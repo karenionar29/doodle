@@ -5,164 +5,149 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>畫給機器人猜</title>
 <style>
-/* ============================================================
-   視覺：深夜實驗室 × 白紙。機器人住在深藍裡，紙是唯一的亮面。
-   ============================================================ */
 :root{
-  --ink:#0B1B2B;        /* 深藍：機器人的世界 */
-  --ink-2:#132A42;      /* 深藍淺一階：卡片 */
-  --paper:#FDFCF7;      /* 紙白：唯一的亮面 */
-  --wire:#3EE6D0;       /* 電光青：機器人在想事情 */
-  --spark:#FFD23F;      /* 螢光黃：得分、慶祝 */
-  --hot:#FF5C6C;        /* 珊瑚紅：倒數告急 */
-  --dim:#7E9BB5;        /* 次要文字 */
-  --pen:#101820;        /* 筆跡 */
+  --ink:#0B1B2B; --ink-2:#132A42; --paper:#FDFCF7;
+  --wire:#3EE6D0; --spark:#FFD23F; --hot:#FF5C6C; --dim:#7E9BB5;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{
-  background:var(--ink);
-  color:var(--paper);
-  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
-  font-weight:700;
-  display:flex;flex-direction:column;
-  overflow:hidden;
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   user-select:none;-webkit-user-select:none;
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
-
-/* ---------- 通用畫面 ---------- */
 .screen{flex:1;display:none;flex-direction:column;min-height:0}
 .screen.on{display:flex}
 
-/* ---------- 開場 ---------- */
-#start{justify-content:center;align-items:center;text-align:center;gap:22px;padding:24px}
-.bot{font-size:64px;line-height:1;animation:bob 2.4s ease-in-out infinite}
+/* 開場 */
+#start{justify-content:center;align-items:center;text-align:center;gap:18px;padding:24px}
+.bot{font-size:56px;animation:bob 2.4s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-h1{font-size:30px;letter-spacing:.02em;line-height:1.3}
+h1{font-size:27px;line-height:1.3}
 h1 em{font-style:normal;color:var(--wire)}
-.sub{color:var(--dim);font-size:15px;font-weight:500;line-height:1.7;max-width:20em}
-.who{display:flex;gap:12px;margin-top:6px}
-.who button{
-  background:var(--ink-2);border:2px solid #24435E;border-radius:18px;
-  padding:16px 22px;min-width:132px;transition:.15s;
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7;max-width:20em}
+.pick{display:flex;flex-direction:column;gap:9px;width:min(300px,86vw)}
+.pick button{
+  background:var(--ink-2);border:2px solid #24435E;border-radius:16px;
+  padding:14px;text-align:left;transition:.15s
 }
-.who button:active{transform:scale(.95)}
-.who button:hover{border-color:var(--wire)}
-.who b{display:block;font-size:20px}
-.who span{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:4px}
+.pick button:active{transform:scale(.96)}
+.pick b{font-size:17px}
+.pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
 
-/* ---------- 載入 ---------- */
-#loading{justify-content:center;align-items:center;text-align:center;gap:18px;padding:32px}
+/* 載入 */
+#loading{justify-content:center;align-items:center;text-align:center;gap:16px;padding:32px}
 .bar{width:min(280px,80vw);height:10px;background:var(--ink-2);border-radius:99px;overflow:hidden}
-.bar i{display:block;height:100%;width:0%;background:var(--wire);border-radius:99px;transition:width .3s}
+.bar i{display:block;height:100%;width:0%;background:var(--wire);transition:width .3s}
 #loadNote{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7;max-width:22em}
 .err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;text-align:left;
      background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
 
-/* ---------- 遊戲 ---------- */
-#play{padding:10px 12px 12px;gap:8px}
-.topbar{display:flex;align-items:center;gap:10px}
-.pill{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:15px;white-space:nowrap}
+/* 換人 */
+#relay{justify-content:center;align-items:center;text-align:center;gap:16px;padding:28px}
+#relayWho{font-size:36px;color:var(--spark)}
+#relayNote{color:var(--dim);font-size:14px;font-weight:500;line-height:1.7;max-width:20em}
+#relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:16px 40px;font-size:19px}
+
+/* 遊戲 */
+#play{padding:8px 10px 10px;gap:6px}
+.topbar{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
 .pill.spark{color:var(--spark)}
-#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:19px;min-width:56px;text-align:center}
+#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:19px;min-width:52px;text-align:center}
 #timer.hot{color:var(--hot);animation:pulse .5s ease-in-out infinite}
-@keyframes pulse{50%{transform:scale(1.14)}}
+@keyframes pulse{50%{transform:scale(1.15)}}
 
-.task{text-align:center;padding:2px 0 4px}
-.task .lead{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.14em}
-.task .word{font-size:34px;line-height:1.15;margin-top:2px}
-.task .en{font-size:14px;color:var(--wire);font-weight:500;letter-spacing:.05em}
+.task{text-align:center;padding:1px 0 3px}
+.task .lead{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.14em}
+.task .word{font-size:31px;line-height:1.15}
+.task .en{font-size:13px;color:var(--wire);font-weight:500}
 
-.sheet{
-  position:relative;flex:1;min-height:0;
-  background:var(--paper);border-radius:16px;overflow:hidden;
-  box-shadow:0 10px 34px rgba(0,0,0,.42);
-}
+.sheet{position:relative;flex:1;min-height:0;background:var(--paper);
+       border-radius:16px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.42)}
 #pad{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
-.hint{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  color:#C9CFD6;font-size:17px;font-weight:600;pointer-events:none;transition:opacity .25s
-}
+.hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      color:#C9CFD6;font-size:16px;font-weight:600;pointer-events:none;transition:opacity .25s}
 .hint.gone{opacity:0}
 
-/* 機器人的思考氣泡 —— 這是整個遊戲的招牌 */
-.think{
-  display:flex;align-items:center;gap:9px;min-height:46px;
-  background:var(--ink-2);border-radius:14px;padding:8px 12px;
-}
-.think .face{font-size:24px;flex:none;transition:transform .2s}
+/* 蠟筆盤 */
+.crayons{display:flex;gap:7px;justify-content:center;padding:2px 0}
+.crayons button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;transition:.12s}
+.crayons button.sel{border-color:var(--paper);transform:scale(1.16)}
+
+/* 機器人思考氣泡 */
+.think{display:flex;align-items:center;gap:8px;min-height:44px;
+       background:var(--ink-2);border-radius:14px;padding:7px 11px}
+.think .face{font-size:23px;flex:none}
 .think.busy .face{animation:tilt .9s ease-in-out infinite}
 @keyframes tilt{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
-.guesses{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-width:0}
-.g{
-  background:#1E3A55;border-radius:99px;padding:5px 11px;font-size:14px;white-space:nowrap;
-  animation:pop .18s ease-out;
-}
+.guesses{display:flex;gap:5px;flex-wrap:wrap;align-items:center;min-width:0}
+.g{background:#1E3A55;border-radius:99px;padding:5px 10px;font-size:13px;white-space:nowrap;animation:pop .18s}
 .g.hit{background:var(--spark);color:var(--ink)}
 @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-.idle{color:var(--dim);font-size:14px;font-weight:500}
+.idle{color:var(--dim);font-size:13px;font-weight:500}
 
-.tools{display:flex;gap:10px}
-.tools button{
-  flex:1;background:var(--ink-2);border:2px solid #24435E;border-radius:14px;
-  padding:14px 0;font-size:16px;transition:.12s
-}
+.tools{display:flex;gap:8px}
+.tools button{flex:1;background:var(--ink-2);border:2px solid #24435E;border-radius:14px;padding:12px 0;font-size:15px}
 .tools button:active{transform:scale(.96)}
+#timeBtn{color:var(--wire)}
 #skipBtn{color:var(--dim)}
 
-/* ---------- 慶祝 ---------- */
-#burst{
-  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  pointer-events:none;z-index:9;
-}
+/* 慶祝 */
+#burst{position:fixed;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:9}
 #burst.on{display:flex}
-#burst b{
-  font-size:56px;color:var(--spark);text-shadow:0 6px 30px rgba(255,210,63,.55);
-  animation:boom .55s cubic-bezier(.2,1.6,.4,1);
-}
-@keyframes boom{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+#burst b{font-size:48px;color:var(--spark);text-shadow:0 6px 30px rgba(255,210,63,.55);
+         animation:boom .55s cubic-bezier(.2,1.6,.4,1);text-align:center;padding:0 20px}
+@keyframes boom{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* ---------- 結算 ---------- */
-#over{justify-content:center;align-items:center;text-align:center;gap:18px;padding:28px}
-#over .score{font-size:74px;color:var(--spark);line-height:1}
-#over .lab{color:var(--dim);font-size:14px;font-weight:500}
-.gallery{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:340px}
-.gallery span{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px}
-#again{
-  background:var(--wire);color:var(--ink);border-radius:16px;padding:16px 34px;font-size:18px;margin-top:6px
-}
-#again:active{transform:scale(.96)}
+/* 結算 */
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#over h2{font-size:24px}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:13px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:20px;width:30px}
+.row .nm{flex:1;text-align:left;font-size:17px}
+.row .sc{font-size:20px}
+#again{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:17px;margin-top:6px}
 </style>
 </head>
 <body>
 
-<!-- ================= 開場 ================= -->
 <section id="start" class="screen on">
   <div class="bot">🤖</div>
   <h1>畫給機器人猜<br><em>它住在你的平板裡</em></h1>
-  <p class="sub">機器人不會上網、不會偷看，它就住在這台平板裡面。<br>你畫，它猜。</p>
-  <div class="who">
-    <button data-mode="george"><b>George</b><span>小一 · 慢一點</span></button>
-    <button data-mode="win"><b>Win</b><span>小三 · 快一點</span></button>
+  <p class="sub">機器人不會上網、不會偷看，它就住在這台平板裡面。</p>
+  <div class="pick">
+    <button data-mode="party"><b>👨‍👦‍👦 三個人比賽</b><span>George → Win → 爸爸 輪流畫，看誰讓機器人猜對最多</span></button>
+    <button data-mode="george"><b>🧒 George 一個人玩</b><span>45 秒 · 題目簡單</span></button>
+    <button data-mode="win"><b>🧑 Win 一個人玩</b><span>35 秒 · 題目全開</span></button>
+    <button data-mode="dad"><b>🧔 爸爸一個人玩</b><span>25 秒 · 題目全開 · 判定最嚴</span></button>
   </div>
 </section>
 
-<!-- ================= 載入 ================= -->
 <section id="loading" class="screen">
   <div class="bot">🤖</div>
   <div style="font-size:19px">機器人正在搬進來…</div>
   <div class="bar"><i id="barFill"></i></div>
-  <p id="loadNote">第一次要下載大腦（大約 20MB）。<br>下載完會記住，下次一秒就好。</p>
+  <p id="loadNote">第一次要下載大腦（約 20MB）。<br>下載完會記住，下次一秒就好。</p>
 </section>
 
-<!-- ================= 遊戲 ================= -->
+<section id="relay" class="screen">
+  <div class="bot">🎨</div>
+  <div id="relayWho">換 George！</div>
+  <p id="relayNote">把平板交給他。</p>
+  <button id="relayGo">我準備好了</button>
+</section>
+
 <section id="play" class="screen">
   <div class="topbar">
     <div class="pill" id="whoTag">George</div>
     <div class="pill spark">⭐ <span id="score">0</span></div>
-    <div class="pill" id="timer">20</div>
+    <div class="pill" id="timer">45</div>
   </div>
 
   <div class="task">
@@ -176,6 +161,8 @@ h1 em{font-style:normal;color:var(--wire)}
     <div class="hint" id="hint">用手指在這裡畫</div>
   </div>
 
+  <div class="crayons" id="crayons"></div>
+
   <div class="think" id="think">
     <div class="face" id="face">🤖</div>
     <div class="guesses" id="guesses"><span class="idle">機器人在等你動筆…</span></div>
@@ -183,64 +170,57 @@ h1 em{font-style:normal;color:var(--wire)}
 
   <div class="tools">
     <button id="clearBtn">🧽 重畫</button>
+    <button id="timeBtn">+10 秒</button>
     <button id="skipBtn">跳過 →</button>
   </div>
 </section>
 
-<!-- ================= 慶祝 ================= -->
 <div id="burst"><b id="burstText">猜到了！</b></div>
 
-<!-- ================= 結算 ================= -->
 <section id="over" class="screen">
   <div class="bot">🎉</div>
-  <div class="lab">機器人猜對了</div>
-  <div class="score" id="finalScore">0</div>
-  <div class="lab">張圖</div>
-  <div class="gallery" id="gallery"></div>
+  <h2 id="overTitle">比賽結果</h2>
+  <div class="board" id="board"></div>
   <button id="again">再玩一次</button>
 </section>
 
 <script type="module">
 /* ==============================================================
-   CONFIG —— 所有可調參數集中在這裡。換皮 / 調難度只改這一塊。
+   CONFIG —— 所有可調參數集中在這裡
    ============================================================== */
 const CONFIG = {
-  // --- AI 層（可抽換：換模型只改這兩行）---
   LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
-  MODEL: 'Xenova/quickdraw-mobilevit-small',   // 專門認塗鴉的模型
+  MODEL: 'Xenova/quickdraw-mobilevit-small',
 
-  // --- 推論 ---
-  INFER_MS:    450,   // 每隔幾毫秒猜一次
-  INFER_SIZE:  224,   // 送進模型前縮到幾 px
-  SHOW_TOP:    3,     // 氣泡裡顯示幾個猜測
-  MIN_STROKES: 1,     // 至少畫幾筆才開始猜
+  INFER_MS:  350,   // 每隔幾毫秒猜一次
+  SHOW_TOP:  3,     // 氣泡顯示幾個猜測
+  PAD_RES:   600,   // 畫布內部解析度
+  BRUSH:     18,    // 筆粗
+  CROP_PAD:  8,     // 裁切塗鴉時外圍留白
+  MIN_BOX:   24,    // 塗鴉小於這尺寸先不猜
+  ADD_TIME:  10,    // +10 秒按鈕
 
-  // --- 畫布 ---
-  PAD_RES:    512,    // 畫布內部解析度
-  PEN_WIDTH:  14,     // 筆粗（相對 PAD_RES）
-
-  // --- 難度（兩個小孩各一組）---
-  MODES: {
-    george: { name:'George', seconds:25, winTopN:3, minConf:0.05, pool:'easy' },
-    win:    { name:'Win',    seconds:15, winTopN:2, minConf:0.10, pool:'all'  },
+  // 讓比賽公平：年紀小的時間長、題目簡單、判定寬鬆
+  PLAYERS: {
+    george: { name:'George', emoji:'🧒', seconds:45, winTopN:3, minConf:0.05, pool:'easy' },
+    win:    { name:'Win',    emoji:'🧑', seconds:35, winTopN:2, minConf:0.08, pool:'all'  },
+    dad:    { name:'爸爸',   emoji:'🧔', seconds:25, winTopN:1, minConf:0.10, pool:'all'  },
   },
+  PARTY_ORDER: ['george', 'win', 'dad'],
+
+  CRAYONS: ['#E63946','#F77F00','#FCBF49','#43AA8B','#277DA1','#9D4EDD','#101820'],
 };
 
-/* ==============================================================
-   題庫 —— 英文標籤必須是 QuickDraw 的類別名。
-   程式啟動後會跟「模型實際認得的標籤」取交集，
-   模型不認得的題目會自動被剔除，所以就算這裡寫錯也不會壞。
-   ============================================================== */
+/* 題庫：英文必須是 QuickDraw 類別名。
+   啟動後會跟「模型實際認得的標籤」取交集，認不得的自動剔除。 */
 const WORDS = {
-  // easy：小一也畫得出來
   easy: {
     'sun':'太陽','moon':'月亮','star':'星星','cloud':'雲','tree':'樹','flower':'花',
     'house':'房子','cat':'貓','dog':'狗','fish':'魚','bird':'鳥','snake':'蛇',
     'apple':'蘋果','banana':'香蕉','car':'汽車','key':'鑰匙','cup':'杯子','hat':'帽子',
-    'door':'門','ladder':'梯子','umbrella':'雨傘','eye':'眼睛','hand':'手','clock':'時鐘',
-    'ice cream':'冰淇淋','pizza':'披薩','t-shirt':'T恤','shoe':'鞋子','book':'書','pants':'褲子',
+    'door':'門','ladder':'梯子','umbrella':'雨傘','eye':'眼睛','hand':'手',
+    'ice cream':'冰淇淋','pizza':'披薩','t-shirt':'T恤','shoe':'鞋子','book':'書',
   },
-  // 只有 Win 會遇到的加碼題
   extra: {
     'elephant':'大象','lion':'獅子','tiger':'老虎','octopus':'章魚','crab':'螃蟹',
     'shark':'鯊魚','whale':'鯨魚','penguin':'企鵝','duck':'鴨子','frog':'青蛙',
@@ -259,8 +239,13 @@ const WORDS = {
 };
 
 /* ==============================================================
-   Web Worker —— 模型推論跑在背景執行緒，絕不卡住畫布。
-   （單檔 HTML 沒有獨立的 worker.js，所以用 Blob 生一個。）
+   Web Worker
+   ★ 關鍵修正 ★
+   模型吃的是「黑底白線」的單通道灰階圖。
+   官方做法：從 canvas 的 alpha 通道取值。
+     有畫到 → alpha 255 → 白
+     沒畫到 → alpha 0   → 黑
+   所以「機器人專用畫布」必須保持【透明背景】，絕不能填白色。
    ============================================================== */
 const WORKER_SRC = `
 import { pipeline, RawImage, env } from '${CONFIG.LIB}';
@@ -291,7 +276,9 @@ self.onmessage = async (e) => {
 
   if (m.type === 'classify' && clf) {
     try {
-      const img = new RawImage(m.data, m.w, m.h, 4).grayscale();
+      const gray = new Uint8ClampedArray(m.data.length / 4);
+      for (let i = 0; i < gray.length; ++i) gray[i] = m.data[i * 4 + 3];
+      const img = new RawImage(gray, m.w, m.h, 1);
       const out = await clf(img, { topk: 5 });
       self.postMessage({ type:'result', out, seq: m.seq });
     } catch (err) {
@@ -301,19 +288,15 @@ self.onmessage = async (e) => {
 };
 `;
 
-/* ==============================================================
-   音效 —— Web Audio 程式合成，零音檔。
-   ============================================================== */
+/* ---------- 音效（Web Audio 合成，零音檔） ---------- */
 let ac = null;
 function beep(freqs, dur = 0.1, type = 'sine', gain = 0.12) {
   try {
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
     if (ac.state === 'suspended') ac.resume();
     freqs.forEach((f, i) => {
-      const o = ac.createOscillator();
-      const g = ac.createGain();
-      o.type = type;
-      o.frequency.value = f;
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = f;
       const t0 = ac.currentTime + i * dur * 0.8;
       g.gain.setValueAtTime(0, t0);
       g.gain.linearRampToValueAtTime(gain, t0 + 0.012);
@@ -321,33 +304,27 @@ function beep(freqs, dur = 0.1, type = 'sine', gain = 0.12) {
       o.connect(g); g.connect(ac.destination);
       o.start(t0); o.stop(t0 + dur + 0.02);
     });
-  } catch (_) { /* 音效失敗不該影響遊戲 */ }
+  } catch (_) {}
 }
 const SFX = {
   win:  () => beep([523, 659, 784, 1047], 0.11, 'triangle', 0.16),
   skip: () => beep([392, 294], 0.09, 'sine', 0.09),
   tick: () => beep([880], 0.05, 'square', 0.05),
   go:   () => beep([392, 523], 0.1, 'triangle', 0.12),
+  add:  () => beep([659, 880], 0.09, 'triangle', 0.13),
   done: () => beep([523, 659, 784, 1047, 1319], 0.13, 'triangle', 0.18),
 };
 
-/* ==============================================================
-   遊戲狀態
-   ============================================================== */
+/* ---------- 狀態 ---------- */
 const S = {
-  mode: null,        // CONFIG.MODES 裡的一組
-  deck: [],          // 這一局的題目佇列
-  target: null,      // { en, zh }
-  score: 0,
-  won: [],           // 猜對過的題目（結算展示）
-  strokes: 0,
-  drawing: false,
-  left: 0,
-  timerId: null,
-  inferId: null,
-  busy: false,       // worker 正在算
-  seq: 0,
-  ready: false,
+  queue: [], cur: null, results: [],
+  deck: [], target: null,
+  score: 0, left: 0,
+  strokes: 0, drawing: false, bbox: null,
+  color: CONFIG.CRAYONS[0],
+  timerId: null, inferId: null,
+  busy: false, seq: 0, ready: false,
+  solo: false,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -356,26 +333,41 @@ const show = (id) => {
   $(id).classList.add('on');
 };
 
-/* ---------- 畫布 ---------- */
+/* ==============================================================
+   兩張畫布
+   pad   = 小孩看的：白紙 + 彩色蠟筆
+   aiPad = 機器人看的：透明底 + 黑線（同座標，不顯示）
+   ============================================================== */
 const pad = $('pad');
 const ctx = pad.getContext('2d', { willReadFrequently: true });
-pad.width = CONFIG.PAD_RES;
-pad.height = CONFIG.PAD_RES;
+pad.width = pad.height = CONFIG.PAD_RES;
+
+const aiPad = document.createElement('canvas');
+aiPad.width = aiPad.height = CONFIG.PAD_RES;
+const aic = aiPad.getContext('2d', { willReadFrequently: true });
+
+function setupPens() {
+  ctx.lineWidth = CONFIG.BRUSH; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = S.color;
+
+  aic.lineWidth = CONFIG.BRUSH; aic.lineCap = 'round'; aic.lineJoin = 'round';
+  aic.strokeStyle = '#000';
+  aic.shadowColor = 'rgba(0,0,0,0.9)'; aic.shadowBlur = 1;
+}
 
 function clearPad() {
-  ctx.fillStyle = '#FFFFFF';           // QuickDraw 是白底黑線
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, pad.width, pad.height);
-  ctx.strokeStyle = '#101820';
-  ctx.lineWidth = CONFIG.PEN_WIDTH;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  aic.clearRect(0, 0, aiPad.width, aiPad.height);   // 保持透明，絕不填白
+  setupPens();
   S.strokes = 0;
+  S.bbox = null;
   $('hint').classList.remove('gone');
   $('guesses').innerHTML = '<span class="idle">機器人在等你動筆…</span>';
   $('think').classList.remove('busy');
 }
 
-function padXY(ev) {
+function xy(ev) {
   const r = pad.getBoundingClientRect();
   return {
     x: (ev.clientX - r.left) / r.width * pad.width,
@@ -383,30 +375,74 @@ function padXY(ev) {
   };
 }
 
+function grow(x, y) {
+  const r = CONFIG.BRUSH / 2;
+  if (!S.bbox) S.bbox = [x - r, y - r, x + r, y + r];
+  else S.bbox = [
+    Math.min(S.bbox[0], x - r), Math.min(S.bbox[1], y - r),
+    Math.max(S.bbox[2], x + r), Math.max(S.bbox[3], y + r),
+  ];
+}
+
 pad.addEventListener('pointerdown', (e) => {
   if (!S.ready || !S.target) return;
   e.preventDefault();
   pad.setPointerCapture(e.pointerId);
-  S.drawing = true;
-  S.strokes++;
+  S.drawing = true; S.strokes++;
   $('hint').classList.add('gone');
-  const p = padXY(e);
-  ctx.beginPath();
-  ctx.moveTo(p.x, p.y);
-  ctx.lineTo(p.x + 0.01, p.y);   // 單點也要留下痕跡
-  ctx.stroke();
+  const p = xy(e);
+  [ctx, aic].forEach(c => {
+    c.beginPath(); c.moveTo(p.x, p.y);
+    c.arc(p.x, p.y, 0.5, 0, Math.PI * 2);
+    c.stroke();
+  });
+  grow(p.x, p.y);
 });
 pad.addEventListener('pointermove', (e) => {
   if (!S.drawing) return;
   e.preventDefault();
-  const p = padXY(e);
-  ctx.lineTo(p.x, p.y);
-  ctx.stroke();
+  const p = xy(e);
+  [ctx, aic].forEach(c => { c.lineTo(p.x, p.y); c.stroke(); });
+  grow(p.x, p.y);
 });
-const endStroke = () => { S.drawing = false; };
-pad.addEventListener('pointerup', endStroke);
-pad.addEventListener('pointercancel', endStroke);
-pad.addEventListener('pointerleave', endStroke);
+const stop = () => { S.drawing = false; };
+pad.addEventListener('pointerup', stop);
+pad.addEventListener('pointercancel', stop);
+pad.addEventListener('pointerleave', stop);
+
+/* ---------- 蠟筆盤 ---------- */
+CONFIG.CRAYONS.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.style.background = c;
+  if (i === 0) b.classList.add('sel');
+  b.addEventListener('click', () => {
+    S.color = c;
+    ctx.strokeStyle = c;
+    document.querySelectorAll('#crayons button').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    beep([700], 0.05, 'sine', 0.06);
+  });
+  $('crayons').appendChild(b);
+});
+
+/* ---------- 把塗鴉裁成正方形（官方做法：讓圖填滿畫面） ---------- */
+function cropSketch() {
+  if (!S.bbox) return null;
+  const [x1, y1, x2, y2] = S.bbox;
+  let left = x1, top = y1;
+  const w = x2 - x1, h = y2 - y1;
+  if (Math.max(w, h) < CONFIG.MIN_BOX) return null;
+
+  let size = 2 * CONFIG.CROP_PAD;
+  if (w >= h) { size += w; top = Math.max(top - (w - h) / 2, 0); }
+  else        { size += h; left = Math.max(left - (h - w) / 2, 0); }
+
+  return aic.getImageData(
+    Math.round(left - CONFIG.CROP_PAD),
+    Math.round(top - CONFIG.CROP_PAD),
+    Math.round(size), Math.round(size)
+  );
+}
 
 /* ---------- Worker ---------- */
 let worker = null;
@@ -418,30 +454,22 @@ function bootWorker() {
 
   worker.onmessage = (e) => {
     const m = e.data;
-
     if (m.type === 'progress') {
       $('barFill').style.width = Math.min(99, m.progress).toFixed(0) + '%';
-    }
-
-    else if (m.type === 'ready') {
+    } else if (m.type === 'ready') {
       LABELS = new Set(m.labels.map(s => String(s).toLowerCase().trim()));
       $('barFill').style.width = '100%';
       S.ready = true;
-      startRound();
-    }
-
-    else if (m.type === 'result') {
+      nextPlayer();
+    } else if (m.type === 'result') {
       S.busy = false;
       $('think').classList.remove('busy');
       if (m.seq === S.seq) render(m.out);
-    }
-
-    else if (m.type === 'error') {
+    } else if (m.type === 'error') {
       S.busy = false;
       fail(m.message);
     }
   };
-
   worker.onerror = (e) => fail(e.message || '載不到機器人的大腦');
   worker.postMessage({ type: 'init', model: CONFIG.MODEL });
 }
@@ -449,24 +477,16 @@ function bootWorker() {
 function fail(msg) {
   show('loading');
   $('loadNote').outerHTML =
-    `<div class="err"><b>機器人搬不進來</b><br>
-     ${msg}<br><br>
-     常見原因：網路擋掉了模型下載，或瀏覽器太舊。<br>
-     這個檔案需要能連到 <b>cdn.jsdelivr.net</b> 和 <b>huggingface.co</b>。</div>`;
+    `<div class="err"><b>機器人搬不進來</b><br>${msg}<br><br>
+     這個檔案需要能連到 cdn.jsdelivr.net 和 huggingface.co。</div>`;
 }
 
 /* ---------- 出題 ---------- */
 function buildDeck(pool) {
-  const src = pool === 'easy'
-    ? { ...WORDS.easy }
-    : { ...WORDS.easy, ...WORDS.extra };
-
-  // 關鍵：只留下「模型真的認得」的題目
+  const src = pool === 'easy' ? { ...WORDS.easy } : { ...WORDS.easy, ...WORDS.extra };
   const deck = Object.entries(src)
     .filter(([en]) => LABELS.has(en))
     .map(([en, zh]) => ({ en, zh }));
-
-  // 洗牌
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -475,13 +495,11 @@ function buildDeck(pool) {
 }
 
 function nextWord() {
-  if (!S.deck.length) S.deck = buildDeck(S.mode.pool);
+  if (!S.deck.length) S.deck = buildDeck(S.cur.pool);
   S.target = S.deck.pop();
   $('word').textContent = S.target.zh;
   $('wordEn').textContent = S.target.en;
   clearPad();
-  S.left = S.mode.seconds;
-  paintTimer();
   SFX.go();
 }
 
@@ -490,20 +508,31 @@ function paintTimer() {
   $('timer').classList.toggle('hot', S.left <= 5);
 }
 
-/* ---------- 每回合 ---------- */
-function startRound() {
+/* ---------- 輪替 ---------- */
+function nextPlayer() {
+  if (!S.queue.length) return finish();
+  S.cur = CONFIG.PLAYERS[S.queue.shift()];
+
+  if (S.solo) {
+    startTurn();
+  } else {
+    $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
+    $('relayNote').textContent = `你有 ${S.cur.seconds} 秒。把平板交給他，其他人別偷看題目喔。`;
+    show('relay');
+  }
+}
+
+function startTurn() {
   show('play');
-  $('whoTag').textContent = S.mode.name;
+  $('whoTag').textContent = `${S.cur.emoji} ${S.cur.name}`;
   S.score = 0;
-  S.won = [];
-  S.deck = buildDeck(S.mode.pool);
+  S.deck = buildDeck(S.cur.pool);
   $('score').textContent = '0';
 
-  if (!S.deck.length) {
-    fail('模型認得的類別跟題庫對不起來（題庫是空的）。');
-    return;
-  }
+  if (!S.deck.length) { fail('模型認得的類別跟題庫對不起來。'); return; }
 
+  S.left = S.cur.seconds;
+  paintTimer();
   nextWord();
 
   clearInterval(S.timerId);
@@ -511,48 +540,54 @@ function startRound() {
     S.left--;
     paintTimer();
     if (S.left <= 3 && S.left > 0) SFX.tick();
-    if (S.left <= 0) gameOver();
+    if (S.left <= 0) endTurn();
   }, 1000);
 
   clearInterval(S.inferId);
   S.inferId = setInterval(tryInfer, CONFIG.INFER_MS);
 }
 
-/* ---------- 推論 ---------- */
-const mini = document.createElement('canvas');
-mini.width = mini.height = CONFIG.INFER_SIZE;
-const mctx = mini.getContext('2d', { willReadFrequently: true });
-
-function tryInfer() {
-  if (!S.ready || S.busy || !S.target) return;
-  if (S.strokes < CONFIG.MIN_STROKES) return;
-
-  mctx.fillStyle = '#FFFFFF';
-  mctx.fillRect(0, 0, mini.width, mini.height);
-  mctx.drawImage(pad, 0, 0, mini.width, mini.height);
-  const img = mctx.getImageData(0, 0, mini.width, mini.height);
-
-  S.busy = true;
-  S.seq++;
-  $('think').classList.add('busy');
-  worker.postMessage({
-    type: 'classify',
-    data: img.data,
-    w: img.width,
-    h: img.height,
-    seq: S.seq,
-  }, [img.data.buffer]);
+function endTurn() {
+  clearInterval(S.timerId); S.timerId = null;
+  clearInterval(S.inferId); S.inferId = null;
+  S.target = null;
+  S.results.push({ name: S.cur.name, emoji: S.cur.emoji, score: S.score });
+  SFX.done();
+  nextPlayer();
 }
 
-/* ---------- 顯示機器人的猜測 ---------- */
+function finish() {
+  const sorted = [...S.results].sort((a, b) => b.score - a.score);
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '比賽結果' : '這回合結果';
+  $('board').innerHTML = sorted.map((r, i) => `
+    <div class="row ${i === 0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i + 1)) : r.emoji}</div>
+      <div class="nm">${r.name}</div>
+      <div class="sc">${r.score}</div>
+    </div>`).join('');
+  show('over');
+}
+
+/* ---------- 推論 ---------- */
+function tryInfer() {
+  if (!S.ready || S.busy || !S.target || S.strokes < 1) return;
+  const img = cropSketch();
+  if (!img) return;
+
+  S.busy = true; S.seq++;
+  $('think').classList.add('busy');
+  worker.postMessage(
+    { type: 'classify', data: img.data, w: img.width, h: img.height, seq: S.seq },
+    [img.data.buffer]
+  );
+}
+
 function render(out) {
   if (!S.target || !Array.isArray(out)) return;
-
-  const top = out.slice(0, CONFIG.SHOW_TOP);
   const box = $('guesses');
   box.innerHTML = '';
-
-  top.forEach(r => {
+  out.slice(0, CONFIG.SHOW_TOP).forEach(r => {
     const en = String(r.label).toLowerCase().trim();
     const zh = WORDS.easy[en] || WORDS.extra[en] || en;
     const el = document.createElement('span');
@@ -561,64 +596,44 @@ function render(out) {
     box.appendChild(el);
   });
 
-  // 命中判定：在前 N 名內 + 超過信心門檻
-  const rank = out.findIndex(r =>
-    String(r.label).toLowerCase().trim() === S.target.en
-  );
-  if (rank >= 0 && rank < S.mode.winTopN && out[rank].score >= S.mode.minConf) {
-    hit();
-  }
+  const rank = out.findIndex(r => String(r.label).toLowerCase().trim() === S.target.en);
+  if (rank >= 0 && rank < S.cur.winTopN && out[rank].score >= S.cur.minConf) hit();
 }
 
 function hit() {
   S.score++;
-  S.won.push(S.target.zh);
   $('score').textContent = S.score;
   SFX.win();
-
   $('burstText').textContent = `是「${S.target.zh}」！`;
   $('burst').classList.add('on');
-  setTimeout(() => $('burst').classList.remove('on'), 750);
-
-  S.target = null;              // 暫停判定，避免連續觸發
-  setTimeout(() => { if (S.timerId) nextWord(); }, 800);
-}
-
-/* ---------- 結束 ---------- */
-function gameOver() {
-  clearInterval(S.timerId); S.timerId = null;
-  clearInterval(S.inferId); S.inferId = null;
-  SFX.done();
-
-  $('finalScore').textContent = S.score;
-  $('gallery').innerHTML = S.won.length
-    ? S.won.map(w => `<span>${w}</span>`).join('')
-    : '<span>下次一定畫得出來</span>';
-  show('over');
+  setTimeout(() => $('burst').classList.remove('on'), 700);
+  S.target = null;
+  setTimeout(() => { if (S.timerId) nextWord(); }, 750);
 }
 
 /* ---------- 事件 ---------- */
-document.querySelectorAll('.who button').forEach(b => {
+document.querySelectorAll('.pick button').forEach(b => {
   b.addEventListener('click', () => {
-    S.mode = CONFIG.MODES[b.dataset.mode];
-    beep([440], 0.06);                       // 解鎖 AudioContext
-    if (S.ready) { startRound(); }
+    const m = b.dataset.mode;
+    S.solo = (m !== 'party');
+    S.queue = S.solo ? [m] : [...CONFIG.PARTY_ORDER];
+    S.results = [];
+    beep([440], 0.06);
+    if (S.ready) nextPlayer();
     else { show('loading'); bootWorker(); }
   });
 });
 
-$('clearBtn').addEventListener('click', () => {
+$('relayGo').addEventListener('click', startTurn);
+$('clearBtn').addEventListener('click', () => { if (S.target) clearPad(); });
+$('skipBtn').addEventListener('click', () => { if (S.target) { SFX.skip(); nextWord(); } });
+$('timeBtn').addEventListener('click', () => {
   if (!S.target) return;
-  clearPad();
+  S.left += CONFIG.ADD_TIME;
+  paintTimer();
+  SFX.add();
 });
-
-$('skipBtn').addEventListener('click', () => {
-  if (!S.target) return;
-  SFX.skip();
-  nextWord();
-});
-
-$('again').addEventListener('click', () => startRound());
+$('again').addEventListener('click', () => show('start'));
 
 clearPad();
 </script>
