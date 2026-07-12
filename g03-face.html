@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>G03 表情大挑戰</title>
+<style>
+:root{
+  --ink:#1A0E2E; --ink-2:#2A1A45; --line:#3F2A63; --paper:#FDFCF7;
+  --wire:#C77DFF; --spark:#FFD23F; --hot:#FF5C6C; --dim:#9B87B8; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+#start{justify-content:center;align-items:center;text-align:center;gap:16px;padding:22px}
+.hero{font-size:46px;letter-spacing:.04em}
+h1{font-size:26px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.75;max-width:21em}
+.pick{display:flex;flex-direction:column;gap:9px;width:min(310px,88vw)}
+.pick button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+             padding:14px;text-align:left;transition:.15s}
+.pick button:active{transform:scale(.96)}
+.pick b{font-size:17px}
+.pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:22em;line-height:1.7}
+
+#loading{justify-content:center;align-items:center;text-align:center;gap:16px;padding:30px}
+.bar{width:min(280px,80vw);height:10px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0%;background:var(--wire);transition:width .3s}
+#loadNote{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7;max-width:22em}
+.err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;text-align:left;
+     background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
+
+#relay{justify-content:center;align-items:center;text-align:center;gap:16px;padding:26px}
+#relayWho{font-size:34px;color:var(--spark)}
+#relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 38px;font-size:18px}
+
+/* 遊戲 */
+#play{padding:8px 10px 10px;gap:7px}
+.topbar{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.pill.spark{color:var(--spark)}
+#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:19px;min-width:52px;text-align:center;
+       background:var(--ink-2);border-radius:99px;padding:6px 10px}
+#timer.hot{color:var(--hot);animation:pulse .5s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.14)}}
+
+/* 任務 */
+.quest{background:var(--wire);color:var(--ink);border-radius:16px;padding:11px;text-align:center;
+       display:flex;align-items:center;justify-content:center;gap:12px}
+.quest .em{font-size:34px}
+.quest .txt{text-align:left}
+.quest .lead{font-size:11px;font-weight:500;letter-spacing:.16em;opacity:.7}
+.quest .what{font-size:26px;line-height:1.15}
+
+/* 鏡頭 */
+.lens{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#000;
+      box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#cam{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+.ring{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:62%;aspect-ratio:1;border-radius:50%;
+  border:4px dashed rgba(255,255,255,.4);pointer-events:none;transition:.15s;
+}
+.lens.hot .ring{border-style:solid;border-color:var(--hit);
+                box-shadow:0 0 0 9999px rgba(74,222,128,.16)}
+.tipFace{position:absolute;left:0;right:0;bottom:10px;text-align:center;
+         font-size:12px;font-weight:600;color:rgba(255,255,255,.75);pointer-events:none}
+.camNote{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+         color:var(--dim);font-size:14px;font-weight:600;text-align:center;padding:24px;background:#000}
+.camNote.gone{display:none}
+
+/* 機器人讀數 —— 這是最好玩的部分 */
+.meter{background:var(--ink-2);border-radius:14px;padding:9px 12px;display:flex;flex-direction:column;gap:7px}
+.meter .head{display:flex;align-items:baseline;gap:8px;font-size:13px}
+.meter .head .lab{color:var(--dim);font-weight:500}
+.meter .head .pct{margin-left:auto;font-size:17px;color:var(--wire);font-variant-numeric:tabular-nums}
+.meter .track{height:12px;background:#12071F;border-radius:99px;overflow:hidden;position:relative}
+.meter .fill{height:100%;width:0%;background:var(--wire);border-radius:99px;transition:width .18s}
+.meter .fill.pass{background:var(--hit)}
+.meter .goal{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--spark);border-radius:2px}
+.meter .see{font-size:12px;color:var(--dim);font-weight:500}
+
+.tools{display:flex;gap:8px}
+.tools button{flex:1;background:var(--ink-2);border:2px solid var(--line);
+              border-radius:14px;padding:12px 0;font-size:15px;color:var(--dim)}
+.tools button:active{transform:scale(.96)}
+
+#pass{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+      gap:8px;z-index:9;background:rgba(26,14,46,.93);pointer-events:none}
+#pass.on{display:flex}
+#passEm{font-size:78px;animation:boom .5s cubic-bezier(.2,1.6,.4,1)}
+#passTxt{font-size:34px;color:var(--hit)}
+@keyframes boom{from{transform:scale(.3) rotate(-14deg);opacity:0}to{transform:scale(1);opacity:1}}
+
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#over h2{font-size:24px}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:19px}
+#again{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:17px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on">
+  <div class="hero">😡 😱 🤢 😄</div>
+  <h1>G03 <em>表情大挑戰</em></h1>
+  <p class="sub">機器人喊出一個表情，<br><b>你就用臉做給它看。</b><br>它會即時告訴你「像幾 %」。</p>
+  <div class="pick">
+    <button data-p="george"><b>🧒 George</b><span>60 秒 · 像 35% 就過</span></button>
+    <button data-p="win"><b>🧑 Win</b><span>50 秒 · 像 50% 才過</span></button>
+    <button data-p="dad"><b>🧔 爸爸</b><span>40 秒 · 像 65% 才過</span></button>
+    <button data-p="party"><b>👨‍👦‍👦 三個人比賽</b><span>輪流上場，看誰過最多關</span></button>
+  </div>
+  <p class="tiny">🔒 鏡頭畫面只在這台平板裡處理，<b>不會傳出去任何地方</b>。</p>
+</section>
+
+<section id="loading" class="screen">
+  <div class="hero">🤖</div>
+  <div style="font-size:19px">機器人正在學看表情…</div>
+  <div class="bar"><i id="barFill"></i></div>
+  <p id="loadNote">第一次要下載，之後會記住。<br>等一下會問「要不要用相機」，<b>請按允許</b>。</p>
+</section>
+
+<section id="relay" class="screen">
+  <div class="hero">🎭</div>
+  <div id="relayWho">換 George！</div>
+  <p id="relayNote" class="sub">平板拿好，臉對準圓圈。</p>
+  <button id="relayGo">開始！</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="topbar">
+    <div class="pill" id="whoTag">🧒 George</div>
+    <div class="pill spark">🎭 <span id="score">0</span></div>
+    <div id="timer">60</div>
+  </div>
+
+  <div class="quest">
+    <div class="em" id="questEm">😡</div>
+    <div class="txt">
+      <div class="lead">做 出 這 個 表 情</div>
+      <div class="what" id="questWhat">生氣</div>
+    </div>
+  </div>
+
+  <div class="lens" id="lens">
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="ring"></div>
+    <div class="tipFace">把臉放進圓圈裡</div>
+    <div class="camNote" id="camNote">正在打開相機…</div>
+  </div>
+
+  <div class="meter">
+    <div class="head">
+      <span id="mEm">😡</span>
+      <span class="lab">像不像</span>
+      <span class="pct" id="mPct">0%</span>
+    </div>
+    <div class="track">
+      <i class="fill" id="mFill"></i>
+      <div class="goal" id="mGoal"></div>
+    </div>
+    <div class="see" id="mSee">機器人正在看…</div>
+  </div>
+
+  <div class="tools">
+    <button id="skipBtn">做不出來，換一個</button>
+  </div>
+</section>
+
+<div id="pass">
+  <div id="passEm">😡</div>
+  <div id="passTxt">生氣 ✓</div>
+</div>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h2 id="overTitle">表情大賽結果</h2>
+  <div class="board" id="board"></div>
+  <button id="again">再玩一次</button>
+</section>
+
+<script type="module">
+/* ==============================================================
+   CONFIG —— 模型只是一個「可抽換的字串」
+   ============================================================== */
+const CONFIG = {
+  LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
+  MODEL: 'Xenova/facial_emotions_image_detection',
+
+  INFER_MS: 400,
+  FRAME:    224,
+  CROP:     0.62,   // 只取中間這麼大一塊（≈ 臉的位置，跟畫面上的圓圈對齊）
+  HOLD:     2,      // 連續達標幾次才過關（避免一閃而過）
+
+  PLAYERS: {
+    george: { name:'George', emoji:'🧒', seconds:60, need:0.35 },
+    win:    { name:'Win',    emoji:'🧑', seconds:50, need:0.50 },
+    dad:    { name:'爸爸',   emoji:'🧔', seconds:40, need:0.65 },
+  },
+  PARTY: ['george','win','dad'],
+};
+
+/* 表情對照表。啟動後會跟「模型實際認得的標籤」取交集，認不得的自動剔除。 */
+const FACES = {
+  happy:    { zh:'開心',     em:'😄', hint:'笑到牙齒露出來！' },
+  sad:      { zh:'難過',     em:'😢', hint:'嘴角往下垂…' },
+  angry:    { zh:'生氣',     em:'😡', hint:'眉毛用力擠下來！' },
+  surprise: { zh:'嚇一跳',   em:'😲', hint:'眼睛睜超大、嘴巴張開！' },
+  fear:     { zh:'害怕',     em:'😱', hint:'眉毛抬高、往後縮！' },
+  disgust:  { zh:'好噁心',   em:'🤢', hint:'皺鼻子、嘴巴歪一邊！' },
+  neutral:  { zh:'面無表情', em:'😐', hint:'不准笑！撐住！' },
+};
+
+/* ---------- Worker ---------- */
+const WORKER_SRC = `
+import { pipeline, RawImage, env } from '${CONFIG.LIB}';
+env.allowLocalModels = false;
+let clf = null;
+
+self.onmessage = async (e) => {
+  const m = e.data;
+  if (m.type === 'init') {
+    try {
+      clf = await pipeline('image-classification', m.model, {
+        quantized: false,
+        progress_callback: (p) => {
+          if (p.status === 'progress' && typeof p.progress === 'number')
+            self.postMessage({ type:'progress', progress: p.progress });
+        }
+      });
+      self.postMessage({ type:'ready', labels: Object.values(clf.model.config.id2label || {}) });
+    } catch (err) {
+      self.postMessage({ type:'error', message: String(err && err.message || err) });
+    }
+    return;
+  }
+  if (m.type === 'look' && clf) {
+    try {
+      // 真實照片 → RGB（跟塗鴉那款取 alpha 不同）
+      const n = m.data.length / 4;
+      const rgb = new Uint8ClampedArray(n * 3);
+      for (let i = 0; i < n; i++) {
+        rgb[i*3]   = m.data[i*4];
+        rgb[i*3+1] = m.data[i*4+1];
+        rgb[i*3+2] = m.data[i*4+2];
+      }
+      const img = new RawImage(rgb, m.w, m.h, 3);
+      const out = await clf(img, { topk: 7 });
+      self.postMessage({ type:'result', out, seq: m.seq });
+    } catch (err) {
+      self.postMessage({ type:'error', message: String(err && err.message || err) });
+    }
+  }
+};
+`;
+
+/* ---------- 音效 ---------- */
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  pass: () => beep([659,784,1047,1319], 0.1, 'triangle', 0.17),
+  near: () => beep([1300], 0.035, 'sine', 0.05),
+  go:   () => beep([392,523], 0.1, 'triangle', 0.12),
+  skip: () => beep([392,294], 0.09, 'sine', 0.09),
+  tick: () => beep([880], 0.05, 'square', 0.05),
+  done: () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+/* ---------- 狀態 ---------- */
+const S = {
+  queue: [], cur: null, results: [],
+  deck: [], target: null, targetKey: '',
+  score: 0, left: 0, hold: 0,
+  timerId: null, inferId: null,
+  busy: false, seq: 0, ready: false, camOn: false,
+  solo: true,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+const norm = (s) => String(s).split(',')[0].trim().toLowerCase();
+
+/* ---------- 相機（前鏡頭） ---------- */
+const cam = $('cam');
+const grab = document.createElement('canvas');
+grab.width = grab.height = CONFIG.FRAME;
+const gctx = grab.getContext('2d', { willReadFrequently:true });
+
+async function openCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'user' } }, audio: false   // 前鏡頭：拍自己的臉
+    });
+    cam.srcObject = stream;
+    await cam.play();
+    S.camOn = true;
+    $('camNote').classList.add('gone');
+    return true;
+  } catch (e) {
+    $('camNote').textContent = '打不開相機。請允許相機權限後重新整理。(' + e.name + ')';
+    return false;
+  }
+}
+
+/* ---------- Worker ---------- */
+let worker = null, LABELS = new Set();
+
+function bootWorker() {
+  const url = URL.createObjectURL(new Blob([WORKER_SRC], { type:'text/javascript' }));
+  worker = new Worker(url, { type:'module' });
+  worker.onmessage = async (e) => {
+    const m = e.data;
+    if (m.type === 'progress') $('barFill').style.width = Math.min(99,m.progress).toFixed(0)+'%';
+    else if (m.type === 'ready') {
+      LABELS = new Set(m.labels.map(norm));
+      $('barFill').style.width = '100%';
+      S.ready = true;
+      await openCamera();
+      nextPlayer();
+    }
+    else if (m.type === 'result') {
+      S.busy = false;
+      if (m.seq === S.seq) judge(m.out);
+    }
+    else if (m.type === 'error') { S.busy = false; fail(m.message); }
+  };
+  worker.onerror = (e) => fail(e.message || '載不到機器人的眼睛');
+  worker.postMessage({ type:'init', model: CONFIG.MODEL });
+}
+
+function fail(msg) {
+  show('loading');
+  $('loadNote').outerHTML =
+    `<div class="err"><b>機器人學不會看表情</b><br>${msg}<br><br>
+     這個檔案需要能連到 cdn.jsdelivr.net 和 huggingface.co。</div>`;
+}
+
+/* ---------- 出題 ---------- */
+function buildDeck() {
+  const d = Object.entries(FACES)
+    .filter(([k]) => LABELS.has(k))       // 只留模型真的認得的表情
+    .map(([k, v]) => ({ key:k, ...v }));
+  for (let i=d.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+function nextFace() {
+  if (!S.deck.length) S.deck = buildDeck();
+  S.target = S.deck.pop();
+  S.targetKey = S.target.key;
+  S.hold = 0;
+
+  $('questEm').textContent = S.target.em;
+  $('questWhat').textContent = S.target.zh;
+  $('mEm').textContent = S.target.em;
+  $('mSee').textContent = S.target.hint;
+  $('mFill').style.width = '0%';
+  $('mPct').textContent = '0%';
+  $('mGoal').style.left = (S.cur.need * 100) + '%';
+  $('lens').classList.remove('hot');
+  SFX.go();
+}
+
+/* ---------- 輪替 ---------- */
+function nextPlayer() {
+  if (!S.queue.length) return finish();
+  S.cur = CONFIG.PLAYERS[S.queue.shift()];
+  if (S.solo) startTurn();
+  else {
+    $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
+    $('relayNote').textContent = `${S.cur.seconds} 秒。臉對準圓圈，準備做鬼臉。`;
+    show('relay');
+  }
+}
+
+function startTurn() {
+  show('play');
+  $('whoTag').textContent = `${S.cur.emoji} ${S.cur.name}`;
+  S.score = 0;
+  $('score').textContent = '0';
+  S.deck = buildDeck();
+
+  if (!S.deck.length) { fail('模型認得的表情跟題庫對不起來。'); return; }
+  if (!S.camOn) openCamera();
+
+  S.left = S.cur.seconds;
+  paintTimer();
+  nextFace();
+
+  clearInterval(S.timerId);
+  S.timerId = setInterval(() => {
+    S.left--;
+    paintTimer();
+    if (S.left <= 3 && S.left > 0) SFX.tick();
+    if (S.left <= 0) endTurn();
+  }, 1000);
+
+  clearInterval(S.inferId);
+  S.inferId = setInterval(look, CONFIG.INFER_MS);
+}
+
+function paintTimer() {
+  $('timer').textContent = S.left;
+  $('timer').classList.toggle('hot', S.left <= 5);
+}
+
+/* ---------- 看鏡頭 ---------- */
+function look() {
+  if (!S.ready || S.busy || !S.target || !S.camOn || !cam.videoWidth) return;
+
+  // 取中間一小塊（對齊畫面上的圓圈）＝ 大概就是臉
+  const vw = cam.videoWidth, vh = cam.videoHeight;
+  const side = Math.min(vw, vh) * CONFIG.CROP;
+  gctx.drawImage(cam, (vw-side)/2, (vh-side)/2, side, side, 0, 0, CONFIG.FRAME, CONFIG.FRAME);
+  const img = gctx.getImageData(0, 0, CONFIG.FRAME, CONFIG.FRAME);
+
+  S.busy = true; S.seq++;
+  worker.postMessage({ type:'look', data:img.data, w:img.width, h:img.height, seq:S.seq },
+                     [img.data.buffer]);
+}
+
+function judge(out) {
+  if (!S.target || !Array.isArray(out)) return;
+
+  const me = out.find(r => norm(r.label) === S.targetKey);
+  const score = me ? me.score : 0;
+  const pct = Math.round(score * 100);
+
+  $('mPct').textContent = pct + '%';
+  $('mFill').style.width = pct + '%';
+
+  const pass = score >= S.cur.need;
+  $('mFill').classList.toggle('pass', pass);
+  $('lens').classList.toggle('hot', pass);
+
+  if (pass) {
+    S.hold++;
+    if (S.hold === 1) SFX.near();
+    if (S.hold >= CONFIG.HOLD) passed();
+  } else {
+    S.hold = 0;
+    // 沒過的話，順便告訴他機器人現在覺得你是什麼表情（很好笑）
+    const top = out[0] && FACES[norm(out[0].label)];
+    $('mSee').textContent = top
+      ? `機器人現在覺得你是「${top.zh}」${top.em}`
+      : S.target.hint;
+  }
+}
+
+function passed() {
+  const t = S.target;
+  S.score++;
+  $('score').textContent = S.score;
+  S.target = null;
+  SFX.pass();
+
+  $('passEm').textContent = t.em;
+  $('passTxt').textContent = t.zh + ' ✓';
+  $('pass').classList.add('on');
+  setTimeout(() => {
+    $('pass').classList.remove('on');
+    if (S.timerId) nextFace();
+  }, 900);
+}
+
+function endTurn() {
+  clearInterval(S.timerId); S.timerId = null;
+  clearInterval(S.inferId); S.inferId = null;
+  S.target = null;
+  S.results.push({ name:S.cur.name, emoji:S.cur.emoji, score:S.score });
+  SFX.done();
+  nextPlayer();
+}
+
+function finish() {
+  const sorted = [...S.results].sort((a,b) => b.score - a.score);
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '表情大賽結果' : '你的成績';
+  $('board').innerHTML = sorted.map((r,i) => `
+    <div class="row ${i===0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i+1)) : r.emoji}</div>
+      <div class="nm">${r.name}</div>
+      <div class="sc">${r.score}</div>
+    </div>`).join('');
+  show('over');
+}
+
+/* ---------- 事件 ---------- */
+document.querySelectorAll('.pick button').forEach(b => {
+  b.onclick = () => {
+    const p = b.dataset.p;
+    S.solo = (p !== 'party');
+    S.queue = S.solo ? [p] : [...CONFIG.PARTY];
+    S.results = [];
+    beep([440], 0.06);
+    if (S.ready) nextPlayer();
+    else { show('loading'); bootWorker(); }
+  };
+});
+
+$('relayGo').onclick = startTurn;
+$('skipBtn').onclick = () => { if (S.target) { SFX.skip(); nextFace(); } };
+$('again').onclick = () => show('start');
+</script>
+</body>
+</html>
