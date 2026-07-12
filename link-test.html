@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>家庭連線測試</title>
+<style>
+:root{
+  --ink:#0B1B2B; --ink-2:#132A42; --line:#24435E;
+  --wire:#3EE6D0; --spark:#FFD23F; --hot:#FF5C6C; --dim:#7E9BB5; --paper:#FDFCF7;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;gap:18px;text-align:center;overflow-y:auto;
+  transition:background .12s;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{display:none;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:360px}
+.screen.on{display:flex}
+
+h1{font-size:26px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7}
+
+.big{
+  width:100%;background:var(--ink-2);border:2px solid var(--line);
+  border-radius:18px;padding:18px;text-align:left;transition:.15s
+}
+.big:active{transform:scale(.96)}
+.big b{font-size:19px;display:block}
+.big span{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:4px;line-height:1.5}
+
+#codeBox{
+  font-size:52px;letter-spacing:.18em;color:var(--spark);
+  background:var(--ink-2);border-radius:18px;padding:18px 10px;width:100%;
+  font-variant-numeric:tabular-nums;
+}
+#codeIn{
+  width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+  padding:16px;font:inherit;font-size:34px;color:var(--paper);text-align:center;
+  letter-spacing:.18em;outline:none;
+}
+#codeIn:focus{border-color:var(--wire)}
+
+.go{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:18px;width:100%}
+.go:active{transform:scale(.96)}
+.go[disabled]{opacity:.4}
+
+.who{display:flex;flex-direction:column;gap:8px;width:100%}
+.who .p{display:flex;align-items:center;gap:10px;background:var(--ink-2);border-radius:14px;padding:12px 15px}
+.who .dot{width:10px;height:10px;border-radius:50%;background:var(--wire);flex:none}
+.who .nm{flex:1;text-align:left;font-size:16px}
+.who .me{color:var(--spark);font-size:12px}
+
+.pad{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%}
+.pad button{height:70px;border-radius:16px;font-size:17px;color:#0B1B2B}
+.pad button:active{transform:scale(.94)}
+
+#log{
+  width:100%;background:#08131F;border-radius:14px;padding:12px;
+  font-size:12px;font-weight:500;color:var(--dim);text-align:left;
+  max-height:130px;overflow-y:auto;line-height:1.8;font-family:ui-monospace,monospace;
+}
+.err{color:var(--hot)}
+.ok{color:var(--wire)}
+.status{font-size:14px;color:var(--dim);font-weight:500}
+#backBtn{color:var(--dim);font-size:14px;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- 1. 選角色 -->
+<section id="pick" class="screen on">
+  <div style="font-size:52px">📡</div>
+  <h1>家庭連線測試<br><em>看看四台機器能不能講話</em></h1>
+  <p class="sub">一台開房，其他人輸入代碼加入。<br>資料是裝置之間直接傳，不經過伺服器。</p>
+  <button class="big" id="hostBtn">
+    <b>🏠 我是主機（開房）</b>
+    <span>用平板或電腦當主機，會給你一組代碼</span>
+  </button>
+  <button class="big" id="joinBtn">
+    <b>📲 我要加入</b>
+    <span>輸入主機給的 4 位數代碼</span>
+  </button>
+</section>
+
+<!-- 2. 輸入代碼 -->
+<section id="enter" class="screen">
+  <div style="font-size:44px">📲</div>
+  <h1>輸入代碼</h1>
+  <input id="codeIn" type="tel" inputmode="numeric" maxlength="4" placeholder="0000">
+  <button class="go" id="connectBtn">連線</button>
+  <div class="status" id="joinStatus"></div>
+  <button id="backBtn">← 回上一頁</button>
+</section>
+
+<!-- 3. 房間 -->
+<section id="room" class="screen">
+  <p class="sub" id="roomLead">把這組代碼念給其他人聽</p>
+  <div id="codeBox">----</div>
+
+  <div class="who" id="who"></div>
+
+  <p class="sub">👇 隨便按一個，<b>所有人的螢幕都要一起變色</b></p>
+  <div class="pad" id="padBtns"></div>
+
+  <div id="log"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script>
+/* ==============================================================
+   家庭連線地基 —— 這一層跟遊戲無關，以後每個遊戲都能直接拿去用。
+   ============================================================== */
+const CONFIG = {
+  PREFIX: 'krisfam-',                                  // 避免跟別人的房間撞號
+  COLORS: [
+    { name:'紅', hex:'#E63946' },
+    { name:'黃', hex:'#FFD23F' },
+    { name:'綠', hex:'#43AA8B' },
+    { name:'藍', hex:'#3EE6D0' },
+  ],
+  DEVICES: ['平板A','平板B','手機','電腦'],
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+function log(msg, cls = '') {
+  const p = document.createElement('div');
+  p.className = cls;
+  p.textContent = `${new Date().toLocaleTimeString('zh-TW',{hour12:false})} ${msg}`;
+  $('log').prepend(p);
+}
+
+/* ---------- 狀態 ---------- */
+const NET = {
+  peer: null,
+  isHost: false,
+  conns: [],          // 主機：所有客人的連線 / 客人：只有一條（連到主機）
+  me: '',             // 我的名字
+  players: [],        // 房間裡的人（名字陣列）
+  code: '',
+};
+
+/* 幫每台裝置取個名字（隨機挑一個，避免三個人都叫「平板」） */
+function guessName() {
+  const ua = navigator.userAgent;
+  const base = /iPad/.test(ua) ? '平板'
+            : /iPhone|Android/.test(ua) ? '手機'
+            : '電腦';
+  return base + '-' + Math.floor(Math.random() * 90 + 10);
+}
+NET.me = guessName();
+
+/* ---------- 廣播（主機轉發給所有人） ---------- */
+function send(msg) {
+  NET.conns.forEach(c => { try { c.send(msg); } catch (_) {} });
+}
+
+function handle(msg, from) {
+  if (msg.type === 'roster') {          // 主機發來的名單
+    NET.players = msg.players;
+    paintWho();
+  }
+  else if (msg.type === 'flash') {
+    flash(msg.hex, msg.who, msg.color);
+    // 主機收到客人的按鈕 → 轉發給其他客人
+    if (NET.isHost) {
+      NET.conns.forEach(c => { if (c !== from) { try { c.send(msg); } catch (_) {} } });
+    }
+  }
+  else if (msg.type === 'hello' && NET.isHost) {
+    NET.players.push(msg.name);
+    from._name = msg.name;
+    log(`${msg.name} 加入了`, 'ok');
+    paintWho();
+    send({ type:'roster', players: NET.players });
+  }
+}
+
+/* ---------- 畫面 ---------- */
+function paintWho() {
+  $('who').innerHTML = NET.players.map(n => `
+    <div class="p">
+      <div class="dot"></div>
+      <div class="nm">${n}</div>
+      ${n === NET.me ? '<div class="me">你</div>' : ''}
+    </div>`).join('');
+}
+
+let flashTimer = null;
+function flash(hex, who, colorName) {
+  document.body.style.background = hex;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { document.body.style.background = ''; }, 320);
+  log(`${who} 按了「${colorName}」`, 'ok');
+}
+
+/* 按鈕 */
+CONFIG.COLORS.forEach(c => {
+  const b = document.createElement('button');
+  b.textContent = c.name;
+  b.style.background = c.hex;
+  b.addEventListener('click', () => {
+    const msg = { type:'flash', hex:c.hex, who:NET.me, color:c.name };
+    flash(c.hex, NET.me, c.name);
+    send(msg);
+  });
+  $('padBtns').appendChild(b);
+});
+
+/* ---------- 開房（主機） ---------- */
+$('hostBtn').addEventListener('click', () => {
+  NET.isHost = true;
+  NET.code = String(Math.floor(1000 + Math.random() * 9000));
+  NET.players = [NET.me];
+
+  show('room');
+  $('roomLead').textContent = '把這組代碼念給其他人聽';
+  $('codeBox').textContent = NET.code;
+  paintWho();
+  log('正在跟接線生報到…');
+
+  NET.peer = new Peer(CONFIG.PREFIX + NET.code);
+
+  NET.peer.on('open', () => log('房間開好了，等其他人加入 ✔', 'ok'));
+
+  NET.peer.on('connection', (conn) => {
+    NET.conns.push(conn);
+    conn.on('open', () => {
+      log('有人接上線了');
+      conn.send({ type:'roster', players: NET.players });
+    });
+    conn.on('data', (d) => handle(d, conn));
+    conn.on('close', () => {
+      NET.conns = NET.conns.filter(c => c !== conn);
+      NET.players = NET.players.filter(n => n !== conn._name);
+      log(`${conn._name || '有人'} 離線了`, 'err');
+      paintWho();
+      send({ type:'roster', players: NET.players });
+    });
+  });
+
+  NET.peer.on('error', (e) => {
+    if (e.type === 'unavailable-id') {
+      log('這組代碼被佔用了，重新整理再開一次', 'err');
+    } else {
+      log('錯誤：' + e.type, 'err');
+    }
+  });
+});
+
+/* ---------- 加入（客人） ---------- */
+$('joinBtn').addEventListener('click', () => { show('enter'); $('codeIn').focus(); });
+$('backBtn').addEventListener('click', () => show('pick'));
+
+$('connectBtn').addEventListener('click', () => {
+  const code = $('codeIn').value.trim();
+  if (code.length !== 4) { $('joinStatus').textContent = '要輸入 4 位數字'; return; }
+
+  $('connectBtn').disabled = true;
+  $('joinStatus').textContent = '連線中…';
+
+  NET.isHost = false;
+  NET.code = code;
+  NET.peer = new Peer();
+
+  NET.peer.on('open', () => {
+    const conn = NET.peer.connect(CONFIG.PREFIX + code, { reliable: true });
+    NET.conns = [conn];
+
+    const bail = setTimeout(() => {
+      $('joinStatus').textContent = '連不上。代碼對嗎？主機開好了嗎？';
+      $('connectBtn').disabled = false;
+    }, 12000);
+
+    conn.on('open', () => {
+      clearTimeout(bail);
+      show('room');
+      $('roomLead').textContent = '已經連上主機了';
+      $('codeBox').textContent = code;
+      log('連上主機 ✔', 'ok');
+      conn.send({ type:'hello', name: NET.me });
+    });
+
+    conn.on('data', (d) => handle(d, conn));
+    conn.on('close', () => log('跟主機斷線了', 'err'));
+    conn.on('error', (e) => log('連線錯誤：' + e, 'err'));
+  });
+
+  NET.peer.on('error', (e) => {
+    $('joinStatus').textContent = '連不上：' + e.type;
+    $('connectBtn').disabled = false;
+  });
+});
+</script>
+</body>
+</html>
