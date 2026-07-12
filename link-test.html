@@ -3,197 +3,207 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>家庭連線測試</title>
+<title>家庭連線測試 v2</title>
 <style>
 :root{
   --ink:#0B1B2B; --ink-2:#132A42; --line:#24435E;
   --wire:#3EE6D0; --spark:#FFD23F; --hot:#FF5C6C; --dim:#7E9BB5; --paper:#FDFCF7;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
 body{
-  background:var(--ink);color:var(--paper);
+  min-height:100%;background:var(--ink);color:var(--paper);
   font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:24px;gap:18px;text-align:center;overflow-y:auto;
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 16px 40px;gap:14px;text-align:center;
   transition:background .12s;
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
-.screen{display:none;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:360px}
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:380px}
 .screen.on{display:flex}
 
-h1{font-size:26px;line-height:1.35}
-h1 em{font-style:normal;color:var(--wire)}
+h1{font-size:23px;line-height:1.35;margin-top:8px}
 .sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7}
 
-.big{
-  width:100%;background:var(--ink-2);border:2px solid var(--line);
-  border-radius:18px;padding:18px;text-align:left;transition:.15s
-}
-.big:active{transform:scale(.96)}
-.big b{font-size:19px;display:block}
-.big span{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:4px;line-height:1.5}
+/* 體檢表 —— 這次的重點 */
+.check{width:100%;background:#08131F;border-radius:14px;padding:12px 14px;text-align:left}
+.check .r{display:flex;gap:9px;align-items:baseline;padding:5px 0;font-size:13px;font-weight:500}
+.check .r b{font-weight:700;flex:none}
+.ok{color:var(--wire)} .bad{color:var(--hot)} .wait{color:var(--dim)} .warn{color:var(--spark)}
 
-#codeBox{
-  font-size:52px;letter-spacing:.18em;color:var(--spark);
-  background:var(--ink-2);border-radius:18px;padding:18px 10px;width:100%;
-  font-variant-numeric:tabular-nums;
-}
-#codeIn{
-  width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
-  padding:16px;font:inherit;font-size:34px;color:var(--paper);text-align:center;
-  letter-spacing:.18em;outline:none;
-}
+.big{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:16px;padding:16px;text-align:left}
+.big:active{transform:scale(.96)}
+.big b{font-size:18px;display:block}
+.big span{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:3px}
+
+#codeBox{font-size:48px;letter-spacing:.18em;color:var(--spark);background:var(--ink-2);
+         border-radius:16px;padding:14px 10px;width:100%;font-variant-numeric:tabular-nums}
+#codeIn{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;
+        padding:14px;font:inherit;font-size:30px;color:var(--paper);text-align:center;
+        letter-spacing:.18em;outline:none}
 #codeIn:focus{border-color:var(--wire)}
 
-.go{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:18px;width:100%}
-.go:active{transform:scale(.96)}
+.go{background:var(--wire);color:var(--ink);border-radius:14px;padding:14px 30px;font-size:17px;width:100%}
 .go[disabled]{opacity:.4}
 
-.who{display:flex;flex-direction:column;gap:8px;width:100%}
-.who .p{display:flex;align-items:center;gap:10px;background:var(--ink-2);border-radius:14px;padding:12px 15px}
-.who .dot{width:10px;height:10px;border-radius:50%;background:var(--wire);flex:none}
-.who .nm{flex:1;text-align:left;font-size:16px}
-.who .me{color:var(--spark);font-size:12px}
+.who{display:flex;flex-direction:column;gap:7px;width:100%}
+.who .p{display:flex;align-items:center;gap:10px;background:var(--ink-2);border-radius:12px;padding:11px 14px}
+.who .dot{width:9px;height:9px;border-radius:50%;background:var(--wire);flex:none}
+.who .nm{flex:1;text-align:left;font-size:15px}
+.who .me{color:var(--spark);font-size:11px}
 
-.pad{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%}
-.pad button{height:70px;border-radius:16px;font-size:17px;color:#0B1B2B}
+.pad{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;width:100%}
+.pad button{height:62px;border-radius:14px;font-size:16px;color:#0B1B2B}
 .pad button:active{transform:scale(.94)}
 
-#log{
-  width:100%;background:#08131F;border-radius:14px;padding:12px;
-  font-size:12px;font-weight:500;color:var(--dim);text-align:left;
-  max-height:130px;overflow-y:auto;line-height:1.8;font-family:ui-monospace,monospace;
-}
-.err{color:var(--hot)}
-.ok{color:var(--wire)}
-.status{font-size:14px;color:var(--dim);font-weight:500}
-#backBtn{color:var(--dim);font-size:14px;text-decoration:underline}
+#log{width:100%;background:#08131F;border-radius:12px;padding:11px;
+     font-size:11px;font-weight:500;color:var(--dim);text-align:left;
+     max-height:190px;overflow-y:auto;line-height:1.75;
+     font-family:ui-monospace,SFMono-Regular,monospace;word-break:break-all}
+#back{color:var(--dim);font-size:13px;text-decoration:underline}
 </style>
 </head>
 <body>
 
-<!-- 1. 選角色 -->
 <section id="pick" class="screen on">
-  <div style="font-size:52px">📡</div>
-  <h1>家庭連線測試<br><em>看看四台機器能不能講話</em></h1>
-  <p class="sub">一台開房，其他人輸入代碼加入。<br>資料是裝置之間直接傳，不經過伺服器。</p>
+  <div style="font-size:46px">📡</div>
+  <h1>家庭連線測試 v2</h1>
+
+  <!-- 體檢表：一打開就自動檢查，答案直接寫在這 -->
+  <div class="check" id="check">
+    <div class="r"><b>①</b><span id="c1" class="wait">正在載入連線工具…</span></div>
+    <div class="r"><b>②</b><span id="c2" class="wait">等你按下面的按鈕</span></div>
+    <div class="r"><b>③</b><span id="c3" class="wait">等你按下面的按鈕</span></div>
+  </div>
+
   <button class="big" id="hostBtn">
     <b>🏠 我是主機（開房）</b>
-    <span>用平板或電腦當主機，會給你一組代碼</span>
+    <span>會給你一組 4 位數代碼</span>
   </button>
   <button class="big" id="joinBtn">
     <b>📲 我要加入</b>
-    <span>輸入主機給的 4 位數代碼</span>
+    <span>輸入主機給的代碼</span>
   </button>
-</section>
-
-<!-- 2. 輸入代碼 -->
-<section id="enter" class="screen">
-  <div style="font-size:44px">📲</div>
-  <h1>輸入代碼</h1>
-  <input id="codeIn" type="tel" inputmode="numeric" maxlength="4" placeholder="0000">
-  <button class="go" id="connectBtn">連線</button>
-  <div class="status" id="joinStatus"></div>
-  <button id="backBtn">← 回上一頁</button>
-</section>
-
-<!-- 3. 房間 -->
-<section id="room" class="screen">
-  <p class="sub" id="roomLead">把這組代碼念給其他人聽</p>
-  <div id="codeBox">----</div>
-
-  <div class="who" id="who"></div>
-
-  <p class="sub">👇 隨便按一個，<b>所有人的螢幕都要一起變色</b></p>
-  <div class="pad" id="padBtns"></div>
 
   <div id="log"></div>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<section id="enter" class="screen">
+  <h1>輸入代碼</h1>
+  <input id="codeIn" type="tel" inputmode="numeric" maxlength="4" placeholder="0000">
+  <button class="go" id="connectBtn">連線</button>
+  <button id="back">← 回上一頁</button>
+  <div id="log2Holder"></div>
+</section>
+
+<section id="room" class="screen">
+  <p class="sub" id="roomLead">把這組代碼念給其他人聽</p>
+  <div id="codeBox">----</div>
+  <div class="who" id="who"></div>
+  <p class="sub">👇 按一個，<b>所有人的螢幕都要一起變色</b></p>
+  <div class="pad" id="padBtns"></div>
+</section>
+
 <script>
 /* ==============================================================
-   家庭連線地基 —— 這一層跟遊戲無關，以後每個遊戲都能直接拿去用。
+   0. 先架好「會講話的黑盒子」—— 任何錯誤都要被抓下來顯示出來
+   ============================================================== */
+const $ = (id) => document.getElementById(id);
+
+function log(msg, cls = '') {
+  const box = $('log');
+  const p = document.createElement('div');
+  p.className = cls;
+  p.textContent = `${new Date().toLocaleTimeString('zh-TW', { hour12:false })} ${msg}`;
+  box.prepend(p);
+}
+function setCheck(n, text, cls) {
+  const el = $('c' + n);
+  el.textContent = text;
+  el.className = cls;
+}
+
+// 攔截所有沒被接住的錯誤（這是上一版看不到問題的原因）
+window.onerror = (m, src, line, col, err) => {
+  log(`💥 程式出錯：${m} @${(src||'').split('/').pop()}:${line}`, 'bad');
+};
+window.addEventListener('unhandledrejection', (e) => {
+  log(`💥 未處理的錯誤：${e.reason}`, 'bad');
+});
+
+/* ==============================================================
+   1. 載入 PeerJS —— 一個 CDN 掛了就換下一個，而且會說是哪一個成功
+   ============================================================== */
+const CDNS = [
+  'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js',
+  'https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js',
+];
+
+function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = url;
+    s.crossOrigin = 'anonymous';            // 讓錯誤訊息看得到內容，不會只剩 "Script error"
+    s.onload = () => resolve(url);
+    s.onerror = () => reject(new Error('載不到 ' + url));
+    document.head.appendChild(s);
+  });
+}
+
+let LIB_OK = false;
+
+(async function boot() {
+  for (const url of CDNS) {
+    const host = new URL(url).host;
+    try {
+      log(`嘗試從 ${host} 載入…`);
+      await loadScript(url);
+      if (typeof Peer === 'function') {
+        LIB_OK = true;
+        setCheck(1, `連線工具已載入（來自 ${host}）`, 'ok');
+        log(`✔ 工具載入成功：${host}`, 'ok');
+        return;
+      }
+      log(`⚠️ ${host} 檔案載到了，但裡面沒有 Peer`, 'bad');
+    } catch (e) {
+      log(`✘ ${host} 失敗`, 'bad');
+    }
+  }
+  setCheck(1, '三個來源都載不到連線工具（網路被擋？）', 'bad');
+})();
+
+/* ==============================================================
+   2. 連線層
    ============================================================== */
 const CONFIG = {
-  PREFIX: 'krisfam-',                                  // 避免跟別人的房間撞號
+  PREFIX: 'krisfam2-',
   COLORS: [
-    { name:'紅', hex:'#E63946' },
-    { name:'黃', hex:'#FFD23F' },
-    { name:'綠', hex:'#43AA8B' },
-    { name:'藍', hex:'#3EE6D0' },
+    { name:'紅', hex:'#E63946' }, { name:'黃', hex:'#FFD23F' },
+    { name:'綠', hex:'#43AA8B' }, { name:'藍', hex:'#3EE6D0' },
   ],
-  DEVICES: ['平板A','平板B','手機','電腦'],
 };
 
-const $ = (id) => document.getElementById(id);
+const NET = { peer:null, isHost:false, conns:[], me:'', players:[], code:'' };
+
+NET.me = (/iPad/.test(navigator.userAgent) ? '平板'
+        : /iPhone|Android/.test(navigator.userAgent) ? '手機'
+        : '電腦') + '-' + Math.floor(Math.random() * 90 + 10);
+
 const show = (id) => {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   $(id).classList.add('on');
+  // 黑盒子跟著搬過去，隨時看得到
+  $(id).appendChild($('log'));
 };
 
-function log(msg, cls = '') {
-  const p = document.createElement('div');
-  p.className = cls;
-  p.textContent = `${new Date().toLocaleTimeString('zh-TW',{hour12:false})} ${msg}`;
-  $('log').prepend(p);
-}
-
-/* ---------- 狀態 ---------- */
-const NET = {
-  peer: null,
-  isHost: false,
-  conns: [],          // 主機：所有客人的連線 / 客人：只有一條（連到主機）
-  me: '',             // 我的名字
-  players: [],        // 房間裡的人（名字陣列）
-  code: '',
-};
-
-/* 幫每台裝置取個名字（隨機挑一個，避免三個人都叫「平板」） */
-function guessName() {
-  const ua = navigator.userAgent;
-  const base = /iPad/.test(ua) ? '平板'
-            : /iPhone|Android/.test(ua) ? '手機'
-            : '電腦';
-  return base + '-' + Math.floor(Math.random() * 90 + 10);
-}
-NET.me = guessName();
-
-/* ---------- 廣播（主機轉發給所有人） ---------- */
 function send(msg) {
   NET.conns.forEach(c => { try { c.send(msg); } catch (_) {} });
 }
 
-function handle(msg, from) {
-  if (msg.type === 'roster') {          // 主機發來的名單
-    NET.players = msg.players;
-    paintWho();
-  }
-  else if (msg.type === 'flash') {
-    flash(msg.hex, msg.who, msg.color);
-    // 主機收到客人的按鈕 → 轉發給其他客人
-    if (NET.isHost) {
-      NET.conns.forEach(c => { if (c !== from) { try { c.send(msg); } catch (_) {} } });
-    }
-  }
-  else if (msg.type === 'hello' && NET.isHost) {
-    NET.players.push(msg.name);
-    from._name = msg.name;
-    log(`${msg.name} 加入了`, 'ok');
-    paintWho();
-    send({ type:'roster', players: NET.players });
-  }
-}
-
-/* ---------- 畫面 ---------- */
 function paintWho() {
   $('who').innerHTML = NET.players.map(n => `
-    <div class="p">
-      <div class="dot"></div>
-      <div class="nm">${n}</div>
-      ${n === NET.me ? '<div class="me">你</div>' : ''}
-    </div>`).join('');
+    <div class="p"><div class="dot"></div><div class="nm">${n}</div>
+    ${n === NET.me ? '<div class="me">你</div>' : ''}</div>`).join('');
 }
 
 let flashTimer = null;
@@ -201,106 +211,155 @@ function flash(hex, who, colorName) {
   document.body.style.background = hex;
   clearTimeout(flashTimer);
   flashTimer = setTimeout(() => { document.body.style.background = ''; }, 320);
-  log(`${who} 按了「${colorName}」`, 'ok');
+  log(`🎨 ${who} 按了「${colorName}」`, 'ok');
+  setCheck(3, `收到訊息了！連線是通的 🎉`, 'ok');
 }
 
-/* 按鈕 */
+function handle(msg, from) {
+  if (msg.type === 'roster') { NET.players = msg.players; paintWho(); }
+  else if (msg.type === 'flash') {
+    flash(msg.hex, msg.who, msg.color);
+    if (NET.isHost) NET.conns.forEach(c => { if (c !== from) { try { c.send(msg); } catch (_) {} } });
+  }
+  else if (msg.type === 'hello' && NET.isHost) {
+    NET.players.push(msg.name);
+    from._name = msg.name;
+    log(`👋 ${msg.name} 加入了`, 'ok');
+    setCheck(3, `${msg.name} 連進來了！`, 'ok');
+    paintWho();
+    send({ type:'roster', players: NET.players });
+  }
+}
+
 CONFIG.COLORS.forEach(c => {
   const b = document.createElement('button');
   b.textContent = c.name;
   b.style.background = c.hex;
-  b.addEventListener('click', () => {
-    const msg = { type:'flash', hex:c.hex, who:NET.me, color:c.name };
+  b.onclick = () => {
     flash(c.hex, NET.me, c.name);
-    send(msg);
-  });
+    send({ type:'flash', hex:c.hex, who:NET.me, color:c.name });
+  };
   $('padBtns').appendChild(b);
 });
 
-/* ---------- 開房（主機） ---------- */
-$('hostBtn').addEventListener('click', () => {
+/* PeerJS 內建錯誤全部攤開來 */
+function wirePeer(peer) {
+  peer.on('error', (e) => {
+    log(`✘ 接線生錯誤：${e.type} — ${e.message || ''}`, 'bad');
+    setCheck(2, `接線生說：${e.type}`, 'bad');
+  });
+  peer.on('disconnected', () => log('⚠️ 跟接線生斷線了', 'bad'));
+  peer.on('close', () => log('⚠️ 連線關閉', 'bad'));
+}
+
+/* ---------- 開房 ---------- */
+$('hostBtn').onclick = () => {
+  if (!LIB_OK) { log('✘ 工具還沒載好，不能開房', 'bad'); return; }
+
   NET.isHost = true;
   NET.code = String(Math.floor(1000 + Math.random() * 9000));
   NET.players = [NET.me];
 
   show('room');
-  $('roomLead').textContent = '把這組代碼念給其他人聽';
   $('codeBox').textContent = NET.code;
   paintWho();
-  log('正在跟接線生報到…');
 
-  NET.peer = new Peer(CONFIG.PREFIX + NET.code);
+  setCheck(2, '正在跟接線生報到…', 'wait');
+  log(`開房中，代碼 ${NET.code}…`);
 
-  NET.peer.on('open', () => log('房間開好了，等其他人加入 ✔', 'ok'));
+  NET.peer = new Peer(CONFIG.PREFIX + NET.code, { debug: 2 });
+  wirePeer(NET.peer);
+
+  // 逾時警報：15 秒沒回應就明說
+  const alarm = setTimeout(() => {
+    if (!NET.peer.open) {
+      log('⏰ 15 秒了，接線生沒回應。可能被網路擋住（防火牆 / 公司網路）', 'bad');
+      setCheck(2, '接線生 15 秒沒回應 → 網路擋住了', 'bad');
+    }
+  }, 15000);
+
+  NET.peer.on('open', (id) => {
+    clearTimeout(alarm);
+    log(`✔ 房間開好了（我的編號 ${id}）`, 'ok');
+    setCheck(2, '房間開好了！等其他人加入', 'ok');
+    setCheck(3, '等其他裝置連進來…', 'wait');
+  });
 
   NET.peer.on('connection', (conn) => {
     NET.conns.push(conn);
-    conn.on('open', () => {
-      log('有人接上線了');
-      conn.send({ type:'roster', players: NET.players });
-    });
+    log('📲 有人正在接上線…');
+    conn.on('open', () => conn.send({ type:'roster', players: NET.players }));
     conn.on('data', (d) => handle(d, conn));
+    conn.on('error', (e) => log('連線錯誤：' + e, 'bad'));
     conn.on('close', () => {
       NET.conns = NET.conns.filter(c => c !== conn);
       NET.players = NET.players.filter(n => n !== conn._name);
-      log(`${conn._name || '有人'} 離線了`, 'err');
+      log(`${conn._name || '有人'} 離線了`, 'bad');
       paintWho();
       send({ type:'roster', players: NET.players });
     });
   });
+};
 
-  NET.peer.on('error', (e) => {
-    if (e.type === 'unavailable-id') {
-      log('這組代碼被佔用了，重新整理再開一次', 'err');
-    } else {
-      log('錯誤：' + e.type, 'err');
-    }
-  });
-});
+/* ---------- 加入 ---------- */
+$('joinBtn').onclick = () => {
+  if (!LIB_OK) { log('✘ 工具還沒載好', 'bad'); return; }
+  show('enter'); $('codeIn').focus();
+};
+$('back').onclick = () => show('pick');
 
-/* ---------- 加入（客人） ---------- */
-$('joinBtn').addEventListener('click', () => { show('enter'); $('codeIn').focus(); });
-$('backBtn').addEventListener('click', () => show('pick'));
-
-$('connectBtn').addEventListener('click', () => {
+$('connectBtn').onclick = () => {
   const code = $('codeIn').value.trim();
-  if (code.length !== 4) { $('joinStatus').textContent = '要輸入 4 位數字'; return; }
+  if (code.length !== 4) { log('要輸入 4 位數字', 'bad'); return; }
 
   $('connectBtn').disabled = true;
-  $('joinStatus').textContent = '連線中…';
-
   NET.isHost = false;
   NET.code = code;
-  NET.peer = new Peer();
+
+  setCheck(2, '正在跟接線生報到…', 'wait');
+  log('連線中…');
+
+  NET.peer = new Peer({ debug: 2 });
+  wirePeer(NET.peer);
+
+  const alarm = setTimeout(() => {
+    if (!NET.peer.open) {
+      log('⏰ 15 秒了，接線生沒回應 → 網路擋住了', 'bad');
+      setCheck(2, '接線生 15 秒沒回應', 'bad');
+      $('connectBtn').disabled = false;
+    }
+  }, 15000);
 
   NET.peer.on('open', () => {
+    clearTimeout(alarm);
+    log('✔ 我跟接線生報到成功', 'ok');
+    setCheck(2, '接線生 OK，正在找主機…', 'ok');
+
     const conn = NET.peer.connect(CONFIG.PREFIX + code, { reliable: true });
     NET.conns = [conn];
 
     const bail = setTimeout(() => {
-      $('joinStatus').textContent = '連不上。代碼對嗎？主機開好了嗎？';
-      $('connectBtn').disabled = false;
-    }, 12000);
+      if (!conn.open) {
+        log('⏰ 找不到主機。代碼對嗎？主機的「房間開好了」出現了嗎？', 'bad');
+        setCheck(3, '找不到主機', 'bad');
+        $('connectBtn').disabled = false;
+      }
+    }, 15000);
 
     conn.on('open', () => {
       clearTimeout(bail);
       show('room');
-      $('roomLead').textContent = '已經連上主機了';
+      $('roomLead').textContent = '已經連上主機';
       $('codeBox').textContent = code;
-      log('連上主機 ✔', 'ok');
+      log('✔ 連上主機了！', 'ok');
+      setCheck(3, '連上主機了 🎉', 'ok');
       conn.send({ type:'hello', name: NET.me });
     });
-
     conn.on('data', (d) => handle(d, conn));
-    conn.on('close', () => log('跟主機斷線了', 'err'));
-    conn.on('error', (e) => log('連線錯誤：' + e, 'err'));
+    conn.on('error', (e) => log('連線錯誤：' + e, 'bad'));
+    conn.on('close', () => log('跟主機斷線', 'bad'));
   });
-
-  NET.peer.on('error', (e) => {
-    $('joinStatus').textContent = '連不上：' + e.type;
-    $('connectBtn').disabled = false;
-  });
-});
+};
 </script>
 </body>
 </html>
