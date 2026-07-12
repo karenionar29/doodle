@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>家庭遊戲間</title>
+<style>
+:root{
+  --ink:#0B1B2B; --ink-2:#132A42; --line:#24435E; --paper:#FDFCF7;
+  --wire:#3EE6D0; --spark:#FFD23F; --dim:#7E9BB5;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;align-items:center;
+  padding:36px 18px 48px;gap:22px;
+  padding-top:calc(36px + env(safe-area-inset-top));
+}
+header{text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.mark{font-size:44px;letter-spacing:.08em}
+h1{font-size:26px;line-height:1.3}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7;max-width:20em}
+
+.shelf{display:flex;flex-direction:column;gap:11px;width:100%;max-width:380px}
+
+a.game{
+  display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit;
+  background:var(--ink-2);border:2px solid var(--line);border-radius:18px;
+  padding:16px;transition:.15s;
+}
+a.game:active{transform:scale(.97)}
+a.game:hover{border-color:var(--wire)}
+.no{
+  flex:none;width:44px;height:44px;border-radius:12px;background:#0A1826;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--spark);letter-spacing:.04em;
+}
+.meat{flex:1;min-width:0}
+.meat b{display:block;font-size:18px;line-height:1.3}
+.meat span{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:4px;line-height:1.55}
+.tag{
+  flex:none;font-size:10px;font-weight:500;color:var(--dim);
+  border:1px solid var(--line);border-radius:99px;padding:3px 8px;
+}
+
+.soon{opacity:.42;border-style:dashed}
+.soon .no{color:var(--dim)}
+
+footer{color:var(--dim);font-size:11px;font-weight:500;text-align:center;line-height:1.9;max-width:24em;margin-top:6px}
+footer b{color:var(--paper)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mark">🎮 🧒 🧑 🧔</div>
+  <h1>家庭<em>遊戲間</em></h1>
+  <p class="sub">全部住在平板裡，不用網路也能玩。<br>畫面和聲音都不會傳出去。</p>
+</header>
+
+<div class="shelf">
+
+  <a class="game" href="g01-doodle.html">
+    <div class="no">G01</div>
+    <div class="meat">
+      <b>✏️ 全家 vs 機器人</b>
+      <span>一個人畫，其他人猜。題目是秘密，只有畫的人能偷看。機器人也在猜——看誰先。</span>
+    </div>
+    <div class="tag">1 台</div>
+  </a>
+
+  <a class="game" href="g02-hunt.html">
+    <div class="no">G02</div>
+    <div class="meat">
+      <b>📸 家裡尋寶</b>
+      <span>機器人喊出一樣東西，你跑去家裡找出來、鏡頭對準它。限時內看誰找最多。</span>
+    </div>
+    <div class="tag">要相機</div>
+  </a>
+
+  <div class="game soon">
+    <div class="no">G03</div>
+    <div class="meat">
+      <b>還沒做</b>
+      <span>下一個遊戲的位置</span>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  第一次玩要等機器人下載大腦（約 20MB），<b>之後就秒開</b>。<br>
+  卡住的話，網址後面加 <b>?v=2</b> 逼它重抓。
+</footer>
+
+</body>
+</html>
