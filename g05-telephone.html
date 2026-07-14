@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>G05 傳話大亂畫</title>
+<style>
+:root{
+  --ink:#2B1B0E; --ink-2:#41301C; --line:#5E4726; --paper:#FDFCF7;
+  --wire:#FFB84C; --spark:#FFD23F; --hot:#FF5C6C; --dim:#B39B7E; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+#start{justify-content:center;align-items:center;text-align:center;gap:16px;padding:22px}
+.hero{font-size:44px}
+h1{font-size:26px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.8;max-width:22em}
+#go{background:var(--wire);color:var(--ink);border-radius:18px;padding:17px 44px;font-size:19px}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:22em;line-height:1.7}
+
+#loading{justify-content:center;align-items:center;text-align:center;gap:16px;padding:30px}
+.bar{width:min(280px,80vw);height:10px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0%;background:var(--wire);transition:width .3s}
+#loadNote{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7;max-width:22em}
+.err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;text-align:left;
+     background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
+
+/* 交接畫面 —— 保密的關鍵 */
+#relay{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#relayWho{font-size:36px;color:var(--spark)}
+#relayJob{font-size:16px;color:var(--dim);font-weight:500;line-height:1.8;max-width:19em}
+#relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:16px 40px;font-size:18px}
+.round{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.1em}
+
+/* 畫圖 */
+#draw{padding:8px 10px 10px;gap:7px}
+.jobbar{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
+#peek{
+  flex:1;background:#4A3418;border:2px dashed var(--line);border-radius:14px;
+  padding:10px;font-size:15px;color:var(--dim);transition:.1s;text-align:center;
+}
+#peek.open{background:var(--spark);color:var(--ink);border-style:solid;border-color:var(--spark);font-size:23px}
+#brief{
+  flex:1;background:var(--spark);color:var(--ink);border-radius:14px;
+  padding:10px;font-size:19px;text-align:center;
+}
+.sheet{position:relative;flex:1;min-height:0;background:var(--paper);
+       border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+#pad{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      color:#C9CFD6;font-size:15px;font-weight:600;pointer-events:none;transition:opacity .25s;
+      padding:20px;text-align:center}
+.hint.gone{opacity:0}
+.crayons{display:flex;gap:7px;justify-content:center;padding:1px 0}
+.crayons button{width:32px;height:32px;border-radius:50%;border:3px solid transparent;transition:.12s}
+.crayons button.sel{border-color:var(--paper);transform:scale(1.16)}
+.drawTools{display:flex;gap:8px}
+#clearBtn{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;
+          padding:13px 0;font-size:15px;color:var(--dim)}
+#doneBtn{flex:2;background:var(--wire);color:var(--ink);border-radius:14px;padding:13px 0;font-size:17px}
+#doneBtn:active,#clearBtn:active{transform:scale(.97)}
+
+/* 看圖寫字 */
+#guess{padding:10px 12px 12px;gap:10px}
+#guess .lead{text-align:center;font-size:14px;color:var(--dim);font-weight:500}
+.view{flex:1;min-height:0;background:var(--paper);border-radius:16px;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.view img{width:100%;height:100%;object-fit:contain}
+#gIn{
+  width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+  padding:15px;font-size:20px;color:var(--paper);text-align:center;outline:none;
+}
+#gIn:focus{border-color:var(--wire)}
+#gSend{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 0;font-size:18px;width:100%}
+
+/* 大揭曉 */
+#reveal{padding:14px 14px 20px;gap:10px;overflow-y:auto}
+#reveal h2{text-align:center;font-size:22px;flex:none}
+.chain{display:flex;flex-direction:column;gap:8px;flex:none}
+.step{background:var(--ink-2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:7px}
+.step .who{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.06em}
+.step .word{font-size:26px}
+.step .word.gold{color:var(--spark)}
+.step img{width:100%;border-radius:10px;background:var(--paper)}
+.arrow{text-align:center;color:var(--dim);font-size:16px;flex:none}
+.verdict{border-radius:16px;padding:15px;text-align:center;flex:none}
+.verdict.win{background:#1E4230;color:var(--hit)}
+.verdict.lose{background:#4A2430;color:var(--hot)}
+.verdict .big{font-size:22px}
+.verdict .why{font-size:13px;font-weight:500;margin-top:5px;opacity:.85;line-height:1.7}
+#nextRound{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 0;font-size:17px;flex:none}
+
+/* 結算 */
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#over .n{font-size:64px;color:var(--spark)}
+#over .lab{color:var(--dim);font-size:14px;font-weight:500}
+#again{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:17px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on">
+  <div class="hero">✏️ ➜ 👀 ➜ ✏️ ➜ 🤖</div>
+  <h1>G05 <em>傳話大亂畫</em></h1>
+  <p class="sub">一個人看題目<b>畫</b>出來 →<br>下一個人看圖<b>寫</b>他猜的 →<br>再下一個人看字<b>再畫</b>一次 →<br>最後機器人看圖判斷：<b>傳回原題了嗎？</b></p>
+  <button id="go">開始一局（3 回合）</button>
+  <p class="tiny">順序：🧒 George → 🧑 Win → 🧔 爸爸，每回合換人開頭。<br>畫得爛沒關係——<b>畫得越爛越好笑</b>。</p>
+</section>
+
+<section id="loading" class="screen">
+  <div class="hero">🤖</div>
+  <div style="font-size:19px">裁判機器人正在搬進來…</div>
+  <div class="bar"><i id="barFill"></i></div>
+  <p id="loadNote">第一次要下載大腦（約 20MB），之後秒開。</p>
+</section>
+
+<section id="relay" class="screen">
+  <div class="hero" id="relayEm">🎨</div>
+  <div class="round" id="relayRound">第 1 / 3 回合</div>
+  <div id="relayWho">交給 George</div>
+  <p id="relayJob">你的任務：偷看題目，把它畫出來。</p>
+  <button id="relayGo">我拿到平板了</button>
+</section>
+
+<section id="draw" class="screen">
+  <div class="jobbar">
+    <div class="pill" id="dWho">🧒 George</div>
+    <button id="peek">👁 按住偷看題目</button>
+    <div id="brief" style="display:none">畫「？」</div>
+  </div>
+  <div class="sheet">
+    <canvas id="pad"></canvas>
+    <div class="hint" id="hint">用手指在這裡畫</div>
+  </div>
+  <div class="crayons" id="crayons"></div>
+  <div class="drawTools">
+    <button id="clearBtn">🧽 重畫</button>
+    <button id="doneBtn">✅ 畫好了，換下一個人</button>
+  </div>
+</section>
+
+<section id="guess" class="screen">
+  <div class="lead" id="gWho">🧑 Win，你覺得這張圖是什麼？</div>
+  <div class="view"><img id="gImg" alt="上一個人畫的圖"></div>
+  <input id="gIn" type="text" placeholder="寫下你猜的東西" autocomplete="off">
+  <button id="gSend">✅ 寫好了，換下一個人</button>
+</section>
+
+<section id="reveal" class="screen">
+  <h2>🎉 大揭曉</h2>
+  <div class="chain" id="chain"></div>
+  <div class="verdict" id="verdict"></div>
+  <button id="nextRound">下一回合 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <div class="n" id="finScore">0 / 3</div>
+  <div class="lab">傳話成功次數</div>
+  <button id="again">再玩一局</button>
+</section>
+
+<script type="module">
+/* ==============================================================
+   CONFIG
+   ============================================================== */
+const CONFIG = {
+  LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
+  MODEL: 'Xenova/quickdraw-mobilevit-small',   // 跟 G01 同一顆裁判腦
+
+  PAD_RES: 600, BRUSH: 18, CROP_PAD: 8, MIN_BOX: 24,
+  ROUNDS: 3,
+  JUDGE_TOPN: 3,       // 機器人前 3 名猜中原題 = 傳話成功
+
+  PLAYERS: [
+    { name:'George', emoji:'🧒' },
+    { name:'Win',    emoji:'🧑' },
+    { name:'爸爸',   emoji:'🧔' },
+  ],
+  CRAYONS: ['#E63946','#F77F00','#FCBF49','#43AA8B','#277DA1','#9D4EDD','#101820'],
+};
+
+/* 題庫：跟 G01 一樣走 QuickDraw 類別，裁判才看得懂。啟動時取交集。 */
+const WORDS = {
+  'sun':'太陽','moon':'月亮','star':'星星','cloud':'雲','tree':'樹','flower':'花',
+  'house':'房子','cat':'貓','dog':'狗','fish':'魚','bird':'鳥','snake':'蛇',
+  'apple':'蘋果','banana':'香蕉','car':'汽車','key':'鑰匙','cup':'杯子','hat':'帽子',
+  'door':'門','ladder':'梯子','umbrella':'雨傘','eye':'眼睛','hand':'手',
+  'ice cream':'冰淇淋','pizza':'披薩','t-shirt':'T恤','shoe':'鞋子','book':'書',
+  'elephant':'大象','lion':'獅子','octopus':'章魚','shark':'鯊魚','penguin':'企鵝',
+  'duck':'鴨子','frog':'青蛙','pig':'豬','rabbit':'兔子','bear':'熊','spider':'蜘蛛',
+  'butterfly':'蝴蝶','snail':'蝸牛','dragon':'龍',
+  'airplane':'飛機','bicycle':'腳踏車','train':'火車','rocket':'火箭','sailboat':'帆船',
+  'mountain':'山','rainbow':'彩虹','snowflake':'雪花',
+  'hamburger':'漢堡','cake':'蛋糕','donut':'甜甜圈','strawberry':'草莓','mushroom':'蘑菇',
+  'sword':'劍','crown':'皇冠','guitar':'吉他','camera':'相機','candle':'蠟燭',
+  'scissors':'剪刀','pencil':'鉛筆','chair':'椅子','snowman':'雪人','castle':'城堡',
+  'bridge':'橋','windmill':'風車','tent':'帳篷','basketball':'籃球','umbrella2':'',
+};
+delete WORDS['umbrella2'];
+
+/* ---------- Worker（跟 G01 同款：alpha 通道 → 黑底白線） ---------- */
+const WORKER_SRC = `
+import { pipeline, RawImage, env } from '${CONFIG.LIB}';
+env.allowLocalModels = false;
+let clf = null;
+
+self.onmessage = async (e) => {
+  const m = e.data;
+  if (m.type === 'init') {
+    try {
+      clf = await pipeline('image-classification', m.model, {
+        quantized: false,
+        progress_callback: (p) => {
+          if (p.status === 'progress' && typeof p.progress === 'number')
+            self.postMessage({ type:'progress', progress: p.progress });
+        }
+      });
+      self.postMessage({ type:'ready', labels: Object.values(clf.model.config.id2label || {}) });
+    } catch (err) {
+      self.postMessage({ type:'error', message: String(err && err.message || err) });
+    }
+    return;
+  }
+  if (m.type === 'classify' && clf) {
+    try {
+      const gray = new Uint8ClampedArray(m.data.length / 4);
+      for (let i = 0; i < gray.length; ++i) gray[i] = m.data[i * 4 + 3];
+      const img = new RawImage(gray, m.w, m.h, 1);
+      const out = await clf(img, { topk: 5 });
+      self.postMessage({ type:'result', out, tag: m.tag });
+    } catch (err) {
+      self.postMessage({ type:'error', message: String(err && err.message || err) });
+    }
+  }
+};
+`;
+
+/* ---------- 音效 ---------- */
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  win:  () => beep([523,659,784,1047,1319], 0.11, 'triangle', 0.17),
+  lose: () => beep([440,349,262], 0.14, 'sawtooth', 0.1),
+  go:   () => beep([392,523], 0.1, 'triangle', 0.12),
+  send: () => beep([700,900], 0.08, 'sine', 0.1),
+};
+
+/* ---------- 狀態 ---------- */
+const S = {
+  round: 0, wins: 0,
+  order: [],            // 這回合的 [畫的人, 猜的人, 再畫的人]
+  step: 0,              // 0=畫1 1=猜字 2=畫2
+  word: null,           // {en, zh}
+  guessText: '',
+  img1: '', img2: '',   // dataURL 給揭曉用
+  ai1: null, ai2: null, // 裁切好的 ImageData 給裁判用
+  deck: [],
+  color: CONFIG.CRAYONS[0],
+  strokes: 0, drawing: false, bbox: null,
+  ready: false,
+  judged: {},           // {d1: out, d2: out}
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 兩張畫布（同 G01） ---------- */
+const pad = $('pad');
+const ctx = pad.getContext('2d', { willReadFrequently:true });
+pad.width = pad.height = CONFIG.PAD_RES;
+const aiPad = document.createElement('canvas');
+aiPad.width = aiPad.height = CONFIG.PAD_RES;
+const aic = aiPad.getContext('2d', { willReadFrequently:true });
+
+function pens() {
+  ctx.lineWidth = CONFIG.BRUSH; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.strokeStyle = S.color;
+  aic.lineWidth = CONFIG.BRUSH; aic.lineCap='round'; aic.lineJoin='round';
+  aic.strokeStyle = '#000';
+  aic.shadowColor = 'rgba(0,0,0,0.9)'; aic.shadowBlur = 1;
+}
+function clearPad() {
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,pad.width,pad.height);
+  aic.clearRect(0,0,aiPad.width,aiPad.height);
+  pens();
+  S.strokes = 0; S.bbox = null;
+  $('hint').classList.remove('gone');
+}
+function xy(e) {
+  const r = pad.getBoundingClientRect();
+  return { x:(e.clientX-r.left)/r.width*pad.width, y:(e.clientY-r.top)/r.height*pad.height };
+}
+function grow(x,y) {
+  const r = CONFIG.BRUSH/2;
+  if (!S.bbox) S.bbox = [x-r,y-r,x+r,y+r];
+  else S.bbox = [Math.min(S.bbox[0],x-r), Math.min(S.bbox[1],y-r),
+                 Math.max(S.bbox[2],x+r), Math.max(S.bbox[3],y+r)];
+}
+pad.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  pad.setPointerCapture(e.pointerId);
+  S.drawing = true; S.strokes++;
+  $('hint').classList.add('gone');
+  const p = xy(e);
+  [ctx,aic].forEach(c => { c.beginPath(); c.moveTo(p.x,p.y); c.arc(p.x,p.y,0.5,0,Math.PI*2); c.stroke(); });
+  grow(p.x,p.y);
+});
+pad.addEventListener('pointermove', (e) => {
+  if (!S.drawing) return;
+  e.preventDefault();
+  const p = xy(e);
+  [ctx,aic].forEach(c => { c.lineTo(p.x,p.y); c.stroke(); });
+  grow(p.x,p.y);
+});
+['pointerup','pointercancel','pointerleave'].forEach(ev =>
+  pad.addEventListener(ev, () => { S.drawing = false; }));
+
+CONFIG.CRAYONS.forEach((c,i) => {
+  const b = document.createElement('button');
+  b.style.background = c;
+  if (i===0) b.classList.add('sel');
+  b.onclick = () => {
+    S.color = c; ctx.strokeStyle = c;
+    document.querySelectorAll('#crayons button').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+  };
+  $('crayons').appendChild(b);
+});
+
+function cropSketch() {
+  if (!S.bbox) return null;
+  const [x1,y1,x2,y2] = S.bbox;
+  let left=x1, top=y1;
+  const w=x2-x1, h=y2-y1;
+  if (Math.max(w,h) < CONFIG.MIN_BOX) return null;
+  let size = 2*CONFIG.CROP_PAD;
+  if (w>=h) { size+=w; top = Math.max(top-(w-h)/2, 0); }
+  else      { size+=h; left = Math.max(left-(h-w)/2, 0); }
+  return aic.getImageData(Math.round(left-CONFIG.CROP_PAD), Math.round(top-CONFIG.CROP_PAD),
+                          Math.round(size), Math.round(size));
+}
+
+/* ---------- Worker ---------- */
+let worker = null, LABELS = new Set();
+
+function bootWorker() {
+  const url = URL.createObjectURL(new Blob([WORKER_SRC], { type:'text/javascript' }));
+  worker = new Worker(url, { type:'module' });
+  worker.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === 'progress') $('barFill').style.width = Math.min(99,m.progress).toFixed(0)+'%';
+    else if (m.type === 'ready') {
+      LABELS = new Set(m.labels.map(s => String(s).toLowerCase().trim()));
+      S.ready = true;
+      newGame();
+    }
+    else if (m.type === 'result') {
+      S.judged[m.tag] = m.out;
+      if (S.judged.d1 && S.judged.d2) paintVerdict();
+    }
+    else if (m.type === 'error') fail(m.message);
+  };
+  worker.onerror = (e) => fail(e.message || '載不到裁判的大腦');
+  worker.postMessage({ type:'init', model: CONFIG.MODEL });
+}
+
+function fail(msg) {
+  show('loading');
+  $('loadNote').outerHTML =
+    `<div class="err"><b>裁判搬不進來</b><br>${msg}<br><br>
+     這個檔案需要能連到 cdn.jsdelivr.net 和 huggingface.co。</div>`;
+}
+
+/* ---------- 流程 ---------- */
+function buildDeck() {
+  const d = Object.entries(WORDS)
+    .filter(([en]) => LABELS.has(en))
+    .map(([en, zh]) => ({ en, zh }));
+  for (let i=d.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+function newGame() {
+  S.round = 0; S.wins = 0;
+  S.deck = buildDeck();
+  if (!S.deck.length) { fail('題庫跟裁判認得的類別對不起來。'); return; }
+  newRound();
+}
+
+function newRound() {
+  if (S.round >= CONFIG.ROUNDS) return gameOver();
+
+  // 每回合輪換開頭：R1 G→W→D，R2 W→D→G，R3 D→G→W
+  const P = CONFIG.PLAYERS;
+  S.order = [P[S.round % 3], P[(S.round+1) % 3], P[(S.round+2) % 3]];
+  S.step = 0;
+  S.word = S.deck.pop();
+  S.guessText = '';
+  S.img1 = S.img2 = '';
+  S.ai1 = S.ai2 = null;
+  S.judged = {};
+
+  relay(S.order[0], '🎨', '你的任務：按住偷看題目，把它畫出來。別唸出聲！');
+}
+
+function relay(player, em, job) {
+  $('relayEm').textContent = em;
+  $('relayRound').textContent = `第 ${S.round + 1} / ${CONFIG.ROUNDS} 回合`;
+  $('relayWho').textContent = `交給 ${player.emoji} ${player.name}`;
+  $('relayJob').textContent = job;
+  show('relay');
+  SFX.go();
+}
+
+$('relayGo').onclick = () => {
+  if (S.step === 0) beginDraw(S.order[0], true);
+  else if (S.step === 1) beginGuess();
+  else beginDraw(S.order[2], false);
+};
+
+/* ---------- 畫圖階段 ---------- */
+let peekMode = true;   // true = 第一棒（偷看題目）, false = 第三棒（照字畫）
+
+function beginDraw(player, isFirst) {
+  peekMode = isFirst;
+  show('draw');
+  $('dWho').textContent = `${player.emoji} ${player.name}`;
+  if (isFirst) {
+    $('peek').style.display = '';
+    $('brief').style.display = 'none';
+    $('peek').classList.remove('open');
+    $('peek').textContent = '👁 按住偷看題目';
+  } else {
+    $('peek').style.display = 'none';
+    $('brief').style.display = '';
+    $('brief').textContent = `畫「${S.guessText}」`;
+  }
+  clearPad();
+}
+
+const peek = $('peek');
+peek.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (!peekMode || !S.word) return;
+  peek.classList.add('open');
+  peek.textContent = S.word.zh;
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev =>
+  peek.addEventListener(ev, () => {
+    peek.classList.remove('open');
+    peek.textContent = '👁 按住偷看題目';
+  }));
+
+$('clearBtn').onclick = clearPad;
+
+$('doneBtn').onclick = () => {
+  if (S.strokes < 1) { beep([300], 0.1); return; }   // 空白不能交
+  SFX.send();
+  const shot = pad.toDataURL('image/png');
+  const crop = cropSketch();
+
+  if (S.step === 0) {
+    S.img1 = shot; S.ai1 = crop;
+    S.step = 1;
+    relay(S.order[1], '👀', '你的任務：看這張圖，寫下你覺得它是什麼。不准問畫的人！');
+  } else {
+    S.img2 = shot; S.ai2 = crop;
+    doReveal();
+  }
+};
+
+/* ---------- 猜字階段 ---------- */
+function beginGuess() {
+  show('guess');
+  $('gWho').textContent = `${S.order[1].emoji} ${S.order[1].name}，你覺得這張圖是什麼？`;
+  $('gImg').src = S.img1;
+  $('gIn').value = '';
+  setTimeout(() => $('gIn').focus(), 300);
+}
+
+$('gSend').onclick = () => {
+  const t = $('gIn').value.trim();
+  if (!t) { beep([300], 0.1); $('gIn').focus(); return; }
+  S.guessText = t;
+  SFX.send();
+  S.step = 2;
+  relay(S.order[2], '🎨', `你的任務：照著上一個人寫的字，把它畫出來。`);
+};
+
+/* ---------- 大揭曉 ---------- */
+function doReveal() {
+  show('reveal');
+  const [A, B, C] = S.order;
+  $('chain').innerHTML = `
+    <div class="step"><div class="who">🎯 原本的題目</div><div class="word gold">${S.word.zh}</div></div>
+    <div class="arrow">⬇️</div>
+    <div class="step"><div class="who">${A.emoji} ${A.name} 畫的</div><img src="${S.img1}"></div>
+    <div class="arrow">⬇️</div>
+    <div class="step"><div class="who">${B.emoji} ${B.name} 猜的</div><div class="word">「${S.guessText}」</div></div>
+    <div class="arrow">⬇️</div>
+    <div class="step"><div class="who">${C.emoji} ${C.name} 再畫的</div><img src="${S.img2}"></div>`;
+  $('verdict').className = 'verdict';
+  $('verdict').innerHTML = '<div class="big">🤖 裁判看圖中…</div>';
+  $('nextRound').style.display = 'none';
+
+  // 兩張圖都送去給裁判
+  S.judged = {};
+  [['d1', S.ai1], ['d2', S.ai2]].forEach(([tag, img]) => {
+    if (!img) { S.judged[tag] = []; return; }
+    const copy = new Uint8ClampedArray(img.data);
+    worker.postMessage({ type:'classify', data:copy, w:img.width, h:img.height, tag },
+                       [copy.buffer]);
+  });
+  if (S.judged.d1 && S.judged.d2) paintVerdict();
+}
+
+const zhOf = (en) => WORDS[en] || en;
+const topGuess = (out) => (out && out[0]) ? zhOf(String(out[0].label).toLowerCase().trim()) : '（看不懂）';
+
+function paintVerdict() {
+  const out2 = S.judged.d2 || [];
+  const rank = out2.findIndex(r => String(r.label).toLowerCase().trim() === S.word.en);
+  const ok = rank >= 0 && rank < CONFIG.JUDGE_TOPN;
+
+  if (ok) { S.wins++; SFX.win(); }
+  else SFX.lose();
+
+  const v = $('verdict');
+  v.className = 'verdict ' + (ok ? 'win' : 'lose');
+  v.innerHTML = `
+    <div class="big">${ok ? '🎉 傳話成功！' : '💥 傳歪了！'}</div>
+    <div class="why">
+      裁判看第一張圖覺得是「${topGuess(S.judged.d1)}」，<br>
+      看最後一張圖覺得是「${topGuess(out2)}」${ok ? ' —— 傳回原題了！' : `，可是原題是「${S.word.zh}」…`}
+    </div>`;
+  $('nextRound').style.display = '';
+  $('nextRound').textContent = (S.round + 1 >= CONFIG.ROUNDS) ? '看總成績 →' : '下一回合 →';
+}
+
+$('nextRound').onclick = () => { S.round++; newRound(); };
+
+function gameOver() {
+  $('finScore').textContent = `${S.wins} / ${CONFIG.ROUNDS}`;
+  show('over');
+}
+$('again').onclick = () => { if (S.ready) newGame(); };
+
+/* ---------- 開始 ---------- */
+$('go').onclick = () => {
+  beep([440], 0.06);
+  if (S.ready) newGame();
+  else { show('loading'); bootWorker(); }
+};
+
+clearPad();
+</script>
+</body>
+</html>
