@@ -26,8 +26,6 @@ h1 em{font-style:normal;color:var(--wire)}
 .sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.7;max-width:22em}
 
 .block{width:100%;max-width:390px}
-
-/* 玩家列 */
 .who{background:var(--ink-2);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .who .head{display:flex;align-items:center;gap:8px}
 .who .head h3{font-size:15px;flex:1}
@@ -35,11 +33,11 @@ h1 em{font-style:normal;color:var(--wire)}
 .who .strip{display:flex;gap:7px;flex-wrap:wrap}
 .who .chip{background:#0A1826;border-radius:99px;padding:7px 12px;font-size:13px;display:flex;gap:6px;align-items:center}
 .who .chip .lv{font-size:10px;color:var(--dim);font-weight:500}
-.who .edit{background:#0A1826;border:2px solid var(--line);border-radius:12px;
-           padding:11px 0;font-size:13px;color:var(--wire)}
-.who .edit:active{transform:scale(.97)}
+.rowBtns{display:flex;gap:8px}
+.rowBtns button{flex:1;background:#0A1826;border:2px solid var(--line);border-radius:12px;
+                padding:11px 0;font-size:13px;color:var(--wire)}
+.rowBtns button:active{transform:scale(.97)}
 
-/* 遊戲架 */
 .shelf{display:flex;flex-direction:column;gap:11px;width:100%;max-width:390px}
 .card{background:var(--ink-2);border:2px solid var(--line);border-radius:18px;overflow:hidden}
 a.play{display:flex;gap:13px;align-items:center;text-decoration:none;color:inherit;padding:15px;transition:.15s}
@@ -57,7 +55,6 @@ a.play:active{transform:scale(.98)}
          border-radius:99px;padding:5px 13px}
 .soon{opacity:.42;border-style:dashed;padding:15px;display:flex;gap:13px;align-items:center}
 
-/* 口味 */
 .taste{background:var(--ink-2);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .taste h3{font-size:15px}
 .taste .row{display:flex;align-items:center;gap:9px}
@@ -80,7 +77,6 @@ a.play:active{transform:scale(.98)}
 footer{color:var(--dim);font-size:11px;font-weight:500;text-align:center;line-height:1.9;max-width:24em}
 footer b{color:var(--paper)}
 
-/* 通用彈窗 */
 .veil{position:fixed;inset:0;background:rgba(5,12,20,.85);display:none;z-index:10;
       align-items:flex-end;justify-content:center}
 .veil.on{display:flex}
@@ -89,14 +85,14 @@ footer b{color:var(--paper)}
        display:flex;flex-direction:column;gap:13px}
 .panel h2{font-size:19px;text-align:center}
 
-/* 玩家編輯 */
-.pRow{display:flex;gap:8px;align-items:center;background:#0A1826;border-radius:14px;padding:9px 10px}
-.pRow .em{font-size:24px;width:40px;height:40px;border-radius:10px;background:#132A42;flex:none}
-.pRow input{flex:1;min-width:0;background:transparent;border:none;outline:none;
-            font-size:16px;color:var(--paper);font-weight:700}
-.pRow .lvBtn{background:#132A42;border-radius:99px;padding:6px 10px;font-size:12px;color:var(--dim);flex:none}
-.pRow .lvBtn.easy{color:var(--hit)} .pRow .lvBtn.normal{color:var(--spark)} .pRow .lvBtn.hard{color:var(--hot)}
-.pRow .del{color:var(--dim);font-size:19px;padding:4px 6px;flex:none}
+.pRow{display:flex;gap:7px;align-items:center;background:#0A1826;border-radius:14px;padding:8px 9px;flex-wrap:wrap}
+.pRow .em{font-size:23px;width:38px;height:38px;border-radius:10px;background:#132A42;flex:none}
+.pRow input{flex:1;min-width:70px;background:transparent;border:none;outline:none;
+            font-size:15px;color:var(--paper);font-weight:700}
+.pRow .cyc{background:#132A42;border-radius:99px;padding:6px 10px;font-size:11px;color:var(--dim);flex:none}
+.pRow .cyc.easy{color:var(--hit)} .pRow .cyc.normal{color:var(--spark)} .pRow .cyc.hard{color:var(--hot)}
+.pRow .cyc.boy{color:#6FB6FF} .pRow .cyc.girl{color:#FF9EC4}
+.pRow .del{color:var(--dim);font-size:18px;padding:4px 5px;flex:none}
 #addP{background:#0A1826;border:2px dashed var(--line);border-radius:14px;padding:12px 0;
       font-size:14px;color:var(--wire)}
 .emPick{display:flex;gap:6px;flex-wrap:wrap;background:#0A1826;border-radius:14px;padding:10px}
@@ -121,16 +117,18 @@ footer b{color:var(--paper)}
 #liveTotal{text-align:center;font-size:13px;color:var(--dim);font-weight:500}
 #liveTotal b{color:var(--spark);font-size:17px}
 
-#copyBox{position:fixed;inset:0;background:rgba(5,12,20,.92);display:none;z-index:11;
+#copyBox,#qrBox{position:fixed;inset:0;background:rgba(5,12,20,.92);display:none;z-index:11;
          align-items:center;justify-content:center;padding:20px}
-#copyBox.on{display:flex}
-#copyInner{width:100%;max-width:420px;background:var(--ink-2);border-radius:20px;padding:18px;
-           display:flex;flex-direction:column;gap:12px}
-#copyInner h3{font-size:16px;text-align:center}
+#copyBox.on,#qrBox.on{display:flex}
+.modal{width:100%;max-width:420px;background:var(--ink-2);border-radius:20px;padding:18px;
+       display:flex;flex-direction:column;gap:12px;align-items:center}
+.modal h3{font-size:16px;text-align:center}
 #copyText{width:100%;height:220px;background:#0A1826;border:2px solid var(--line);border-radius:14px;
           padding:12px;font-size:12px;font-weight:500;color:var(--paper);
           font-family:ui-monospace,monospace;resize:none;outline:none}
-#copyClose{background:var(--wire);color:var(--ink);border-radius:14px;padding:13px 0;font-size:15px}
+.modal .go{background:var(--wire);color:var(--ink);border-radius:14px;padding:13px 0;font-size:15px;width:100%}
+#qrHolder{background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center}
+#qrUrl{font-size:12px;color:var(--dim);font-weight:500;text-align:center;word-break:break-all}
 </style>
 </head>
 <body>
@@ -141,15 +139,14 @@ footer b{color:var(--paper)}
   <p class="sub">全部住在平板裡，畫面和聲音都不會傳出去。</p>
 </header>
 
-<!-- 玩家設定：五款遊戲共用 -->
 <div class="block">
   <div class="who">
-    <div class="head">
-      <h3>👥 玩家</h3>
-      <div class="n" id="pCount">3 人</div>
-    </div>
+    <div class="head"><h3>👥 玩家</h3><div class="n" id="pCount">3 人</div></div>
     <div class="strip" id="pStrip"></div>
-    <button class="edit" id="editP">✏️ 改人數 / 名字 / 難度</button>
+    <div class="rowBtns">
+      <button id="editP">✏️ 改玩家</button>
+      <button id="qrBtn">📱 給朋友掃</button>
+    </div>
   </div>
 </div>
 
@@ -169,14 +166,14 @@ footer b{color:var(--paper)}
 
 <footer>
   第一次玩要等機器人下載大腦，<b>之後秒開</b>。<br>
-  卡住的話，網址後面加 <b>?v=9</b> 逼它重抓。
+  卡住的話，網址後面加 <b>?v=99</b> 逼它重抓。
 </footer>
 
 <!-- 玩家編輯 -->
 <div class="veil" id="pVeil">
   <div class="panel">
     <h2>👥 玩家設定</h2>
-    <p class="note">最多 6 人。難度會影響時間長短和判定寬鬆度。<br>五款遊戲全部套用這裡的設定。</p>
+    <p class="note">最多 6 人。點按鈕循環切換難度／性別。<br>五款遊戲全部套用這裡的設定。</p>
     <div id="pList"></div>
     <button id="addP">＋ 加一個人</button>
     <div class="emPick" id="emPick" style="display:none"></div>
@@ -205,19 +202,23 @@ footer b{color:var(--paper)}
   </div>
 </div>
 
-<div id="copyBox">
-  <div id="copyInner">
-    <h3 id="copyHead">📋 已複製！直接貼給 Claude</h3>
-    <textarea id="copyText" readonly></textarea>
-    <button id="copyClose">好</button>
-  </div>
-</div>
+<div id="copyBox"><div class="modal">
+  <h3 id="copyHead">📋 已複製！直接貼給 Claude</h3>
+  <textarea id="copyText" readonly></textarea>
+  <button class="go" id="copyClose">好</button>
+</div></div>
+
+<div id="qrBox"><div class="modal">
+  <h3>📱 朋友用相機掃這個</h3>
+  <div id="qrHolder"></div>
+  <div id="qrUrl"></div>
+  <p class="note">掃了直接進遊戲間，不用安裝任何東西。<br>（評分和玩家設定不會跟過去，那是各自裝置的）</p>
+  <button class="go" id="qrClose">好</button>
+</div></div>
 
 <script src="family-players.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-/* ==============================================================
-   遊戲清單 —— 新遊戲只要在這裡加一行
-   ============================================================== */
 const GAMES = [
   { id:'g01', file:'g01-doodle.html',    icon:'✏️', name:'全家 vs 機器人',
     desc:'一個人畫、其他人猜，機器人也在猜——看誰先。', tag:'1 台' },
@@ -236,7 +237,11 @@ const DIMS = [
   ['fun','😆 好玩'], ['easy','🚀 好上手'], ['replay','🔁 耐玩・變化'],
   ['idea','💡 創意'], ['family','👨‍👦‍👦 全家互動'], ['polish','✨ 完成度'],
 ];
-const TAGS = ['笑到肚子痛','緊張刺激','學到東西','全家一起玩','AI 好神','小孩自己會玩','想一直再來一局'];
+/* 標籤加倍：方向訊號更細 */
+const TAGS = [
+  '笑到肚子痛','緊張刺激','學到東西','全家一起玩','AI 好神','小孩自己會玩','想一直再來一局',
+  '動來動去不無聊','有比賽感','機器人吐槽好笑','畫畫好玩','練英文讚','適合聚會客人','動腦解謎爽',
+];
 
 const RKEY = 'family-game-ratings-v1';
 const $ = (id) => document.getElementById(id);
@@ -244,17 +249,16 @@ const loadR = () => { try { return JSON.parse(localStorage.getItem(RKEY)) || {};
 const saveR = (d) => { try { localStorage.setItem(RKEY, JSON.stringify(d)); } catch(_) {} };
 const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
 
-/* ---------- 玩家列 ---------- */
 function renderPlayers() {
   const ps = FP.get();
   $('pCount').textContent = ps.length + ' 人';
-  $('pStrip').innerHTML = ps.map(p => `
-    <div class="chip">${p.emoji} ${p.name}
-      <span class="lv">${FP.lv(p).label}</span>
-    </div>`).join('');
+  $('pStrip').innerHTML = ps.map(p => {
+    const g = FP.gd(p);
+    return `<div class="chip">${p.emoji} ${p.name}
+      <span class="lv">${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''}</span></div>`;
+  }).join('');
 }
 
-/* ---------- 遊戲架 ---------- */
 function renderShelf() {
   const data = loadR();
   $('shelf').innerHTML = GAMES.map(g => {
@@ -268,8 +272,7 @@ function renderShelf() {
         <div class="icon">${g.icon}</div>
         <div class="meat">
           <div class="no">${g.id.toUpperCase()} · ${g.tag}</div>
-          <b>${g.name}</b>
-          <span>${g.desc}</span>
+          <b>${g.name}</b><span>${g.desc}</span>
         </div>
       </a>
       <div class="foot">
@@ -287,14 +290,13 @@ function renderShelf() {
     b.addEventListener('click', () => openRate(b.dataset.id)));
 }
 
-/* ---------- 口味 ---------- */
 function renderTaste() {
   const data = loadR();
   const rated = GAMES.filter(g => data[g.id]);
   const box = $('taste');
   if (!rated.length) {
     box.innerHTML = `<h3>📈 你們家的口味</h3>
-      <div class="empty">還沒有任何評分。<br>玩完一款回來按「⭐ 評分」，這裡就會慢慢看出你們家最愛什麼。</div>`;
+      <div class="empty">還沒有任何評分。玩完一款回來按「⭐ 評分」。</div>`;
     return;
   }
   const avg = DIMS.map(([k, lab]) => {
@@ -303,21 +305,20 @@ function renderTaste() {
   }).sort((a,b) => b.v - a.v);
   const cnt = {};
   rated.forEach(g => (data[g.id].tags || []).forEach(t => cnt[t] = (cnt[t]||0)+1));
-  const topTags = Object.entries(cnt).sort((a,b) => b[1]-a[1]).slice(0,4);
+  const topTags = Object.entries(cnt).sort((a,b) => b[1]-a[1]).slice(0,5);
 
   box.innerHTML = `<h3>📈 你們家的口味（已評 ${rated.length} 款）</h3>` +
     avg.map(a => `
       <div class="row"><div class="lab">${a.lab}</div>
         <div class="track"><div class="fill" style="width:${a.v/5*100}%"></div></div>
-        <div class="val">${a.v.toFixed(1)}</div>
-      </div>`).join('') +
+        <div class="val">${a.v.toFixed(1)}</div></div>`).join('') +
     (topTags.length ? `<div class="tags">${topTags.map(([t,n]) => `<span>${t} ×${n}</span>`).join('')}</div>` : '');
 }
 
-/* ==============================================================
-   玩家編輯彈窗
-   ============================================================== */
+/* ---------- 玩家編輯 ---------- */
 let draft = [], emTarget = -1;
+const LV_ORDER = ['easy','normal','hard'];
+const GD_ORDER = ['none','boy','girl'];
 
 function openPlayers() {
   draft = FP.get().map(p => ({ ...p }));
@@ -327,40 +328,40 @@ function openPlayers() {
   $('pVeil').classList.add('on');
 }
 
-const LV_ORDER = ['easy','normal','hard'];
-
 function paintDraft() {
   $('pList').innerHTML = draft.map((p, i) => {
-    const lv = FP.lv(p);
+    const lv = FP.lv(p), gd = FP.gd(p);
     return `
     <div class="pRow">
       <button class="em" data-em="${i}">${p.emoji}</button>
       <input type="text" maxlength="8" value="${p.name.replace(/"/g,'&quot;')}" data-nm="${i}" placeholder="名字">
-      <button class="lvBtn ${lv.key}" data-lv="${i}">${lv.label}</button>
+      <button class="cyc ${lv.key}" data-lv="${i}">${lv.label}</button>
+      <button class="cyc ${gd.key}" data-gd="${i}">${gd.label}</button>
       ${draft.length > 1 ? `<button class="del" data-del="${i}">✕</button>` : ''}
     </div>`;
   }).join('');
-
   $('addP').style.display = draft.length >= 6 ? 'none' : '';
 
   document.querySelectorAll('[data-nm]').forEach(el =>
     el.addEventListener('input', () => { draft[+el.dataset.nm].name = el.value; }));
-
   document.querySelectorAll('[data-lv]').forEach(el =>
     el.addEventListener('click', () => {
       const i = +el.dataset.lv;
-      const cur = LV_ORDER.indexOf(draft[i].level);
-      draft[i].level = LV_ORDER[(cur + 1) % 3];
+      draft[i].level = LV_ORDER[(LV_ORDER.indexOf(draft[i].level) + 1) % 3];
       paintDraft();
     }));
-
+  document.querySelectorAll('[data-gd]').forEach(el =>
+    el.addEventListener('click', () => {
+      const i = +el.dataset.gd;
+      draft[i].gender = GD_ORDER[(GD_ORDER.indexOf(draft[i].gender) + 1) % 3];
+      paintDraft();
+    }));
   document.querySelectorAll('[data-del]').forEach(el =>
     el.addEventListener('click', () => {
       draft.splice(+el.dataset.del, 1);
       $('emPick').style.display = 'none';
       paintDraft();
     }));
-
   document.querySelectorAll('[data-em]').forEach(el =>
     el.addEventListener('click', () => {
       emTarget = +el.dataset.em;
@@ -378,22 +379,36 @@ function paintDraft() {
 
 $('addP').addEventListener('click', () => {
   if (draft.length >= 6) return;
-  draft.push({ name:'玩家' + (draft.length + 1), emoji: FP.EMOJIS[draft.length % FP.EMOJIS.length], level:'normal' });
+  draft.push({ name:'玩家' + (draft.length + 1), emoji: FP.EMOJIS[draft.length % FP.EMOJIS.length],
+               level:'normal', gender:'none' });
   paintDraft();
 });
-
 $('pCancel').addEventListener('click', () => $('pVeil').classList.remove('on'));
 $('pSave').addEventListener('click', () => {
   FP.set(draft);
   $('pVeil').classList.remove('on');
   renderPlayers();
 });
-
 $('editP').addEventListener('click', openPlayers);
 
-/* ==============================================================
-   評分彈窗
-   ============================================================== */
+/* ---------- 📱 QR ---------- */
+let qrMade = false;
+$('qrBtn').addEventListener('click', () => {
+  const url = location.origin + location.pathname;   // 去掉 ?v= 之類的
+  $('qrUrl').textContent = url.replace(/^https?:\/\//, '');
+  if (!qrMade) {
+    if (typeof QRCode === 'undefined') {
+      $('qrHolder').innerHTML = '<div style="color:#333;font-size:13px;padding:20px">QR 產生器載不進來（網路擋住了）。<br>直接把上面的網址傳給朋友也可以。</div>';
+    } else {
+      new QRCode($('qrHolder'), { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+      qrMade = true;
+    }
+  }
+  $('qrBox').classList.add('on');
+});
+$('qrClose').addEventListener('click', () => $('qrBox').classList.remove('on'));
+
+/* ---------- 評分 ---------- */
 let cur = null, curScores = {}, curTags = new Set();
 
 function openRate(id) {
@@ -445,27 +460,25 @@ $('rSave').addEventListener('click', () => {
   };
   saveR(data);
   $('rVeil').classList.remove('on');
-  renderShelf();
-  renderTaste();
+  renderShelf(); renderTaste();
 });
 
 document.querySelectorAll('.veil').forEach(v =>
   v.addEventListener('click', (e) => { if (e.target === v) v.classList.remove('on'); }));
 
-/* ==============================================================
-   📋 複製給 Claude
-   ============================================================== */
+/* ---------- 📋 複製給 Claude ---------- */
 function buildReport() {
   const data = loadR();
   const rated = GAMES.filter(g => data[g.id]);
   const ps = FP.get();
   const L = [];
-
   L.push('【家庭遊戲間 · 回報】');
   L.push(`日期：${new Date().toISOString().slice(0,10)}`);
-  L.push('玩家：' + ps.map(p => `${p.emoji}${p.name}(${FP.lv(p).label})`).join('、'));
+  L.push('玩家：' + ps.map(p => {
+    const g = FP.gd(p);
+    return `${p.emoji}${p.name}(${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''})`;
+  }).join('、'));
   L.push('');
-
   if (!rated.length) { L.push('（還沒有任何評分）'); return L.join('\n'); }
 
   rated.sort((a,b) => totalOf(data[b.id]) - totalOf(data[a.id])).forEach(g => {
@@ -498,9 +511,7 @@ $('copyBtn').addEventListener('click', async () => {
   $('copyText').value = text;
   let ok = false;
   try { await navigator.clipboard.writeText(text); ok = true; }
-  catch (_) {
-    try { $('copyText').select(); ok = document.execCommand('copy'); } catch (_) {}
-  }
+  catch (_) { try { $('copyText').select(); ok = document.execCommand('copy'); } catch (_) {} }
   $('copyHead').textContent = ok ? '📋 已複製！直接貼給 Claude' : '📋 複製失敗 → 長按下面文字全選複製';
   $('copyBox').classList.add('on');
   if (ok) {
@@ -511,7 +522,7 @@ $('copyBtn').addEventListener('click', async () => {
 });
 $('copyClose').addEventListener('click', () => $('copyBox').classList.remove('on'));
 
-/* ---------- 存檔 / 讀檔（連玩家設定一起） ---------- */
+/* ---------- 存檔 / 讀檔 ---------- */
 $('exportBtn').addEventListener('click', () => {
   const pack = { ratings: loadR(), players: FP.get() };
   const blob = new Blob([JSON.stringify(pack, null, 2)], { type:'application/json' });
@@ -521,7 +532,6 @@ $('exportBtn').addEventListener('click', () => {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 3000);
 });
-
 $('importBtn').addEventListener('click', () => $('fileIn').click());
 $('fileIn').addEventListener('change', async (e) => {
   const f = e.target.files?.[0];
@@ -529,7 +539,7 @@ $('fileIn').addEventListener('change', async (e) => {
   try {
     const inc = JSON.parse(await f.text());
     if (inc.ratings) saveR({ ...loadR(), ...inc.ratings });
-    else saveR({ ...loadR(), ...inc });          // 相容舊格式
+    else saveR({ ...loadR(), ...inc });
     if (inc.players) FP.set(inc.players);
     renderPlayers(); renderShelf(); renderTaste();
     $('copyHead').textContent = '✅ 讀取成功，已合併';

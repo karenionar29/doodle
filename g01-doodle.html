@@ -22,7 +22,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .screen{flex:1;display:none;flex-direction:column;min-height:0}
 .screen.on{display:flex}
 
-/* 開場 */
 #start{align-items:center;text-align:center;gap:13px;padding:22px 20px;overflow-y:auto;justify-content:center}
 .duel{font-size:38px}
 h1{font-size:24px;line-height:1.35}
@@ -47,7 +46,6 @@ h1 em{font-style:normal;color:var(--wire)}
 .pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
 .back{color:var(--dim);font-size:12px;text-decoration:underline}
 
-/* 載入 */
 #loading{justify-content:center;align-items:center;text-align:center;gap:16px;padding:30px}
 .bar{width:min(280px,80vw);height:10px;background:var(--ink-2);border-radius:99px;overflow:hidden}
 .bar i{display:block;height:100%;width:0%;background:var(--wire);transition:width .3s}
@@ -55,57 +53,67 @@ h1 em{font-style:normal;color:var(--wire)}
 .err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;text-align:left;
      background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
 
-/* 換人 */
 #relay{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
 #relayWho{font-size:32px;color:var(--spark)}
 #relayNote{color:var(--dim);font-size:14px;font-weight:500;line-height:1.8;max-width:19em}
 #relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 38px;font-size:18px}
 
-/* 遊戲 */
-#play{padding:8px 10px 10px;gap:6px}
+#play{padding:6px 10px 8px;gap:5px}
 .scoreline{display:flex;align-items:center;gap:8px}
-.team{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:15px;white-space:nowrap}
+.team{background:var(--ink-2);border-radius:99px;padding:5px 11px;font-size:14px;white-space:nowrap}
 .team.us{color:var(--spark)}
 .team.bot{color:var(--bot)}
-#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:18px;min-width:48px;text-align:center;
-       background:var(--ink-2);border-radius:99px;padding:6px 10px}
+#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:17px;min-width:46px;text-align:center;
+       background:var(--ink-2);border-radius:99px;padding:5px 10px}
 #timer.hot{color:var(--hot);animation:pulse .5s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.12)}}
 
-.secret{display:flex;align-items:center;gap:8px;padding:1px 0 2px}
-.secret .drawer{font-size:13px;color:var(--dim);font-weight:500;white-space:nowrap}
-#peek{flex:1;background:#1B3B54;border:2px dashed var(--line);border-radius:14px;
-      padding:10px;font-size:15px;color:var(--dim);transition:.1s}
-#peek.open{background:var(--spark);color:var(--ink);border-style:solid;border-color:var(--spark);font-size:25px}
-#peek small{display:block;font-size:11px;font-weight:500;opacity:.8;margin-top:2px}
+.secret{display:flex;align-items:center;gap:8px;padding:1px 0}
+.secret .drawer{font-size:12px;color:var(--dim);font-weight:500;white-space:nowrap}
+#peek{flex:1;background:#1B3B54;border:2px dashed var(--line);border-radius:12px;
+      padding:8px;font-size:14px;color:var(--dim);transition:.1s}
+#peek.open{background:var(--spark);color:var(--ink);border-style:solid;border-color:var(--spark);font-size:22px}
+#peek small{display:block;font-size:10px;font-weight:500;opacity:.8;margin-top:1px}
 
 .sheet{position:relative;flex:1;min-height:0;background:var(--paper);
-       border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+       border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 #pad{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-      color:#C9CFD6;font-size:15px;font-weight:600;pointer-events:none;transition:opacity .25s;
+      color:#C9CFD6;font-size:14px;font-weight:600;pointer-events:none;transition:opacity .25s;
       padding:20px;text-align:center}
 .hint.gone{opacity:0}
-.crayons{display:flex;gap:7px;justify-content:center;padding:1px 0}
-.crayons button{width:31px;height:31px;border-radius:50%;border:3px solid transparent;transition:.12s}
+
+/* 🎨 顏色列（可橫滑） */
+.crayons{display:flex;gap:6px;padding:2px 2px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:none}
+.crayons::-webkit-scrollbar{display:none}
+.crayons button{width:30px;height:30px;border-radius:50%;border:3px solid transparent;transition:.12s;flex:none}
 .crayons button.sel{border-color:var(--paper);transform:scale(1.16)}
 
-.think{display:flex;align-items:center;gap:8px;min-height:40px;
-       background:var(--ink-2);border-radius:14px;padding:6px 11px}
-.think .face{font-size:21px;flex:none}
+/* 🖊 工具列：粗細 / 橡皮擦 / 上一步 / 清空 */
+.penbar{display:flex;gap:6px;flex:none}
+.penbar button{background:var(--ink-2);border:2px solid var(--line);border-radius:12px;
+               padding:9px 0;font-size:13px;color:var(--dim);flex:1;transition:.1s}
+.penbar button.sel{border-color:var(--wire);color:var(--wire);background:#153347}
+.penbar button:active{transform:scale(.94)}
+.penbar .w1::before{content:'●';font-size:8px}
+.penbar .w2::before{content:'●';font-size:13px}
+.penbar .w3::before{content:'●';font-size:19px}
+
+.think{display:flex;align-items:center;gap:8px;min-height:38px;
+       background:var(--ink-2);border-radius:12px;padding:5px 10px;flex:none}
+.think .face{font-size:20px;flex:none}
 .think.busy .face{animation:tilt .9s ease-in-out infinite}
 @keyframes tilt{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
 .guesses{display:flex;gap:5px;flex-wrap:wrap;align-items:center;min-width:0}
-.g{background:#1E3A55;border-radius:99px;padding:4px 10px;font-size:13px;white-space:nowrap;animation:pop .18s}
+.g{background:#1E3A55;border-radius:99px;padding:3px 9px;font-size:12px;white-space:nowrap;animation:pop .18s}
 @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-.idle{color:var(--dim);font-size:13px;font-weight:500}
+.idle{color:var(--dim);font-size:12px;font-weight:500}
 
-#gotIt{background:var(--spark);color:var(--ink);border-radius:16px;padding:15px 0;font-size:18px;width:100%}
+.actions{display:flex;gap:6px;flex:none}
+#gotIt{background:var(--spark);color:var(--ink);border-radius:14px;padding:13px 0;font-size:16px;flex:2}
 #gotIt:active{transform:scale(.97)}
-.tools{display:flex;gap:8px}
-.tools button{flex:1;background:var(--ink-2);border:2px solid var(--line);
-              border-radius:14px;padding:11px 0;font-size:14px;color:var(--dim)}
-.tools button:active{transform:scale(.96)}
+.actions .side{flex:1;background:var(--ink-2);border:2px solid var(--line);
+               border-radius:14px;padding:13px 0;font-size:13px;color:var(--dim)}
 
 #burst{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
        gap:8px;pointer-events:none;z-index:9;background:rgba(11,27,43,.9)}
@@ -157,7 +165,7 @@ h1 em{font-style:normal;color:var(--wire)}
 <section id="relay" class="screen">
   <div style="font-size:52px">🎨</div>
   <div id="relayWho">換 George 畫！</div>
-  <p id="relayNote">平板拿給他。<br><b>其他人不要偷看題目喔。</b></p>
+  <p id="relayNote">平板拿給他。</p>
   <button id="relayGo">準備好了</button>
 </section>
 
@@ -180,17 +188,24 @@ h1 em{font-style:normal;color:var(--wire)}
 
   <div class="crayons" id="crayons"></div>
 
+  <div class="penbar">
+    <button class="w1" data-w="10"></button>
+    <button class="w2 sel" data-w="18"></button>
+    <button class="w3" data-w="30"></button>
+    <button id="eraseBtn">🧽 擦子</button>
+    <button id="undoBtn">↩️ 上一步</button>
+    <button id="wipeBtn">🗑️</button>
+  </div>
+
   <div class="think" id="think">
     <div class="face">🤖</div>
     <div class="guesses" id="guesses"><span class="idle">機器人在等你動筆…</span></div>
   </div>
 
-  <button id="gotIt">✋ 我們猜到了！</button>
-
-  <div class="tools">
-    <button id="clearBtn">🧽 重畫</button>
-    <button id="timeBtn">+10 秒</button>
-    <button id="skipBtn">跳過</button>
+  <div class="actions">
+    <button id="gotIt">✋ 我們猜到了！</button>
+    <button class="side" id="timeBtn">+10 秒</button>
+    <button class="side" id="skipBtn">跳過</button>
   </div>
 </section>
 
@@ -212,31 +227,20 @@ h1 em{font-style:normal;color:var(--wire)}
 
 <script src="family-players.js"></script>
 <script type="module">
-/* ==============================================================
-   CONFIG
-   ============================================================== */
 const CONFIG = {
   LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
   MODEL: 'Xenova/quickdraw-mobilevit-small',
-
   INFER_MS: 400, SHOW_TOP: 3,
-  PAD_RES: 600, BRUSH: 18, CROP_PAD: 8, MIN_BOX: 24,
-
-  ROUNDS_PER_PLAYER: 3,   // 每人畫幾題
-  BASE_SECONDS: 45,       // 基準秒數（再乘玩家難度）
-  ADD_TIME: 10,
-
-  BOT_TOPN: 1,
-  BOT_CONF: 0.35,
-
-  CRAYONS: ['#E63946','#F77F00','#FCBF49','#43AA8B','#277DA1','#9D4EDD','#101820'],
+  PAD_RES: 600, CROP_PAD: 8, MIN_BOX: 24,
+  ROUNDS_PER_PLAYER: 3, BASE_SECONDS: 45, ADD_TIME: 10,
+  BOT_TOPN: 1, BOT_CONF: 0.35,
+  /* 13 色蠟筆 */
+  CRAYONS: ['#101820','#E63946','#F77F00','#FCBF49','#FFE066','#43AA8B','#2A9D8F',
+            '#277DA1','#4361EE','#9D4EDD','#F72585','#B08968','#8D99AE'],
+  ERASE_MUL: 1.8,   // 擦子比目前筆粗大幾倍
 };
 
-/* ==============================================================
-   題庫 —— 依類別分組，一共 190+ 題（原本只有 90）
-   英文須為 QuickDraw 類別；啟動時跟模型實際標籤取交集，
-   模型不認得的自動剔除，所以寫錯也不會壞。
-   ============================================================== */
+/* 題庫：8 類 240+ 題（同 v2） */
 const BANK = {
   animal: { name:'🐱 動物', words: {
     'cat':'貓','dog':'狗','fish':'魚','bird':'鳥','snake':'蛇','spider':'蜘蛛',
@@ -272,7 +276,7 @@ const BANK = {
     'lightning':'閃電','snowflake':'雪花','tornado':'龍捲風','fire':'火',
     'tree':'樹','flower':'花','leaf':'葉子','cactus':'仙人掌','palm tree':'棕櫚樹',
     'mountain':'山','river':'河','beach':'海灘','ocean':'海','island':'島',
-    'rock':'石頭','feather':'羽毛','shell':'貝殼','mushroom2':'',
+    'rock':'石頭','feather':'羽毛','shell':'貝殼',
   }},
   home: { name:'🏠 家裡東西', words: {
     'house':'房子','door':'門','window':'窗戶','key':'鑰匙','ladder':'梯子',
@@ -302,14 +306,12 @@ const BANK = {
   world: { name:'🏰 世界·想像', words: {
     'castle':'城堡','bridge':'橋','windmill':'風車','lighthouse':'燈塔','tent':'帳篷',
     'church':'教堂','skyscraper':'摩天大樓','barn':'穀倉','garden':'花園','fence':'籬笆',
-    'sword':'劍','shield':'盾牌','crown2':'','skull':'骷髏頭','ghost':'鬼','snowman':'雪人',
+    'sword':'劍','shield':'盾牌','skull':'骷髏頭','ghost':'鬼','snowman':'雪人',
     'robot':'機器人','alien':'外星人','angel':'天使','witch':'女巫',
     'diamond':'鑽石','map':'地圖','compass':'指南針','flashlight':'手電筒','stethoscope':'聽診器',
   }},
 };
-['mushroom2','crown2'].forEach(k => { for (const c in BANK) delete BANK[c].words[k]; });
 
-/* ---------- Worker ---------- */
 const WORKER_SRC = `
 import { pipeline, RawImage, env } from '${CONFIG.LIB}';
 env.allowLocalModels = false;
@@ -341,7 +343,6 @@ self.onmessage = async (e) => {
 };
 `;
 
-/* ---------- 音效 ---------- */
 let ac = null;
 function beep(f, dur=0.1, type='sine', gain=0.12) {
   try {
@@ -366,20 +367,23 @@ const SFX = {
   tick:   () => beep([880], 0.05, 'square', 0.05),
   peek:   () => beep([1100], 0.04, 'sine', 0.05),
   add:    () => beep([659,880], 0.09, 'triangle', 0.13),
+  undo:   () => beep([500,400], 0.06, 'sine', 0.08),
   done:   () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
 };
 
-/* ---------- 狀態 ---------- */
 const S = {
   mode:'family', players: [], drawer: null,
-  round: 0, totalRounds: 9,
-  us: 0, bot: 0,
-  cats: new Set(Object.keys(BANK)),   // 預設全選
+  round: 0, totalRounds: 9, us: 0, bot: 0,
+  cats: new Set(Object.keys(BANK)),
   deck: [], target: null,
   left: 0, timerId: null, inferId: null,
-  strokes: 0, drawing: false, bbox: null,
-  color: CONFIG.CRAYONS[0],
   busy: false, seq: 0, ready: false, locked: false,
+  /* 畫圖工具狀態 */
+  color: CONFIG.CRAYONS[0],
+  width: 18,
+  erasing: false,
+  strokes: [],          // 完整筆畫紀錄 → 上一步用重播
+  cur: null,            // 進行中的筆畫
 };
 
 const $ = (id) => document.getElementById(id);
@@ -388,7 +392,7 @@ const show = (id) => {
   $(id).classList.add('on');
 };
 
-/* ---------- 開場：玩家 + 類別 ---------- */
+/* ---------- 開場 ---------- */
 function paintStart() {
   S.players = FP.get();
   S.totalRounds = S.players.length * CONFIG.ROUNDS_PER_PLAYER;
@@ -399,7 +403,6 @@ function paintStart() {
   $('cats').innerHTML = Object.entries(BANK).map(([k, v]) =>
     `<button data-c="${k}" class="${S.cats.has(k) ? 'on' : ''}">${v.name}</button>`).join('')
     + `<div class="cnt" id="catCnt"></div>`;
-
   document.querySelectorAll('#cats button').forEach(b =>
     b.addEventListener('click', () => {
       const c = b.dataset.c;
@@ -411,7 +414,6 @@ function paintStart() {
     }));
   paintCatCount();
 }
-
 function paintCatCount() {
   let n = 0;
   S.cats.forEach(c => n += Object.keys(BANK[c].words).length);
@@ -419,7 +421,11 @@ function paintCatCount() {
   if (el) el.textContent = `${n} 題`;
 }
 
-/* ---------- 兩張畫布 ---------- */
+/* ==============================================================
+   畫圖層：筆畫記錄 + 重播（上一步/擦子的地基）
+   pad   = 小孩看的白紙彩色
+   aiPad = 機器人看的透明底黑線（擦子用 destination-out 擦掉 alpha）
+   ============================================================== */
 const pad = $('pad');
 const ctx = pad.getContext('2d', { willReadFrequently:true });
 pad.width = pad.height = CONFIG.PAD_RES;
@@ -427,91 +433,143 @@ const aiPad = document.createElement('canvas');
 aiPad.width = aiPad.height = CONFIG.PAD_RES;
 const aic = aiPad.getContext('2d', { willReadFrequently:true });
 
-function pens() {
-  ctx.lineWidth = CONFIG.BRUSH; ctx.lineCap='round'; ctx.lineJoin='round';
-  ctx.strokeStyle = S.color;
-  aic.lineWidth = CONFIG.BRUSH; aic.lineCap='round'; aic.lineJoin='round';
-  aic.strokeStyle = '#000';
-  aic.shadowColor = 'rgba(0,0,0,0.9)'; aic.shadowBlur = 1;
+function setLine(c, stroke) {
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  c.lineWidth = stroke.tool === 'erase' ? stroke.width * CONFIG.ERASE_MUL : stroke.width;
 }
-function clearPad() {
+
+function drawSeg(stroke, from, to) {
+  /* 顯示畫布：擦子 = 畫白色 */
+  setLine(ctx, stroke);
+  ctx.strokeStyle = stroke.tool === 'erase' ? '#FFFFFF' : stroke.color;
+  ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
+
+  /* AI 畫布：擦子 = 真的把 alpha 擦掉 */
+  setLine(aic, stroke);
+  if (stroke.tool === 'erase') {
+    aic.globalCompositeOperation = 'destination-out';
+    aic.strokeStyle = 'rgba(0,0,0,1)';
+    aic.shadowBlur = 0;
+  } else {
+    aic.globalCompositeOperation = 'source-over';
+    aic.strokeStyle = '#000';
+    aic.shadowColor = 'rgba(0,0,0,0.9)'; aic.shadowBlur = 1;
+  }
+  aic.beginPath(); aic.moveTo(from.x, from.y); aic.lineTo(to.x, to.y); aic.stroke();
+  aic.globalCompositeOperation = 'source-over';
+}
+
+function drawDot(stroke, p) { drawSeg(stroke, p, { x:p.x + 0.01, y:p.y }); }
+
+function blank() {
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,pad.width,pad.height);
-  aic.clearRect(0,0,aiPad.width,aiPad.height);   // 保持透明
-  pens();
-  S.strokes = 0; S.bbox = null;
+  aic.clearRect(0,0,aiPad.width,aiPad.height);
+}
+
+function replay() {
+  blank();
+  S.strokes.forEach(st => {
+    if (!st.pts.length) return;
+    if (st.pts.length === 1) { drawDot(st, st.pts[0]); return; }
+    for (let i = 1; i < st.pts.length; i++) drawSeg(st, st.pts[i-1], st.pts[i]);
+  });
+  $('hint').classList.toggle('gone', S.strokes.length > 0);
+}
+
+function clearPad() {
+  S.strokes = []; S.cur = null;
+  blank();
   $('hint').classList.remove('gone');
   $('guesses').innerHTML = '<span class="idle">機器人在等你動筆…</span>';
   $('think').classList.remove('busy');
 }
+
+/* 邊界框：只算「畫」的筆畫（擦掉的不算），每次由紀錄重算 */
+function calcBBox() {
+  let bb = null;
+  S.strokes.forEach(st => {
+    if (st.tool !== 'pen') return;
+    const r = st.width / 2;
+    st.pts.forEach(p => {
+      if (!bb) bb = [p.x-r, p.y-r, p.x+r, p.y+r];
+      else bb = [Math.min(bb[0],p.x-r), Math.min(bb[1],p.y-r),
+                 Math.max(bb[2],p.x+r), Math.max(bb[3],p.y+r)];
+    });
+  });
+  return bb;
+}
+
 function xy(e) {
   const r = pad.getBoundingClientRect();
   return { x:(e.clientX-r.left)/r.width*pad.width, y:(e.clientY-r.top)/r.height*pad.height };
 }
-function grow(x,y) {
-  const r = CONFIG.BRUSH/2;
-  if (!S.bbox) S.bbox = [x-r,y-r,x+r,y+r];
-  else S.bbox = [Math.min(S.bbox[0],x-r), Math.min(S.bbox[1],y-r),
-                 Math.max(S.bbox[2],x+r), Math.max(S.bbox[3],y+r)];
-}
+
 pad.addEventListener('pointerdown', (e) => {
   if (!S.ready || !S.target || S.locked) return;
   e.preventDefault();
   pad.setPointerCapture(e.pointerId);
-  S.drawing = true; S.strokes++;
+  S.cur = { tool: S.erasing ? 'erase' : 'pen', color: S.color, width: S.width, pts: [xy(e)] };
+  drawDot(S.cur, S.cur.pts[0]);
   $('hint').classList.add('gone');
-  const p = xy(e);
-  [ctx,aic].forEach(c => { c.beginPath(); c.moveTo(p.x,p.y); c.arc(p.x,p.y,0.5,0,Math.PI*2); c.stroke(); });
-  grow(p.x,p.y);
 });
 pad.addEventListener('pointermove', (e) => {
-  if (!S.drawing) return;
+  if (!S.cur) return;
   e.preventDefault();
   const p = xy(e);
-  [ctx,aic].forEach(c => { c.lineTo(p.x,p.y); c.stroke(); });
-  grow(p.x,p.y);
+  drawSeg(S.cur, S.cur.pts[S.cur.pts.length - 1], p);
+  S.cur.pts.push(p);
 });
 ['pointerup','pointercancel','pointerleave'].forEach(ev =>
-  pad.addEventListener(ev, () => { S.drawing = false; }));
+  pad.addEventListener(ev, () => {
+    if (S.cur) { S.strokes.push(S.cur); S.cur = null; }
+  }));
 
+/* 顏色列 */
 CONFIG.CRAYONS.forEach((c,i) => {
   const b = document.createElement('button');
   b.style.background = c;
   if (i===0) b.classList.add('sel');
   b.onclick = () => {
-    S.color = c; ctx.strokeStyle = c;
+    S.color = c; S.erasing = false;
+    $('eraseBtn').classList.remove('sel');
     document.querySelectorAll('#crayons button').forEach(x=>x.classList.remove('sel'));
     b.classList.add('sel');
   };
   $('crayons').appendChild(b);
 });
 
-/* ---------- 按住偷看 ---------- */
-const peek = $('peek');
-function openPeek() {
-  if (!S.target) return;
-  peek.classList.add('open');
-  peek.innerHTML = S.target.zh + `<small>${S.target.en}</small>`;
-  SFX.peek();
-}
-function closePeek() {
-  if (S.mode !== 'family') {
-    peek.classList.add('open');
-    peek.innerHTML = S.target ? S.target.zh + `<small>${S.target.en}</small>` : '';
-    return;
-  }
-  peek.classList.remove('open');
-  peek.innerHTML = '👁 按住偷看題目<small>放開就藏起來</small>';
-}
-peek.addEventListener('pointerdown', (e) => {
-  if (S.mode !== 'family') return;
-  e.preventDefault(); openPeek();
-});
-['pointerup','pointerleave','pointercancel'].forEach(ev =>
-  peek.addEventListener(ev, () => { if (S.mode === 'family') closePeek(); }));
+/* 粗細 */
+document.querySelectorAll('.penbar [data-w]').forEach(b =>
+  b.addEventListener('click', () => {
+    S.width = +b.dataset.w;
+    document.querySelectorAll('.penbar [data-w]').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+    beep([650], 0.04, 'sine', 0.05);
+  }));
 
+/* 擦子（再按一次切回筆） */
+$('eraseBtn').addEventListener('click', () => {
+  S.erasing = !S.erasing;
+  $('eraseBtn').classList.toggle('sel', S.erasing);
+  beep([S.erasing ? 500 : 700], 0.05, 'sine', 0.06);
+});
+
+/* 上一步 */
+$('undoBtn').addEventListener('click', () => {
+  if (!S.strokes.length || S.locked) return;
+  S.strokes.pop();
+  replay();
+  SFX.undo();
+});
+
+/* 全部清掉 */
+$('wipeBtn').addEventListener('click', () => { if (S.target && !S.locked) clearPad(); });
+
+/* 裁切給機器人 */
 function cropSketch() {
-  if (!S.bbox) return null;
-  const [x1,y1,x2,y2] = S.bbox;
+  const bb = calcBBox();
+  if (!bb) return null;
+  const [x1,y1,x2,y2] = bb;
   let left=x1, top=y1;
   const w=x2-x1, h=y2-y1;
   if (Math.max(w,h) < CONFIG.MIN_BOX) return null;
@@ -520,6 +578,26 @@ function cropSketch() {
   else      { size+=h; left = Math.max(left-(h-w)/2, 0); }
   return aic.getImageData(Math.round(left-CONFIG.CROP_PAD), Math.round(top-CONFIG.CROP_PAD),
                           Math.round(size), Math.round(size));
+}
+
+/* ---------- 按住偷看 ---------- */
+const peek = $('peek');
+peek.addEventListener('pointerdown', (e) => {
+  if (S.mode !== 'family' || !S.target) return;
+  e.preventDefault();
+  peek.classList.add('open');
+  peek.innerHTML = S.target.zh + `<small>${S.target.en}</small>`;
+  SFX.peek();
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev =>
+  peek.addEventListener(ev, () => {
+    if (S.mode !== 'family') return;
+    peek.classList.remove('open');
+    peek.innerHTML = '👁 按住偷看題目<small>放開就藏起來</small>';
+  }));
+function showSoloWord() {
+  peek.classList.add('open');
+  peek.innerHTML = S.target ? S.target.zh + `<small>${S.target.en}</small>` : '';
 }
 
 /* ---------- Worker ---------- */
@@ -555,7 +633,6 @@ function fail(msg) {
      這個檔案需要能連到 cdn.jsdelivr.net 和 huggingface.co。</div>`;
 }
 
-/* ---------- 題庫（依選的類別） ---------- */
 function buildDeck() {
   const src = {};
   S.cats.forEach(c => Object.assign(src, BANK[c].words));
@@ -575,13 +652,12 @@ function begin() {
   S.players = FP.get();
   S.totalRounds = S.mode === 'family' ? S.players.length * CONFIG.ROUNDS_PER_PLAYER : 999;
   S.deck = buildDeck();
-  if (!S.deck.length) { fail('選到的類別裡，模型一題都不認得。試試換個類別。'); return; }
+  if (!S.deck.length) { fail('選到的類別裡，模型一題都不認得。'); return; }
   nextRound();
 }
 
 function nextRound() {
   if (S.mode === 'family' && S.round >= S.totalRounds) return finish();
-
   if (S.mode === 'family') {
     S.drawer = S.players[S.round % S.players.length];
     $('relayWho').textContent = `${S.drawer.emoji} 換 ${S.drawer.name} 畫！`;
@@ -604,11 +680,13 @@ function startWord() {
   $('drawerTag').textContent = `${S.drawer.emoji} ${S.drawer.name}`;
   $('gotIt').style.display = S.mode === 'family' ? '' : 'none';
   $('hint').textContent = S.mode === 'family'
-    ? '先按住上面偷看題目，再開始畫'
-    : '用手指在這裡畫';
+    ? '先按住上面偷看題目，再開始畫' : '用手指在這裡畫';
 
   clearPad();
-  closePeek();
+  if (S.mode === 'family') {
+    peek.classList.remove('open');
+    peek.innerHTML = '👁 按住偷看題目<small>放開就藏起來</small>';
+  } else showSoloWord();
 
   S.left = FP.secs(S.drawer, CONFIG.BASE_SECONDS);
   paintTimer();
@@ -632,7 +710,7 @@ function paintTimer() {
 }
 
 function tryInfer() {
-  if (!S.ready || S.busy || !S.target || S.locked || S.strokes < 1) return;
+  if (!S.ready || S.busy || !S.target || S.locked) return;
   const img = cropSketch();
   if (!img) return;
   S.busy = true; S.seq++;
@@ -641,7 +719,6 @@ function tryInfer() {
                      [img.data.buffer]);
 }
 
-/* 顯示猜測，但【永遠不顯示正確答案】免得洩題 */
 function render(out) {
   if (!S.target || S.locked || !Array.isArray(out)) return;
   const box = $('guesses');
@@ -697,7 +774,6 @@ function finish() {
   show('over');
 }
 
-/* ---------- 事件 ---------- */
 document.querySelectorAll('.pick button').forEach(b => {
   b.onclick = () => {
     S.mode = b.dataset.mode;
@@ -706,10 +782,8 @@ document.querySelectorAll('.pick button').forEach(b => {
     else { show('loading'); bootWorker(); }
   };
 });
-
 $('relayGo').onclick = startWord;
 $('gotIt').onclick = () => { if (S.target && !S.locked) endWord('us'); };
-$('clearBtn').onclick = () => { if (S.target && !S.locked) clearPad(); };
 $('skipBtn').onclick = () => { if (S.target && !S.locked) endWord('none'); };
 $('timeBtn').onclick = () => {
   if (!S.target || S.locked) return;
@@ -720,7 +794,7 @@ $('timeBtn').onclick = () => {
 $('again').onclick = () => { paintStart(); show('start'); };
 
 paintStart();
-clearPad();
+blank();
 </script>
 </body>
 </html>
