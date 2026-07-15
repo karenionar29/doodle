@@ -216,7 +216,7 @@ footer b{color:var(--paper)}
   <button class="go" id="qrClose">好</button>
 </div></div>
 
-<script src="family-players.js"></script>
+<script src="family-players.js?v=2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const GAMES = [
@@ -253,7 +253,7 @@ function renderPlayers() {
   const ps = FP.get();
   $('pCount').textContent = ps.length + ' 人';
   $('pStrip').innerHTML = ps.map(p => {
-    const g = FP.gd(p);
+    const g = (FP.gd ? FP.gd(p) : { key:'none', label:'' });
     return `<div class="chip">${p.emoji} ${p.name}
       <span class="lv">${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''}</span></div>`;
   }).join('');
@@ -330,7 +330,7 @@ function openPlayers() {
 
 function paintDraft() {
   $('pList').innerHTML = draft.map((p, i) => {
-    const lv = FP.lv(p), gd = FP.gd(p);
+    const lv = FP.lv(p), gd = (FP.gd ? FP.gd(p) : { key:'none', label:'不選' });
     return `
     <div class="pRow">
       <button class="em" data-em="${i}">${p.emoji}</button>
@@ -475,7 +475,7 @@ function buildReport() {
   L.push('【家庭遊戲間 · 回報】');
   L.push(`日期：${new Date().toISOString().slice(0,10)}`);
   L.push('玩家：' + ps.map(p => {
-    const g = FP.gd(p);
+    const g = (FP.gd ? FP.gd(p) : { key:'none', label:'' });
     return `${p.emoji}${p.name}(${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''})`;
   }).join('、'));
   L.push('');
