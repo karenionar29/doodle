@@ -77,6 +77,20 @@ a.play:active{transform:scale(.98)}
 footer{color:var(--dim);font-size:11px;font-weight:500;text-align:center;line-height:1.9;max-width:24em}
 footer b{color:var(--paper)}
 
+/* 入場門：開網址先選今天誰玩 */
+#gate{position:fixed;inset:0;background:var(--ink);z-index:5;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:16px;padding:26px;text-align:center}
+#gate.off{display:none}
+#gate .chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:340px}
+#gate .chips span{background:var(--ink-2);border-radius:99px;padding:8px 14px;font-size:14px}
+#gate .chips span i{font-style:normal;font-size:11px;color:var(--dim);font-weight:500}
+#gateGo{background:var(--wire);color:var(--ink);border-radius:18px;padding:17px 0;
+        font-size:18px;width:min(300px,86vw)}
+#gateGo:active{transform:scale(.97)}
+#gateEdit{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+          padding:13px 0;font-size:14px;color:var(--wire);width:min(300px,86vw)}
+
 .veil{position:fixed;inset:0;background:rgba(5,12,20,.85);display:none;z-index:10;
       align-items:flex-end;justify-content:center}
 .veil.on{display:flex}
@@ -132,6 +146,16 @@ footer b{color:var(--paper)}
 </style>
 </head>
 <body>
+
+<!-- 入場門：先選今天誰玩，再進遊戲間 -->
+<div id="gate">
+  <div class="mark">🎮 🧒 🧑 🧔</div>
+  <h1>今天<em style="font-style:normal;color:var(--wire)">誰要玩</em>？</h1>
+  <div class="chips" id="gateChips"></div>
+  <button id="gateEdit">✏️ 改人數 / 名字 / 難度 / 性別</button>
+  <button id="gateGo">✅ 就這些人，進遊戲間</button>
+  <p class="note">這裡設定一次，<b>每一款遊戲</b>都會自動套用。</p>
+</div>
 
 <header>
   <div class="mark">🎮 🧒 🧑 🧔</div>
@@ -216,7 +240,7 @@ footer b{color:var(--paper)}
   <button class="go" id="qrClose">好</button>
 </div></div>
 
-<script src="family-players.js?v=2"></script>
+<script src="family-players.js?v=3"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const GAMES = [
@@ -553,6 +577,25 @@ $('fileIn').addEventListener('change', async (e) => {
   e.target.value = '';
 });
 
+/* ---------- 入場門 ---------- */
+function renderGate() {
+  const ps = FP.get();
+  $('gateChips').innerHTML = ps.map(p => {
+    const g = (FP.gd ? FP.gd(p) : { key:'none', label:'' });
+    return `<span>${p.emoji} ${p.name} <i>${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''}</i></span>`;
+  }).join('');
+}
+$('gateGo').addEventListener('click', () => {
+  $('gate').classList.add('off');
+  beep && 0;
+});
+$('gateEdit').addEventListener('click', openPlayers);
+
+/* 編輯儲存後，門上的名牌也要跟著更新 */
+const _oldSave = $('pSave').onclick;
+$('pSave').addEventListener('click', renderGate);
+
+renderGate();
 renderPlayers();
 renderShelf();
 renderTaste();

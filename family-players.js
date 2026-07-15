@@ -64,5 +64,31 @@
     tag: function (p) { return (p && p.emoji ? p.emoji + ' ' : '') + (p && p.name || ''); },
   };
 
+  /* ============================================================
+     縮放鎖：小孩兩指誤觸會把畫面放大縮小弄跑掉。
+     這裡把「雙指縮放」和「雙擊放大」全部擋掉。
+     所有引入本檔的遊戲自動生效，不用各自寫。
+     （canvas 上的單指畫圖不受影響）
+     ============================================================ */
+  function lockZoom() {
+    /* 雙擊放大：用 CSS touch-action 解，不會影響按鈕點擊 */
+    try {
+      var st = document.createElement('style');
+      st.textContent = 'html,body,button,a,input,div,section{touch-action:manipulation}';
+      document.head.appendChild(st);
+    } catch (e) {}
+
+    /* iOS 的捏合手勢事件 */
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+    });
+
+    /* 兩指以上的移動一律擋掉（單指不受影響） */
+    document.addEventListener('touchmove', function (e) {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+  }
+  lockZoom();
+
   global.FP = FP;
 })(window);

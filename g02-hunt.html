@@ -22,17 +22,27 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .screen{flex:1;display:none;flex-direction:column;min-height:0}
 .screen.on{display:flex}
 
-#start{justify-content:center;align-items:center;text-align:center;gap:16px;padding:22px}
-.hero{font-size:52px}
-h1{font-size:26px;line-height:1.35}
+#start{align-items:center;text-align:center;gap:13px;padding:22px 20px;overflow-y:auto;justify-content:center}
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
 h1 em{font-style:normal;color:var(--spark)}
-.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.75;max-width:21em}
-.pick{display:flex;flex-direction:column;gap:9px;width:min(310px,88vw)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.75;max-width:21em}
+.box{width:min(320px,90vw);background:var(--ink-2);border-radius:16px;padding:13px;
+     display:flex;flex-direction:column;gap:9px}
+.box h3{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:.08em;text-align:left}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:#0A1826;border:2px solid var(--line);border-radius:99px;
+              padding:7px 12px;font-size:12px;color:var(--dim);transition:.1s}
+.chips button.on{border-color:var(--wire);color:var(--wire);background:#153347}
+.chips .cnt{margin-left:auto;font-size:11px;color:var(--dim);font-weight:500;align-self:center}
+.pick{display:flex;flex-direction:column;gap:8px;width:min(320px,90vw)}
 .pick button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
-             padding:14px;text-align:left;transition:.15s}
+             padding:13px;text-align:left;transition:.15s}
 .pick button:active{transform:scale(.96)}
-.pick b{font-size:17px}
+.pick button.hero2{border-color:var(--wire);background:#153347}
+.pick b{font-size:16px}
 .pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
 .tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:22em;line-height:1.7}
 
 #loading{justify-content:center;align-items:center;text-align:center;gap:16px;padding:30px}
@@ -42,7 +52,10 @@ h1 em{font-style:normal;color:var(--spark)}
 .err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;text-align:left;
      background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
 
-/* 遊戲 */
+#relay{justify-content:center;align-items:center;text-align:center;gap:16px;padding:26px}
+#relayWho{font-size:34px;color:var(--spark)}
+#relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 38px;font-size:18px}
+
 #play{padding:8px 10px 10px;gap:7px}
 .topbar{display:flex;align-items:center;gap:8px}
 .pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
@@ -52,13 +65,11 @@ h1 em{font-style:normal;color:var(--spark)}
 #timer.hot{color:var(--hot);animation:pulse .5s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.14)}}
 
-/* 任務卡 */
 .quest{background:var(--spark);color:var(--ink);border-radius:16px;padding:12px;text-align:center}
 .quest .lead{font-size:11px;font-weight:500;letter-spacing:.16em;opacity:.75}
 .quest .what{font-size:30px;line-height:1.15;margin-top:1px}
 .quest .en{font-size:12px;font-weight:500;opacity:.65}
 
-/* 鏡頭 */
 .lens{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#000;
       box-shadow:0 10px 30px rgba(0,0,0,.45)}
 #cam{width:100%;height:100%;object-fit:cover;display:block}
@@ -69,7 +80,6 @@ h1 em{font-style:normal;color:var(--spark)}
          color:var(--dim);font-size:14px;font-weight:600;text-align:center;padding:24px;background:#000}
 .camNote.gone{display:none}
 
-/* 機器人在看什麼 */
 .think{display:flex;align-items:center;gap:8px;min-height:42px;
        background:var(--ink-2);border-radius:14px;padding:6px 11px}
 .think .face{font-size:22px;flex:none}
@@ -85,7 +95,6 @@ h1 em{font-style:normal;color:var(--spark)}
               border-radius:14px;padding:12px 0;font-size:15px;color:var(--dim)}
 .tools button:active{transform:scale(.96)}
 
-/* 找到了！ */
 #found{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
        gap:10px;z-index:9;background:rgba(11,27,43,.92);pointer-events:none}
 #found.on{display:flex}
@@ -93,8 +102,7 @@ h1 em{font-style:normal;color:var(--spark)}
 #foundWord{font-size:40px;color:var(--hit);text-align:center;padding:0 20px}
 @keyframes boom{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* 結算 */
-#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px;overflow-y:auto}
 #over h2{font-size:24px}
 .board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
 .row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
@@ -110,30 +118,32 @@ h1 em{font-style:normal;color:var(--spark)}
 <body>
 
 <section id="start" class="screen on">
-  <div class="hero">📸 <span style="color:var(--dim)">🔍</span> 🤖</div>
+  <div class="hero">📸 🔍 🤖</div>
   <h1>G02 <em>家裡尋寶</em></h1>
-  <p class="sub">機器人喊出一樣東西，<br><b>你跑去家裡把它找出來，鏡頭對準它。</b><br>機器人認出來就得分！</p>
-  <div class="pick">
-    <button data-p="george"><b>🧒 George</b><span>90 秒 · 機器人比較好說話</span></button>
-    <button data-p="win"><b>🧑 Win</b><span>70 秒 · 標準</span></button>
-    <button data-p="dad"><b>🧔 爸爸</b><span>50 秒 · 機器人很挑</span></button>
-    <button data-p="party"><b>👨‍👦‍👦 三個人比賽</b><span>輪流上場，看誰找最多</span></button>
+  <p class="sub">機器人喊出一樣東西，<br><b>你跑去把它找出來，鏡頭對準它。</b></p>
+
+  <div class="box">
+    <h3>📍 尋寶地點（可多選）</h3>
+    <div class="chips" id="scenes"></div>
   </div>
-  <p class="tiny">🔒 鏡頭畫面只在這台平板裡處理，<b>不會傳出去任何地方</b>。</p>
+
+  <div class="pick" id="pickBox"></div>
+  <p class="tiny">🔒 鏡頭畫面只在這台裝置裡處理，不會傳出去。</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
 </section>
 
 <section id="loading" class="screen">
   <div class="hero">🤖</div>
   <div style="font-size:19px">機器人正在裝眼睛…</div>
   <div class="bar"><i id="barFill"></i></div>
-  <p id="loadNote">第一次要下載（約 20MB），之後會記住。<br>等一下會問你「要不要用相機」，<b>請按允許</b>。</p>
+  <p id="loadNote">第一次要下載（約 20MB），之後會記住。<br>等一下會問「要不要用相機」，<b>請按允許</b>。</p>
 </section>
 
-<section id="relay" class="screen" style="justify-content:center;align-items:center;text-align:center;gap:16px;padding:26px">
+<section id="relay" class="screen">
   <div class="hero">🏃</div>
-  <div id="relayWho" style="font-size:34px;color:var(--spark)">換 George！</div>
+  <div id="relayWho">換 George！</div>
   <p id="relayNote" class="sub">平板交給他，準備好就開始跑。</p>
-  <button id="relayGo" style="background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 38px;font-size:18px">開始！</button>
+  <button id="relayGo">開始！</button>
 </section>
 
 <section id="play" class="screen">
@@ -178,59 +188,64 @@ h1 em{font-style:normal;color:var(--spark)}
   <button id="again">再玩一次</button>
 </section>
 
+<script src="family-players.js?v=3"></script>
 <script type="module">
-/* ==============================================================
-   CONFIG
-   ============================================================== */
 const CONFIG = {
   LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
-  MODEL: 'Xenova/mobilevit-small',   // 認「真實照片」的模型（ImageNet-1k）
-
-  INFER_MS:  600,    // 每隔多久看一次
-  FRAME:     256,    // 送進模型的畫面大小
-  SHOW_TOP:  3,
-  HOLD:      2,      // 要連續認對幾次才算數（避免一閃而過的誤判）
-
-  PLAYERS: {
-    george: { name:'George', emoji:'🧒', seconds:90, topN:5, conf:0.10 },
-    win:    { name:'Win',    emoji:'🧑', seconds:70, topN:3, conf:0.15 },
-    dad:    { name:'爸爸',   emoji:'🧔', seconds:50, topN:1, conf:0.25 },
-  },
-  PARTY: ['george','win','dad'],
+  MODEL: 'Xenova/mobilevit-small',
+  INFER_MS: 600, FRAME: 256, SHOW_TOP: 3, HOLD: 2,
+  BASE_SECONDS: 70,   // × 玩家難度乘數（簡單≈98 / 普通70 / 困難≈49）
+  /* 難度 → 機器人有多好說話 */
+  JUDGE: { easy:{topN:5,conf:0.10}, normal:{topN:3,conf:0.15}, hard:{topN:1,conf:0.25} },
 };
 
-/* 尋寶清單：英文必須是 ImageNet 類別。
-   啟動時會跟「模型實際認得的標籤」取交集，認不得的自動剔除。 */
-const LOOT = {
-  'coffee mug':'杯子','water bottle':'水瓶','pop bottle':'汽水瓶',
-  'remote control':'遙控器','cellular telephone':'手機','laptop':'筆電',
-  'computer keyboard':'鍵盤','mouse':'滑鼠','television':'電視',
-  'teddy':'玩偶熊','pillow':'枕頭','backpack':'背包',
-  'banana':'香蕉','orange':'橘子','lemon':'檸檬',
-  'broom':'掃把','plate':'盤子','toaster':'烤麵包機','microwave':'微波爐',
-  'refrigerator':'冰箱','washer':'洗衣機','frying pan':'平底鍋',
-  'wooden spoon':'木湯匙','spatula':'鍋鏟','soap dispenser':'洗手乳',
-  'toilet tissue':'衛生紙','paper towel':'紙巾','plastic bag':'塑膠袋',
-  'umbrella':'雨傘','vase':'花瓶','candle':'蠟燭','flowerpot':'花盆',
-  'analog clock':'時鐘','wall clock':'掛鐘','digital watch':'電子錶',
-  'ballpoint':'原子筆','rubber eraser':'橡皮擦','envelope':'信封',
-  'sunglasses':'太陽眼鏡','sunglass':'墨鏡','running shoe':'運動鞋',
-  'sock':'襪子','sandal':'涼鞋','jean':'牛仔褲','jersey':'球衣','sweatshirt':'運動衫',
-  'table lamp':'檯燈','wardrobe':'衣櫃','desk':'書桌','studio couch':'沙發',
-  'rocking chair':'搖椅','bath towel':'浴巾','toilet seat':'馬桶',
-  'basketball':'籃球','soccer ball':'足球','tennis ball':'網球',
-  'ping-pong ball':'乒乓球','golf ball':'高爾夫球','balloon':'氣球',
-  'piggy bank':'存錢筒','screwdriver':'螺絲起子','hammer':'鎚子',
-  'Band Aid':'OK繃','lotion':'乳液','perfume':'香水','hair spray':'髮膠',
-  'shopping basket':'購物籃','crate':'箱子','whistle':'哨子','book jacket':'書',
+/* 情境包：英文須為 ImageNet 類別；啟動時跟模型標籤取交集，寫錯自動剔除 */
+const SCENES = {
+  living: { name:'🛋 客廳', words: {
+    'remote control':'遙控器','television':'電視','studio couch':'沙發','pillow':'枕頭',
+    'table lamp':'檯燈','analog clock':'時鐘','wall clock':'掛鐘','vase':'花瓶',
+    'book jacket':'書','teddy':'玩偶熊','rocking chair':'搖椅','window shade':'窗簾',
+  }},
+  kitchen: { name:'🍳 廚房', words: {
+    'coffee mug':'杯子','plate':'盤子','frying pan':'平底鍋','wooden spoon':'木湯匙',
+    'spatula':'鍋鏟','toaster':'烤麵包機','microwave':'微波爐','refrigerator':'冰箱',
+    'banana':'香蕉','orange':'橘子','lemon':'檸檬','water bottle':'水瓶','pop bottle':'汽水瓶',
+    'measuring cup':'量杯','strainer':'濾網','cleaver':'菜刀',
+  }},
+  bath: { name:'🛁 浴室·清潔', words: {
+    'soap dispenser':'洗手乳','toilet tissue':'衛生紙','paper towel':'紙巾',
+    'bath towel':'浴巾','toilet seat':'馬桶','broom':'掃把','washer':'洗衣機',
+    'lotion':'乳液','hair spray':'髮膠','perfume':'香水','bucket':'水桶',
+  }},
+  wear: { name:'👕 衣物·隨身', words: {
+    'backpack':'背包','running shoe':'運動鞋','sock':'襪子','sandal':'涼鞋',
+    'jean':'牛仔褲','jersey':'球衣','sweatshirt':'運動衫','sunglasses':'太陽眼鏡',
+    'digital watch':'電子錶','umbrella':'雨傘','plastic bag':'塑膠袋','wallet':'皮夾',
+    'purse':'皮包','mitten':'手套',
+  }},
+  desk: { name:'✏️ 文具·3C', words: {
+    'ballpoint':'原子筆','rubber eraser':'橡皮擦','envelope':'信封','laptop':'筆電',
+    'computer keyboard':'鍵盤','mouse':'滑鼠','cellular telephone':'手機',
+    'screwdriver':'螺絲起子','hammer':'鎚子','piggy bank':'存錢筒','Band Aid':'OK繃',
+    'crate':'箱子','whistle':'哨子','desk':'書桌','pencil sharpener':'削鉛筆機',
+    'rule':'尺','binder':'資料夾',
+  }},
+  toy: { name:'⚽ 玩具·戶外', words: {
+    'basketball':'籃球','soccer ball':'足球','tennis ball':'網球','ping-pong ball':'乒乓球',
+    'golf ball':'高爾夫球','balloon':'氣球','candle':'蠟燭','flowerpot':'花盆',
+    'shopping basket':'購物籃','kite':'風箏','swing':'鞦韆','tricycle':'三輪車',
+  }},
+  camp: { name:'⛺ 露營', words: {
+    'mountain tent':'帳篷','sleeping bag':'睡袋','backpack':'登山背包','water bottle':'水壺',
+    'sunscreen':'防曬乳','lampshade':'燈罩','matchstick':'火柴','thermos':'保溫瓶',
+    'canoe':'獨木舟','compass':'指南針','binoculars':'望遠鏡',
+  }},
 };
 
-/* ---------- Worker ---------- */
 const WORKER_SRC = `
 import { pipeline, RawImage, env } from '${CONFIG.LIB}';
 env.allowLocalModels = false;
 let clf = null;
-
 self.onmessage = async (e) => {
   const m = e.data;
   if (m.type === 'init') {
@@ -243,32 +258,24 @@ self.onmessage = async (e) => {
         }
       });
       self.postMessage({ type:'ready', labels: Object.values(clf.model.config.id2label || {}) });
-    } catch (err) {
-      self.postMessage({ type:'error', message: String(err && err.message || err) });
-    }
+    } catch (err) { self.postMessage({ type:'error', message: String(err && err.message || err) }); }
     return;
   }
   if (m.type === 'look' && clf) {
     try {
-      // 真實照片要 RGB（跟塗鴉那款不一樣，那款是取 alpha）
       const n = m.data.length / 4;
       const rgb = new Uint8ClampedArray(n * 3);
       for (let i = 0; i < n; i++) {
-        rgb[i*3]   = m.data[i*4];
-        rgb[i*3+1] = m.data[i*4+1];
-        rgb[i*3+2] = m.data[i*4+2];
+        rgb[i*3] = m.data[i*4]; rgb[i*3+1] = m.data[i*4+1]; rgb[i*3+2] = m.data[i*4+2];
       }
       const img = new RawImage(rgb, m.w, m.h, 3);
       const out = await clf(img, { topk: 6 });
       self.postMessage({ type:'result', out, seq: m.seq });
-    } catch (err) {
-      self.postMessage({ type:'error', message: String(err && err.message || err) });
-    }
+    } catch (err) { self.postMessage({ type:'error', message: String(err && err.message || err) }); }
   }
 };
 `;
 
-/* ---------- 音效 ---------- */
 let ac = null;
 function beep(f, dur=0.1, type='sine', gain=0.12) {
   try {
@@ -295,15 +302,13 @@ const SFX = {
   done:  () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
 };
 
-/* ---------- 狀態 ---------- */
 const S = {
-  queue: [], cur: null, results: [],
+  queue: [], cur: null, results: [], solo: true,
+  scenes: new Set(Object.keys(SCENES)),
   deck: [], target: null,
-  score: 0, loot: [], left: 0,
-  hold: 0,
+  score: 0, loot: [], left: 0, hold: 0,
   timerId: null, inferId: null,
   busy: false, seq: 0, ready: false, camOn: false,
-  solo: true,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -311,9 +316,57 @@ const show = (id) => {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   $(id).classList.add('on');
 };
-
-/* 把模型標籤正規化：'teddy, teddy bear' → 'teddy' */
 const norm = (s) => String(s).split(',')[0].trim().toLowerCase();
+const ZH = {};
+Object.values(SCENES).forEach(sc => Object.entries(sc.words).forEach(([en,zh]) => ZH[en.toLowerCase()] = zh));
+
+/* ---------- 開場：玩家由 FP 而來 ---------- */
+function paintStart() {
+  const ps = FP.get();
+  const lvDesc = { easy:'機器人比較好說話', normal:'標準', hard:'機器人很挑' };
+  $('pickBox').innerHTML =
+    (ps.length > 1 ? `
+      <button class="hero2" data-p="party">
+        <b>👨‍👦‍👦 大家比賽（${ps.length} 人）</b>
+        <span>輪流上場，看誰找最多</span>
+      </button>` : '') +
+    ps.map((p, i) => `
+      <button data-p="${i}">
+        <b>${p.emoji} ${p.name}</b>
+        <span>${FP.secs(p, CONFIG.BASE_SECONDS)} 秒 · ${lvDesc[p.level] || '標準'}</span>
+      </button>`).join('');
+
+  document.querySelectorAll('#pickBox button').forEach(b =>
+    b.addEventListener('click', () => {
+      const ps2 = FP.get();
+      if (b.dataset.p === 'party') { S.solo = false; S.queue = ps2.map((_,i) => i); }
+      else { S.solo = true; S.queue = [+b.dataset.p]; }
+      S.results = [];
+      beep([440], 0.06);
+      if (S.ready) nextPlayer();
+      else { show('loading'); bootWorker(); }
+    }));
+
+  $('scenes').innerHTML = Object.entries(SCENES).map(([k, v]) =>
+    `<button data-c="${k}" class="${S.scenes.has(k) ? 'on' : ''}">${v.name}</button>`).join('')
+    + `<div class="cnt" id="scCnt"></div>`;
+  document.querySelectorAll('#scenes button').forEach(b =>
+    b.addEventListener('click', () => {
+      const c = b.dataset.c;
+      if (S.scenes.has(c)) { if (S.scenes.size > 1) S.scenes.delete(c); }
+      else S.scenes.add(c);
+      b.classList.toggle('on', S.scenes.has(c));
+      paintSceneCount();
+      beep([700], 0.04, 'sine', 0.05);
+    }));
+  paintSceneCount();
+}
+function paintSceneCount() {
+  let n = 0;
+  S.scenes.forEach(c => n += Object.keys(SCENES[c].words).length);
+  const el = $('scCnt');
+  if (el) el.textContent = `${n} 樣`;
+}
 
 /* ---------- 相機 ---------- */
 const cam = $('cam');
@@ -332,7 +385,7 @@ async function openCamera() {
     $('camNote').classList.add('gone');
     return true;
   } catch (e) {
-    $('camNote').textContent = '打不開相機。請在瀏覽器設定裡允許相機權限，然後重新整理。\n(' + e.name + ')';
+    $('camNote').textContent = '打不開相機。請允許相機權限後重新整理。(' + e.name + ')';
     return false;
   }
 }
@@ -371,10 +424,12 @@ function fail(msg) {
      這個檔案需要能連到 cdn.jsdelivr.net 和 huggingface.co。</div>`;
 }
 
-/* ---------- 出題 ---------- */
+/* ---------- 出題（依情境） ---------- */
 function buildDeck() {
-  const d = Object.entries(LOOT)
-    .filter(([en]) => LABELS.has(en.toLowerCase()))   // 只留模型真的認得的
+  const src = {};
+  S.scenes.forEach(c => Object.assign(src, SCENES[c].words));
+  const d = Object.entries(src)
+    .filter(([en]) => LABELS.has(en.toLowerCase()))
     .map(([en, zh]) => ({ en, zh }));
   for (let i=d.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
   return d;
@@ -390,14 +445,15 @@ function nextQuest() {
   SFX.go();
 }
 
-/* ---------- 輪替 ---------- */
+/* ---------- 輪替（FP 玩家） ---------- */
 function nextPlayer() {
   if (!S.queue.length) return finish();
-  S.cur = CONFIG.PLAYERS[S.queue.shift()];
+  const ps = FP.get();
+  S.cur = ps[S.queue.shift()] || ps[0];
   if (S.solo) startTurn();
   else {
     $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
-    $('relayNote').textContent = `你有 ${S.cur.seconds} 秒。準備好就開始跑。`;
+    $('relayNote').textContent = `你有 ${FP.secs(S.cur, CONFIG.BASE_SECONDS)} 秒。準備好就開始跑。`;
     show('relay');
   }
 }
@@ -408,11 +464,10 @@ function startTurn() {
   S.score = 0; S.loot = [];
   $('score').textContent = '0';
   S.deck = buildDeck();
-
-  if (!S.deck.length) { fail('模型認得的類別跟尋寶清單對不起來。'); return; }
+  if (!S.deck.length) { fail('選到的地點裡，模型一樣都不認得。試試多勾幾個地點。'); return; }
   if (!S.camOn) openCamera();
 
-  S.left = S.cur.seconds;
+  S.left = FP.secs(S.cur, CONFIG.BASE_SECONDS);
   paintTimer();
   nextQuest();
 
@@ -433,17 +488,12 @@ function paintTimer() {
   $('timer').classList.toggle('hot', S.left <= 5);
 }
 
-/* ---------- 看鏡頭 ---------- */
 function look() {
-  if (!S.ready || S.busy || !S.target || !S.camOn) return;
-  if (!cam.videoWidth) return;
-
-  // 取中間正方形，避免變形
+  if (!S.ready || S.busy || !S.target || !S.camOn || !cam.videoWidth) return;
   const vw = cam.videoWidth, vh = cam.videoHeight;
   const side = Math.min(vw, vh);
   gctx.drawImage(cam, (vw-side)/2, (vh-side)/2, side, side, 0, 0, CONFIG.FRAME, CONFIG.FRAME);
   const img = gctx.getImageData(0, 0, CONFIG.FRAME, CONFIG.FRAME);
-
   S.busy = true; S.seq++;
   $('think').classList.add('busy');
   worker.postMessage({ type:'look', data:img.data, w:img.width, h:img.height, seq:S.seq },
@@ -452,6 +502,7 @@ function look() {
 
 function judge(out) {
   if (!S.target || !Array.isArray(out)) return;
+  const J = CONFIG.JUDGE[S.cur.level] || CONFIG.JUDGE.normal;
 
   const box = $('guesses');
   box.innerHTML = '';
@@ -460,12 +511,12 @@ function judge(out) {
     const el = document.createElement('span');
     const isTarget = en === S.target.en.toLowerCase();
     el.className = 'g' + (isTarget ? ' near' : '');
-    el.textContent = LOOT[en] || en;
+    el.textContent = ZH[en] || en;
     box.appendChild(el);
   });
 
   const rank = out.findIndex(r => norm(r.label) === S.target.en.toLowerCase());
-  const hitNow = rank >= 0 && rank < S.cur.topN && out[rank].score >= S.cur.conf;
+  const hitNow = rank >= 0 && rank < J.topN && out[rank].score >= J.conf;
 
   if (hitNow) {
     S.hold++;
@@ -485,7 +536,6 @@ function gotIt() {
   $('score').textContent = S.score;
   S.target = null;
   SFX.found();
-
   $('foundWord').textContent = word;
   $('found').classList.add('on');
   setTimeout(() => {
@@ -520,22 +570,11 @@ function finish() {
   show('over');
 }
 
-/* ---------- 事件 ---------- */
-document.querySelectorAll('.pick button').forEach(b => {
-  b.onclick = () => {
-    const p = b.dataset.p;
-    S.solo = (p !== 'party');
-    S.queue = S.solo ? [p] : [...CONFIG.PARTY];
-    S.results = [];
-    beep([440], 0.06);
-    if (S.ready) nextPlayer();
-    else { show('loading'); bootWorker(); }
-  };
-});
-
 $('relayGo').onclick = startTurn;
 $('skipBtn').onclick = () => { if (S.target) { SFX.skip(); nextQuest(); } };
-$('again').onclick = () => show('start');
+$('again').onclick = () => { paintStart(); show('start'); };
+
+paintStart();
 </script>
 </body>
 </html>
