@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0B1B2B">
-<title>家庭遊戲間</title>
+<title>遊戲間</title>
 <style>
 :root{
   --ink:#0B1B2B; --ink-2:#132A42; --line:#24435E; --paper:#FDFCF7;
@@ -42,6 +42,22 @@ h1 em{font-style:normal;color:var(--wire)}
                 padding:11px 0;font-size:13px;color:var(--wire)}
 .rowBtns button:active{transform:scale(.97)}
 
+/* 工具列：搜尋 + 篩選 + 排序 + 隨機 */
+.toolbox{background:var(--ink-2);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:9px}
+#search{width:100%;background:#0A1826;border:2px solid var(--line);border-radius:12px;
+        padding:11px 13px;font-size:14px;color:var(--paper);outline:none;font-weight:500}
+#search:focus{border-color:var(--wire)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{background:#0A1826;border:2px solid var(--line);border-radius:99px;
+                padding:6px 12px;font-size:12px;color:var(--dim);transition:.1s}
+.filters button.on{border-color:var(--wire);color:var(--wire);background:#153347}
+.toolRow{display:flex;gap:8px;align-items:center}
+.sortSeg{display:flex;background:#0A1826;border-radius:99px;padding:3px;gap:3px;flex:1}
+.sortSeg button{flex:1;border-radius:99px;padding:7px 0;font-size:12px;color:var(--dim)}
+.sortSeg button.on{background:var(--line);color:var(--paper)}
+#luckyBtn{background:var(--spark);color:var(--ink);border-radius:99px;padding:9px 16px;font-size:13px}
+#luckyBtn:active{transform:scale(.95)}
+
 .shelf{display:flex;flex-direction:column;gap:11px;width:100%;max-width:390px}
 .card{background:var(--ink-2);border:2px solid var(--line);border-radius:18px;overflow:hidden}
 a.play{display:flex;gap:13px;align-items:center;text-decoration:none;color:inherit;padding:15px;transition:.15s}
@@ -58,6 +74,7 @@ a.play:active{transform:scale(.98)}
 .rateBtn{margin-left:auto;font-size:12px;color:var(--wire);border:1px solid var(--line);
          border-radius:99px;padding:5px 13px}
 .soon{opacity:.42;border-style:dashed;padding:15px;display:flex;gap:13px;align-items:center}
+.noHit{color:var(--dim);font-size:13px;font-weight:500;text-align:center;padding:18px}
 
 .taste{background:var(--ink-2);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .taste h3{font-size:15px}
@@ -81,7 +98,6 @@ a.play:active{transform:scale(.98)}
 footer{color:var(--dim);font-size:11px;font-weight:500;text-align:center;line-height:1.9;max-width:24em}
 footer b{color:var(--paper)}
 
-/* 入場門：開網址先選今天誰玩 */
 #gate{position:fixed;inset:0;background:var(--ink);z-index:5;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:16px;padding:26px;text-align:center}
@@ -135,11 +151,11 @@ footer b{color:var(--paper)}
 #liveTotal{text-align:center;font-size:13px;color:var(--dim);font-weight:500}
 #liveTotal b{color:var(--spark);font-size:17px}
 
-#copyBox,#qrBox{position:fixed;inset:0;background:rgba(5,12,20,.92);display:none;z-index:11;
-         align-items:center;justify-content:center;padding:20px}
-#copyBox.on,#qrBox.on{display:flex}
+.modalVeil{position:fixed;inset:0;background:rgba(5,12,20,.92);display:none;z-index:11;
+           align-items:center;justify-content:center;padding:20px}
+.modalVeil.on{display:flex}
 .modal{width:100%;max-width:420px;background:var(--ink-2);border-radius:20px;padding:18px;
-       display:flex;flex-direction:column;gap:12px;align-items:center}
+       display:flex;flex-direction:column;gap:12px;align-items:center;max-height:86vh;overflow-y:auto}
 .modal h3{font-size:16px;text-align:center}
 #copyText{width:100%;height:220px;background:#0A1826;border:2px solid var(--line);border-radius:14px;
           padding:12px;font-size:12px;font-weight:500;color:var(--paper);
@@ -147,11 +163,20 @@ footer b{color:var(--paper)}
 .modal .go{background:var(--wire);color:var(--ink);border-radius:14px;padding:13px 0;font-size:15px;width:100%}
 #qrHolder{background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center}
 #qrUrl{font-size:12px;color:var(--dim);font-weight:500;text-align:center;word-break:break-all}
+.luckyN{display:flex;gap:9px;width:100%}
+.luckyN button{flex:1;background:#0A1826;border:2px solid var(--line);border-radius:14px;
+               padding:14px 0;font-size:16px;color:var(--paper)}
+.luckyN button:active{transform:scale(.95);border-color:var(--spark)}
+.luckyOut{display:flex;flex-direction:column;gap:8px;width:100%}
+.luckyOut a{display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;
+            background:#0A1826;border-radius:14px;padding:12px 14px}
+.luckyOut a .ic{font-size:24px}
+.luckyOut a b{font-size:16px}
+.luckyOut a span{display:block;font-size:11px;color:var(--dim);font-weight:500}
 </style>
 </head>
 <body>
 
-<!-- 入場門：先選今天誰玩，再進遊戲間 -->
 <div id="gate">
   <div class="mark">🎮 🧒 🧑 🧔</div>
   <h1>今天<em style="font-style:normal;color:var(--wire)">誰要玩</em>？</h1>
@@ -163,8 +188,8 @@ footer b{color:var(--paper)}
 
 <header>
   <div class="mark">🎮 🧒 🧑 🧔</div>
-  <h1>家庭<em>遊戲間</em></h1>
-  <p class="sub">全部住在平板裡，畫面和聲音都不會傳出去。</p>
+  <h1>遊戲<em>間</em></h1>
+  <p class="sub">全部住在瀏覽器裡，畫面和聲音都不會傳出去。</p>
 </header>
 
 <div class="block">
@@ -175,6 +200,19 @@ footer b{color:var(--paper)}
       <button id="editP">✏️ 改玩家</button>
       <button id="qrBtn">📱 給朋友掃</button>
     </div>
+  </div>
+</div>
+
+<!-- 找遊戲工具列 -->
+<div class="block toolbox">
+  <input id="search" type="search" placeholder="🔍 搜尋遊戲…" autocomplete="off">
+  <div class="filters" id="filters"></div>
+  <div class="toolRow">
+    <div class="sortSeg">
+      <button id="sortNo" class="on">依編號</button>
+      <button id="sortStar">依評分</button>
+    </div>
+    <button id="luckyBtn">🎲 隨機挑</button>
   </div>
 </div>
 
@@ -193,15 +231,14 @@ footer b{color:var(--paper)}
 </div>
 
 <footer>
-  第一次玩要等機器人下載大腦，<b>之後秒開</b>。<br>
+  第一次玩 AI 遊戲要等機器人下載大腦，<b>之後秒開</b>。<br>
   卡住的話，網址後面加 <b>?v=99</b> 逼它重抓。
 </footer>
 
-<!-- 玩家編輯 -->
 <div class="veil" id="pVeil">
   <div class="panel">
     <h2>👥 玩家設定</h2>
-    <p class="note">最多 6 人。點按鈕循環切換難度／性別。<br>五款遊戲全部套用這裡的設定。</p>
+    <p class="note">最多 6 人。點按鈕循環切換難度／性別。</p>
     <div id="pList"></div>
     <button id="addP">＋ 加一個人</button>
     <div class="emPick" id="emPick" style="display:none"></div>
@@ -212,7 +249,6 @@ footer b{color:var(--paper)}
   </div>
 </div>
 
-<!-- 評分 -->
 <div class="veil" id="rVeil">
   <div class="panel">
     <h2 id="rTitle">評分</h2>
@@ -230,52 +266,67 @@ footer b{color:var(--paper)}
   </div>
 </div>
 
-<div id="copyBox"><div class="modal">
+<div class="modalVeil" id="copyBox"><div class="modal">
   <h3 id="copyHead">📋 已複製！直接貼給 Claude</h3>
   <textarea id="copyText" readonly></textarea>
   <button class="go" id="copyClose">好</button>
 </div></div>
 
-<div id="qrBox"><div class="modal">
+<div class="modalVeil" id="qrBox"><div class="modal">
   <h3>📱 朋友用相機掃這個</h3>
   <div id="qrHolder"></div>
   <div id="qrUrl"></div>
-  <p class="note">掃了直接進遊戲間，不用安裝任何東西。<br>（評分和玩家設定不會跟過去，那是各自裝置的）</p>
+  <p class="note">掃了直接進遊戲間，不用安裝任何東西。</p>
   <button class="go" id="qrClose">好</button>
+</div></div>
+
+<div class="modalVeil" id="luckyBox"><div class="modal">
+  <h3>🎲 隨機挑幾款？</h3>
+  <p class="note" id="luckyScope">從全部遊戲裡挑</p>
+  <div class="luckyN">
+    <button data-n="1">1 款</button>
+    <button data-n="3">3 款</button>
+    <button data-n="5">5 款</button>
+  </div>
+  <div class="luckyOut" id="luckyOut"></div>
+  <button class="go" id="luckyClose">關閉</button>
 </div></div>
 
 <script src="family-players.js?v=4"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+/* ==============================================================
+   遊戲清單：cats = 分類標籤（篩選用）
+   ============================================================== */
 const GAMES = [
   { id:'g01', file:'g01-doodle.html',    icon:'✏️', name:'全家 vs 機器人',
-    desc:'一個人畫、其他人猜，機器人也在猜——看誰先。', tag:'1 台' },
-  { id:'g02', file:'g02-hunt.html',      icon:'📸', name:'家裡尋寶',
-    desc:'機器人喊一樣東西，跑去找出來、鏡頭對準它。', tag:'要相機' },
+    desc:'一個人畫、其他人猜，機器人也在猜——看誰先。', tag:'1 台', cats:['AI','畫畫'] },
+  { id:'g02', file:'g02-hunt.html',      icon:'📸', name:'尋寶大作戰',
+    desc:'機器人喊一樣東西，跑去找出來、鏡頭對準它。', tag:'要相機', cats:['AI','鏡頭'] },
   { id:'g03', file:'g03-face.html',      icon:'😡', name:'表情大挑戰',
-    desc:'用臉做出指定表情，機器人告訴你像幾 %。', tag:'要相機' },
+    desc:'用臉做出指定表情，機器人告訴你像幾 %。', tag:'要相機', cats:['AI','鏡頭'] },
   { id:'g04', file:'g04-speak.html',     icon:'🎤', name:'唸給機器人聽',
-    desc:'看中文說英文，機器人聽你發音準不準。', tag:'要麥克風' },
+    desc:'看中文說英文，機器人聽你發音準不準。', tag:'要麥克風', cats:['AI','聲音'] },
   { id:'g05', file:'g05-telephone.html', icon:'📞', name:'傳話大亂畫',
-    desc:'畫→猜→再畫，最後機器人判斷傳回原題了嗎。', tag:'1 台' },
+    desc:'畫→猜→再畫，最後機器人判斷傳回原題了嗎。', tag:'1 台', cats:['AI','畫畫','派對'] },
   { id:'g06', file:'g06-headsup.html',   icon:'🙆', name:'頭上猜猜樂',
-    desc:'平板舉到額頭上，全家用演的提示你。往下倒=答對、往上仰=跳過。', tag:'秒開' },
+    desc:'平板舉到額頭上，全家用演的提示你。', tag:'秒開', cats:['動作','派對'] },
   { id:'g07', file:'g07-tapduel.html',   icon:'⚡', name:'快手大對決',
-    desc:'平板平放桌上，2~4 人守地盤。綠燈搶按、紅燈忍住、偷跑扣分。', tag:'秒開' },
+    desc:'平板平放，2~4 人守地盤。綠燈搶按、紅燈忍住。', tag:'秒開', cats:['對戰','派對'] },
   { id:'g08', file:'g08-memory.html',    icon:'🎹', name:'機器人記憶王',
-    desc:'機器人彈一段越來越長的旋律，照順序按回去。看誰記得最長。', tag:'秒開' },
+    desc:'越來越長的旋律，照順序按回去。', tag:'秒開', cats:['動腦'] },
   { id:'g09', file:'g09-bomb.html',      icon:'💣', name:'數字炸彈',
-    desc:'1~100 藏一顆炸彈，輪流猜、範圍越縮越小。爆到的人接受機器人懲罰。', tag:'秒開' },
+    desc:'輪流猜數字，爆到的人接受機器人懲罰。', tag:'秒開', cats:['派對'] },
   { id:'g10', file:'g10-spy.html',       icon:'🕵️', name:'誰是臥底',
-    desc:'一個人的詞跟大家不一樣。輪流形容、投票抓臥底。', tag:'3人+' },
+    desc:'一個人的詞跟大家不一樣。形容、投票、抓臥底。', tag:'3人+', cats:['派對','動腦'] },
 ];
 const NEXT_NO = 'G11';
+const CATS = ['全部','AI','畫畫','鏡頭','聲音','動作','對戰','派對','動腦'];
 
 const DIMS = [
   ['fun','😆 好玩'], ['easy','🚀 好上手'], ['replay','🔁 耐玩・變化'],
   ['idea','💡 創意'], ['family','👨‍👦‍👦 全家互動'], ['polish','✨ 完成度'],
 ];
-/* 標籤加倍：方向訊號更細 */
 const TAGS = [
   '笑到肚子痛','緊張刺激','學到東西','全家一起玩','AI 好神','小孩自己會玩','想一直再來一局',
   '動來動去不無聊','有比賽感','機器人吐槽好笑','畫畫好玩','練英文讚','適合聚會客人','動腦解謎爽',
@@ -287,6 +338,9 @@ const loadR = () => { try { return JSON.parse(localStorage.getItem(RKEY)) || {};
 const saveR = (d) => { try { localStorage.setItem(RKEY, JSON.stringify(d)); } catch(_) {} };
 const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
 
+/* 篩選狀態 */
+const V = { cat:'全部', q:'', sort:'no' };
+
 function renderPlayers() {
   const ps = FP.get();
   $('pCount').textContent = ps.length + ' 人';
@@ -297,9 +351,36 @@ function renderPlayers() {
   }).join('');
 }
 
+/* ---------- 篩選工具列 ---------- */
+function renderFilters() {
+  $('filters').innerHTML = CATS.map(c =>
+    `<button data-c="${c}" class="${V.cat === c ? 'on' : ''}">${c}</button>`).join('');
+  document.querySelectorAll('#filters button').forEach(b =>
+    b.addEventListener('click', () => {
+      V.cat = b.dataset.c;
+      renderFilters();
+      renderShelf();
+    }));
+}
+$('search').addEventListener('input', () => { V.q = $('search').value.trim(); renderShelf(); });
+$('sortNo').addEventListener('click', () => { V.sort='no'; $('sortNo').classList.add('on'); $('sortStar').classList.remove('on'); renderShelf(); });
+$('sortStar').addEventListener('click', () => { V.sort='star'; $('sortStar').classList.add('on'); $('sortNo').classList.remove('on'); renderShelf(); });
+
+function filtered() {
+  const data = loadR();
+  let list = GAMES.filter(g =>
+    (V.cat === '全部' || g.cats.includes(V.cat)) &&
+    (!V.q || g.name.includes(V.q) || g.desc.includes(V.q) || g.id.includes(V.q.toLowerCase())));
+  if (V.sort === 'star')
+    list = [...list].sort((a,b) => totalOf(data[b.id]) - totalOf(data[a.id]));
+  return list;
+}
+
+/* ---------- 遊戲架 ---------- */
 function renderShelf() {
   const data = loadR();
-  $('shelf').innerHTML = GAMES.map(g => {
+  const list = filtered();
+  $('shelf').innerHTML = (list.length ? list.map(g => {
     const r = data[g.id];
     const t = r ? totalOf(r) : 0;
     const n = Math.round(t / 6);
@@ -309,7 +390,7 @@ function renderShelf() {
       <a class="play" href="${g.file}">
         <div class="icon">${g.icon}</div>
         <div class="meat">
-          <div class="no">${g.id.toUpperCase()} · ${g.tag}</div>
+          <div class="no">${g.id.toUpperCase()} · ${g.tag} · ${g.cats.join('·')}</div>
           <b>${g.name}</b><span>${g.desc}</span>
         </div>
       </a>
@@ -319,15 +400,41 @@ function renderShelf() {
         <button class="rateBtn" data-id="${g.id}">${r ? '改評分' : '⭐ 評分'}</button>
       </div>
     </div>`;
-  }).join('') + `
+  }).join('') : '<div class="noHit">沒有符合的遊戲，換個條件試試</div>') +
+  (V.cat === '全部' && !V.q ? `
     <div class="card soon">
       <div class="icon">➕</div>
       <div class="meat"><div class="no">${NEXT_NO}</div><b>還沒做</b><span>下一個遊戲的位置</span></div>
-    </div>`;
+    </div>` : '');
   document.querySelectorAll('.rateBtn').forEach(b =>
     b.addEventListener('click', () => openRate(b.dataset.id)));
 }
 
+/* ---------- 🎲 隨機挑 ---------- */
+$('luckyBtn').addEventListener('click', () => {
+  $('luckyScope').textContent = V.cat === '全部' && !V.q
+    ? '從全部遊戲裡挑'
+    : `從目前篩選（${V.cat}${V.q ? '·「' + V.q + '」' : ''}）裡挑`;
+  $('luckyOut').innerHTML = '';
+  $('luckyBox').classList.add('on');
+});
+document.querySelectorAll('.luckyN button').forEach(b =>
+  b.addEventListener('click', () => {
+    const n = +b.dataset.n;
+    const pool = [...filtered()];
+    for (let i=pool.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+    const picks = pool.slice(0, n);
+    $('luckyOut').innerHTML = picks.length
+      ? picks.map(g => `
+        <a href="${g.file}">
+          <div class="ic">${g.icon}</div>
+          <div><b>${g.name}</b><span>${g.id.toUpperCase()} · ${g.desc}</span></div>
+        </a>`).join('')
+      : '<div class="noHit">目前篩選裡沒有遊戲</div>';
+  }));
+$('luckyClose').addEventListener('click', () => $('luckyBox').classList.remove('on'));
+
+/* ---------- 口味 ---------- */
 function renderTaste() {
   const data = loadR();
   const rated = GAMES.filter(g => data[g.id]);
@@ -344,7 +451,6 @@ function renderTaste() {
   const cnt = {};
   rated.forEach(g => (data[g.id].tags || []).forEach(t => cnt[t] = (cnt[t]||0)+1));
   const topTags = Object.entries(cnt).sort((a,b) => b[1]-a[1]).slice(0,5);
-
   box.innerHTML = `<h3>📈 你們家的口味（已評 ${rated.length} 款）</h3>` +
     avg.map(a => `
       <div class="row"><div class="lab">${a.lab}</div>
@@ -352,6 +458,17 @@ function renderTaste() {
         <div class="val">${a.v.toFixed(1)}</div></div>`).join('') +
     (topTags.length ? `<div class="tags">${topTags.map(([t,n]) => `<span>${t} ×${n}</span>`).join('')}</div>` : '');
 }
+
+/* ---------- 入場門 ---------- */
+function renderGate() {
+  const ps = FP.get();
+  $('gateChips').innerHTML = ps.map(p => {
+    const g = (FP.gd ? FP.gd(p) : { key:'none', label:'' });
+    return `<span>${p.emoji} ${p.name} <i>${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''}</i></span>`;
+  }).join('');
+}
+$('gateGo').addEventListener('click', () => $('gate').classList.add('off'));
+$('gateEdit').addEventListener('click', () => openPlayers());
 
 /* ---------- 玩家編輯 ---------- */
 let draft = [], emTarget = -1;
@@ -365,7 +482,6 @@ function openPlayers() {
   paintDraft();
   $('pVeil').classList.add('on');
 }
-
 function paintDraft() {
   $('pList').innerHTML = draft.map((p, i) => {
     const lv = FP.lv(p), gd = (FP.gd ? FP.gd(p) : { key:'none', label:'不選' });
@@ -379,7 +495,6 @@ function paintDraft() {
     </div>`;
   }).join('');
   $('addP').style.display = draft.length >= 6 ? 'none' : '';
-
   document.querySelectorAll('[data-nm]').forEach(el =>
     el.addEventListener('input', () => { draft[+el.dataset.nm].name = el.value; }));
   document.querySelectorAll('[data-lv]').forEach(el =>
@@ -406,15 +521,14 @@ function paintDraft() {
       $('emPick').innerHTML = FP.EMOJIS.map(e =>
         `<button data-e="${e}" class="${draft[emTarget].emoji === e ? 'on' : ''}">${e}</button>`).join('');
       $('emPick').style.display = '';
-      document.querySelectorAll('#emPick button').forEach(b =>
-        b.addEventListener('click', () => {
-          draft[emTarget].emoji = b.dataset.e;
+      document.querySelectorAll('#emPick button').forEach(bb =>
+        bb.addEventListener('click', () => {
+          draft[emTarget].emoji = bb.dataset.e;
           $('emPick').style.display = 'none';
           paintDraft();
         }));
     }));
 }
-
 $('addP').addEventListener('click', () => {
   if (draft.length >= 6) return;
   draft.push({ name:'玩家' + (draft.length + 1), emoji: FP.EMOJIS[draft.length % FP.EMOJIS.length],
@@ -426,17 +540,18 @@ $('pSave').addEventListener('click', () => {
   FP.set(draft);
   $('pVeil').classList.remove('on');
   renderPlayers();
+  renderGate();
 });
 $('editP').addEventListener('click', openPlayers);
 
-/* ---------- 📱 QR ---------- */
+/* ---------- QR ---------- */
 let qrMade = false;
 $('qrBtn').addEventListener('click', () => {
-  const url = location.origin + location.pathname;   // 去掉 ?v= 之類的
+  const url = location.origin + location.pathname;
   $('qrUrl').textContent = url.replace(/^https?:\/\//, '');
   if (!qrMade) {
     if (typeof QRCode === 'undefined') {
-      $('qrHolder').innerHTML = '<div style="color:#333;font-size:13px;padding:20px">QR 產生器載不進來（網路擋住了）。<br>直接把上面的網址傳給朋友也可以。</div>';
+      $('qrHolder').innerHTML = '<div style="color:#333;font-size:13px;padding:20px">QR 產生器載不進來。直接把網址傳給朋友也可以。</div>';
     } else {
       new QRCode($('qrHolder'), { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
       qrMade = true;
@@ -448,7 +563,6 @@ $('qrClose').addEventListener('click', () => $('qrBox').classList.remove('on'));
 
 /* ---------- 評分 ---------- */
 let cur = null, curScores = {}, curTags = new Set();
-
 function openRate(id) {
   cur = GAMES.find(g => g.id === id);
   const old = loadR()[id];
@@ -456,7 +570,6 @@ function openRate(id) {
   curTags = new Set(old?.tags || []);
   $('rTitle').textContent = `⭐ 評分：${cur.name}`;
   $('noteIn').value = old?.note || '';
-
   $('dims').innerHTML = DIMS.map(([k, lab]) => `
     <div class="dim"><div class="lab">${lab}</div>
       <div class="sRow" data-k="${k}">
@@ -465,7 +578,6 @@ function openRate(id) {
   document.querySelectorAll('.sRow').forEach(row =>
     row.querySelectorAll('button').forEach(b =>
       b.addEventListener('click', () => { curScores[row.dataset.k] = +b.dataset.n; paintStars(); })));
-
   $('tagPick').innerHTML = TAGS.map(t =>
     `<button data-t="${t}" class="${curTags.has(t) ? 'on' : ''}">${t}</button>`).join('');
   document.querySelectorAll('#tagPick button').forEach(b =>
@@ -474,11 +586,9 @@ function openRate(id) {
       curTags.has(t) ? curTags.delete(t) : curTags.add(t);
       b.classList.toggle('on');
     }));
-
   paintStars();
   $('rVeil').classList.add('on');
 }
-
 function paintStars() {
   document.querySelectorAll('.sRow').forEach(row => {
     const v = curScores[row.dataset.k] || 0;
@@ -487,7 +597,6 @@ function paintStars() {
   const t = DIMS.reduce((s,[k]) => s + (curScores[k] || 0), 0);
   $('liveTotal').innerHTML = `總分 <b>${t}</b> / 30`;
 }
-
 $('rCancel').addEventListener('click', () => $('rVeil').classList.remove('on'));
 $('rSave').addEventListener('click', () => {
   const data = loadR();
@@ -500,17 +609,16 @@ $('rSave').addEventListener('click', () => {
   $('rVeil').classList.remove('on');
   renderShelf(); renderTaste();
 });
-
 document.querySelectorAll('.veil').forEach(v =>
   v.addEventListener('click', (e) => { if (e.target === v) v.classList.remove('on'); }));
 
-/* ---------- 📋 複製給 Claude ---------- */
+/* ---------- 複製給 Claude ---------- */
 function buildReport() {
   const data = loadR();
   const rated = GAMES.filter(g => data[g.id]);
   const ps = FP.get();
   const L = [];
-  L.push('【家庭遊戲間 · 回報】');
+  L.push('【遊戲間 · 回報】');
   L.push(`日期：${new Date().toISOString().slice(0,10)}`);
   L.push('玩家：' + ps.map(p => {
     const g = (FP.gd ? FP.gd(p) : { key:'none', label:'' });
@@ -518,7 +626,6 @@ function buildReport() {
   }).join('、'));
   L.push('');
   if (!rated.length) { L.push('（還沒有任何評分）'); return L.join('\n'); }
-
   rated.sort((a,b) => totalOf(data[b.id]) - totalOf(data[a.id])).forEach(g => {
     const r = data[g.id];
     L.push(`${g.id.toUpperCase()} ${g.name} — 總分 ${totalOf(r)}/30`);
@@ -527,7 +634,6 @@ function buildReport() {
     if (r.note) L.push('  感想：' + r.note);
     L.push('');
   });
-
   const avg = DIMS.map(([k, lab]) => {
     const vals = rated.map(g => data[g.id].scores?.[k] || 0);
     return { lab: lab.replace(/^\S+\s/, ''), v: vals.reduce((a,b)=>a+b,0)/vals.length };
@@ -535,15 +641,13 @@ function buildReport() {
   const cnt = {};
   rated.forEach(g => (data[g.id].tags || []).forEach(t => cnt[t] = (cnt[t]||0)+1));
   const tags = Object.entries(cnt).sort((a,b) => b[1]-a[1]);
-
   L.push('【口味統整】');
   avg.forEach(a => L.push(`  ${a.lab}：${a.v.toFixed(1)} / 5`));
   if (tags.length) L.push('最常被選：' + tags.map(([t,n]) => `${t}×${n}`).join('、'));
   L.push('');
-  L.push('請根據以上口味設計下一款遊戲。');
+  L.push('請根據以上口味設計下一批遊戲。');
   return L.join('\n');
 }
-
 $('copyBtn').addEventListener('click', async () => {
   const text = buildReport();
   $('copyText').value = text;
@@ -566,7 +670,7 @@ $('exportBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(pack, null, 2)], { type:'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `家庭遊戲備份-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `遊戲間備份-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 3000);
 });
@@ -579,7 +683,7 @@ $('fileIn').addEventListener('change', async (e) => {
     if (inc.ratings) saveR({ ...loadR(), ...inc.ratings });
     else saveR({ ...loadR(), ...inc });
     if (inc.players) FP.set(inc.players);
-    renderPlayers(); renderShelf(); renderTaste();
+    renderPlayers(); renderGate(); renderShelf(); renderTaste();
     $('copyHead').textContent = '✅ 讀取成功，已合併';
     $('copyText').value = '玩家與評分都讀回來了。';
     $('copyBox').classList.add('on');
@@ -591,26 +695,9 @@ $('fileIn').addEventListener('change', async (e) => {
   e.target.value = '';
 });
 
-/* ---------- 入場門 ---------- */
-function renderGate() {
-  const ps = FP.get();
-  $('gateChips').innerHTML = ps.map(p => {
-    const g = (FP.gd ? FP.gd(p) : { key:'none', label:'' });
-    return `<span>${p.emoji} ${p.name} <i>${FP.lv(p).label}${g.key !== 'none' ? '·' + g.label : ''}</i></span>`;
-  }).join('');
-}
-$('gateGo').addEventListener('click', () => {
-  $('gate').classList.add('off');
-  beep && 0;
-});
-$('gateEdit').addEventListener('click', openPlayers);
-
-/* 編輯儲存後，門上的名牌也要跟著更新 */
-const _oldSave = $('pSave').onclick;
-$('pSave').addEventListener('click', renderGate);
-
 renderGate();
 renderPlayers();
+renderFilters();
 renderShelf();
 renderTaste();
 </script>
