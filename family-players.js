@@ -83,7 +83,10 @@
       document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
     });
 
-    /* 兩指以上的移動一律擋掉（單指不受影響） */
+    /* 兩指以上：起手（touchstart）和移動（touchmove）都擋掉（單指不受影響） */
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
     document.addEventListener('touchmove', function (e) {
       if (e.touches && e.touches.length > 1) e.preventDefault();
     }, { passive: false });
