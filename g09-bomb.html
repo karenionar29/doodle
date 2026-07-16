@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2B0F12">
+<title>G09 數字炸彈</title>
+<style>
+:root{
+  --ink:#2B0F12; --ink-2:#451B20; --line:#6B2C33; --paper:#FDFCF7;
+  --wire:#FF8A5C; --spark:#FFD23F; --hot:#FF5C6C; --dim:#C09297; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+#start{justify-content:center;align-items:center;text-align:center;gap:14px;padding:22px}
+.hero{font-size:46px}
+h1{font-size:25px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+#go{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+
+/* 遊戲 */
+#play{padding:10px 14px 12px;gap:10px}
+.turnbar{text-align:center;font-size:16px;background:var(--ink-2);border-radius:99px;padding:9px}
+.turnbar b{color:var(--spark)}
+.range{
+  flex:none;display:flex;align-items:center;justify-content:center;gap:14px;
+  background:var(--ink-2);border-radius:20px;padding:18px 10px;
+}
+.range .n{font-size:44px;font-variant-numeric:tabular-nums}
+.range .bomb{font-size:44px;animation:wig 1.2s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+.range.tight .bomb{animation-duration:.45s}
+.range.tight{background:#5A1F26}
+
+#guessShow{
+  flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  font-size:min(26vw,120px);font-variant-numeric:tabular-nums;color:var(--spark);
+}
+#guessShow.dim{color:var(--line)}
+
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex:none}
+.keypad button{
+  background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+  padding:15px 0;font-size:24px;transition:.1s;
+}
+.keypad button:active{transform:scale(.94);background:#5A2A31}
+.keypad .okKey{background:var(--wire);color:var(--ink);border-color:var(--wire);font-size:19px}
+.keypad .delKey{font-size:19px;color:var(--dim)}
+
+/* 爆炸 + 懲罰 */
+#boom{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+      gap:14px;z-index:9;background:rgba(43,15,18,.96);padding:26px;text-align:center}
+#boom.on{display:flex}
+#boomEm{font-size:96px;animation:shake .5s}
+@keyframes shake{0%,100%{transform:translate(0)}20%{transform:translate(-12px,4px)}
+  40%{transform:translate(10px,-6px)}60%{transform:translate(-8px,-4px)}80%{transform:translate(8px,5px)}}
+#boomWho{font-size:30px;color:var(--hot)}
+.dare{background:var(--ink-2);border-radius:18px;padding:16px 20px;max-width:320px}
+.dare .lab{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.14em}
+.dare .txt{font-size:22px;line-height:1.5;margin-top:6px;color:var(--spark)}
+#boomNext{background:var(--wire);color:var(--ink);border-radius:16px;padding:14px 36px;font-size:17px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on">
+  <div class="hero">💣 🔢</div>
+  <h1>G09 <em>數字炸彈</em></h1>
+  <p class="sub">機器人在 <b>1～100</b> 裡藏了一顆炸彈。<br>
+  大家<b>輪流猜數字</b>，範圍會越縮越小…<br>
+  <b>誰猜到那個數字，炸彈就爆！</b><br>
+  爆到的人要接受機器人的懲罰 😈</p>
+  <button id="go">開始（把平板放中間）</button>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="play" class="screen">
+  <div class="turnbar" id="turnbar">輪到 <b>🧒 George</b></div>
+
+  <div class="range" id="range">
+    <div class="n" id="lo">1</div>
+    <div class="bomb">💣</div>
+    <div class="n" id="hi">100</div>
+  </div>
+
+  <div id="guessShow" class="dim">--</div>
+
+  <div class="keypad">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button class="delKey" id="delKey">⌫</button><button data-k="0">0</button><button class="okKey" id="okKey">猜！</button>
+  </div>
+</section>
+
+<div id="boom">
+  <div id="boomEm">💥</div>
+  <div id="boomWho">George 爆炸了！</div>
+  <div class="dare">
+    <div class="lab">機 器 人 的 懲 罰</div>
+    <div class="txt" id="dareTxt">學貓叫三聲</div>
+  </div>
+  <button id="boomNext">執行完畢，再來一局</button>
+</div>
+
+<script src="family-players.js?v=4"></script>
+<script>
+const CONFIG = {
+  MIN: 1, MAX: 100,
+  TIGHT: 10,          // 範圍縮到多小開始緊張模式
+};
+
+const DARES = [
+  '學貓叫三聲 🐱','學狗叫五聲 🐶','做十下開合跳 🤸','唱一句生日快樂歌 🎂',
+  '用屁股寫自己的名字 🍑','學大猩猩搥胸口 🦍','原地轉三圈再鞠躬 💫','扮鬼臉維持五秒 🤪',
+  '學青蛙跳五下 🐸','用最奇怪的聲音說「我愛全家」 📢','單腳站十秒不能笑 🦩',
+  '學機器人走路繞一圈 🤖','對著大家飛吻三次 😘','學恐龍吼一聲 🦖',
+  '模仿家裡一個人，讓大家猜是誰 🎭','跟左邊的人握手說「恭喜發財」 🧧',
+];
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  key:  () => beep([620], 0.04, 'sine', 0.07),
+  ok:   () => beep([500,700], 0.08, 'triangle', 0.1),
+  safe: () => beep([880], 0.07, 'sine', 0.09),
+  tight:() => beep([440,466], 0.09, 'square', 0.08),
+  boom: () => { beep([110,82,55], 0.35, 'sawtooth', 0.22); beep([1200,800,400], 0.12, 'square', 0.1); },
+  bad:  () => beep([300], 0.12, 'sawtooth', 0.09),
+};
+
+const S = {
+  players: [], turn: 0,
+  secret: 0, lo: CONFIG.MIN, hi: CONFIG.MAX,
+  input: '',
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+function newRound(keepTurn) {
+  S.players = FP.get();
+  if (!keepTurn) S.turn = Math.floor(Math.random() * S.players.length);
+  S.secret = CONFIG.MIN + Math.floor(Math.random() * (CONFIG.MAX - CONFIG.MIN + 1));
+  S.lo = CONFIG.MIN; S.hi = CONFIG.MAX;
+  S.input = '';
+  paint();
+  show('play');
+}
+
+function cur() { return S.players[S.turn % S.players.length]; }
+
+function paint() {
+  $('lo').textContent = S.lo;
+  $('hi').textContent = S.hi;
+  const p = cur();
+  $('turnbar').innerHTML = `輪到 <b>${p.emoji} ${p.name}</b>`;
+  $('guessShow').textContent = S.input || '--';
+  $('guessShow').className = S.input ? '' : 'dim';
+  $('range').classList.toggle('tight', (S.hi - S.lo) <= CONFIG.TIGHT);
+}
+
+/* ---------- 鍵盤 ---------- */
+document.querySelectorAll('[data-k]').forEach(b =>
+  b.addEventListener('click', () => {
+    if (S.input.length >= 3) return;
+    S.input += b.dataset.k;
+    SFX.key();
+    paint();
+  }));
+$('delKey').addEventListener('click', () => {
+  S.input = S.input.slice(0, -1);
+  SFX.key();
+  paint();
+});
+$('okKey').addEventListener('click', () => {
+  const n = parseInt(S.input, 10);
+  if (isNaN(n)) return;
+  /* 要在目前範圍內（不含邊界，邊界已經是安全區） */
+  if (n <= S.lo || n >= S.hi) {
+    if (n === S.lo || n === S.hi) { SFX.bad(); shakeInput(); return; }
+    if (n < S.lo || n > S.hi) { SFX.bad(); shakeInput(); return; }
+  }
+  SFX.ok();
+  guess(n);
+});
+function shakeInput() {
+  S.input = '';
+  $('guessShow').textContent = '要猜中間的數字！';
+  $('guessShow').className = 'dim';
+  setTimeout(paint, 800);
+}
+
+/* ---------- 猜 ---------- */
+function guess(n) {
+  const p = cur();
+  S.input = '';
+
+  if (n === S.secret) {
+    /* 💥 */
+    SFX.boom();
+    if (navigator.vibrate) { try { navigator.vibrate([300,100,300]); } catch(_){} }
+    $('boomWho').textContent = `${p.emoji} ${p.name} 爆炸了！`;
+    $('dareTxt').textContent = DARES[Math.floor(Math.random() * DARES.length)];
+    $('boom').classList.add('on');
+    return;
+  }
+
+  if (n < S.secret) S.lo = n;
+  else S.hi = n;
+
+  const gap = S.hi - S.lo;
+  if (gap <= CONFIG.TIGHT) SFX.tight(); else SFX.safe();
+
+  /* 如果只剩一個數字可猜，下一個人就是必死 —— 保留這個殘酷，最刺激 */
+  S.turn++;
+  paint();
+}
+
+$('go').onclick = () => { beep([440], 0.06); newRound(false); };
+$('boomNext').onclick = () => {
+  $('boom').classList.remove('on');
+  S.turn++;              // 爆炸的人的下一位開始新局
+  newRound(true);
+};
+</script>
+</body>
+</html>

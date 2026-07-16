@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#241028">
+<title>G07 快手大對決</title>
+<style>
+:root{
+  --ink:#241028; --ink-2:#3A1C40; --line:#573060; --paper:#FDFCF7;
+  --wire:#FF7BD5; --spark:#FFD23F; --hot:#FF5C6C; --dim:#B58BBB; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+#start{align-items:center;text-align:center;gap:13px;padding:22px 20px;overflow-y:auto;justify-content:center}
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.8;max-width:22em}
+.sub b{color:var(--paper)}
+.box{width:min(320px,90vw);background:var(--ink-2);border-radius:16px;padding:13px;
+     display:flex;flex-direction:column;gap:9px}
+.box h3{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:.08em;text-align:left}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:#160A19;border:2px solid var(--line);border-radius:99px;
+              padding:8px 13px;font-size:13px;color:var(--dim);transition:.1s}
+.chips button.on{border-color:var(--wire);color:var(--wire);background:#4A2450}
+#go{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:22em;line-height:1.7}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+
+/* 對戰場：切成 N 個地盤 */
+#arena{position:relative}
+.zones{flex:1;display:grid;gap:4px;padding:4px;min-height:0}
+.zones.n2{grid-template-rows:1fr 1fr}
+.zones.n3{grid-template-rows:1fr 1fr;grid-template-columns:1fr 1fr}
+.zones.n3 .zone:first-child{grid-column:1/3}
+.zones.n4{grid-template-rows:1fr 1fr;grid-template-columns:1fr 1fr}
+.zone{
+  border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;position:relative;transition:filter .12s;border:3px solid transparent;
+}
+.zone:active{filter:brightness(1.25)}
+.zone.flip{transform:rotate(180deg)}
+.zone .nm{font-size:17px}
+.zone .sc{font-size:30px;font-variant-numeric:tabular-nums}
+.zone .fx{position:absolute;font-size:40px;opacity:0;pointer-events:none}
+.zone.win{border-color:#fff}
+.zone.win .fx{animation:fxUp .7s}
+.zone.bad .fx{animation:fxUp .7s}
+@keyframes fxUp{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1)}}
+
+/* 中央信號燈 */
+#signal{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:132px;height:132px;border-radius:50%;background:#160A19;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;
+  box-shadow:0 8px 30px rgba(0,0,0,.55);z-index:3;pointer-events:none;
+  border:5px solid var(--line);transition:.12s;
+}
+#signal .em{font-size:52px;line-height:1}
+#signal .lab{font-size:12px;color:var(--dim);font-weight:600}
+#signal.go{border-color:var(--hit);background:#123B26}
+#signal.trap{border-color:var(--hot);background:#47131D}
+#signal.getready{animation:breathe 1s infinite}
+@keyframes breathe{50%{transform:translate(-50%,-50%) scale(1.06)}}
+
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px;overflow-y:auto}
+#over h2{font-size:24px}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:19px}
+#again{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:17px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on">
+  <div class="hero">⚡ 🖐 🖐</div>
+  <h1>G07 <em>快手大對決</em></h1>
+  <p class="sub">平板<b>平放在桌上</b>，每個人守住自己的地盤。<br>
+  中間亮 <b>🟢 綠燈 → 快按自己的地盤！最快的得分</b>。<br>
+  亮 <b>🔴 紅燈 → 千萬別按！</b>手癢按下去會扣分。</p>
+
+  <div class="box">
+    <h3>👥 誰要上場？（2～4 人，點一下切換）</h3>
+    <div class="chips" id="who"></div>
+  </div>
+
+  <button id="go">開始對決（10 回合）</button>
+  <p class="tiny">還有陷阱信號 🟡⭐，看清楚再出手！</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="arena" class="screen">
+  <div class="zones" id="zones"></div>
+  <div id="signal"><div class="em">👀</div><div class="lab">準備…</div></div>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h2>對決結果</h2>
+  <div class="board" id="board"></div>
+  <button id="again">再打一場</button>
+</section>
+
+<script src="family-players.js?v=4"></script>
+<script>
+const CONFIG = {
+  ROUNDS: 10,
+  DELAY_MIN: 1200, DELAY_MAX: 3800,   // 信號出現前的隨機等待
+  TRAP_RATE: 0.35,                    // 幾成機率是陷阱
+  SHOW_MS: 1400,                      // 信號亮多久沒人按就收回
+  ZONE_COLORS: ['#E63946','#277DA1','#43AA8B','#B0722E'],
+};
+
+/* 信號種類：go = 快按；trap = 別按 */
+const SIGNALS = {
+  go:    [{ em:'🟢', lab:'快按！' }, { em:'⚡', lab:'快按！' }],
+  trap:  [{ em:'🔴', lab:'別按！' }, { em:'🟡', lab:'別按！' }, { em:'💣', lab:'別按！' }],
+};
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  go:   () => beep([990,1320], 0.08, 'square', 0.14),
+  win:  () => beep([659,880,1175], 0.09, 'triangle', 0.16),
+  bad:  () => beep([220,165], 0.16, 'sawtooth', 0.13),
+  tick: () => beep([550], 0.05, 'sine', 0.06),
+  done: () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  picks: new Set(),          // 上場玩家的 index
+  fighters: [],              // [{p, score, el, scEl}]
+  round: 0, phase: 'idle',   // idle | wait | live
+  kind: 'go', timerId: null, hideId: null,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開場：選誰上場 ---------- */
+function paintStart() {
+  const ps = FP.get();
+  ps.forEach((_, i) => { if (i < 4) S.picks.add(i); });
+  renderWho();
+}
+function renderWho() {
+  const ps = FP.get();
+  $('who').innerHTML = ps.map((p, i) =>
+    `<button data-i="${i}" class="${S.picks.has(i) ? 'on' : ''}">${p.emoji} ${p.name}</button>`).join('');
+  document.querySelectorAll('#who button').forEach(b =>
+    b.addEventListener('click', () => {
+      const i = +b.dataset.i;
+      if (S.picks.has(i)) S.picks.delete(i);
+      else if (S.picks.size < 4) S.picks.add(i);
+      renderWho();
+      beep([700], 0.04, 'sine', 0.05);
+    }));
+}
+
+/* ---------- 建戰場 ---------- */
+function buildArena() {
+  const ps = FP.get();
+  S.fighters = [...S.picks].sort((a,b)=>a-b).map((i, k) => ({
+    p: ps[i], score: 0, idx: k,
+  }));
+  const n = S.fighters.length;
+  const z = $('zones');
+  z.className = 'zones n' + n;
+  z.innerHTML = S.fighters.map((f, k) => `
+    <div class="zone ${zoneFlip(n, k) ? 'flip' : ''}" data-k="${k}"
+         style="background:${CONFIG.ZONE_COLORS[k]}">
+      <div class="nm">${f.p.emoji} ${f.p.name}</div>
+      <div class="sc" id="sc${k}">0</div>
+      <div class="fx" id="fx${k}">✋</div>
+    </div>`).join('');
+
+  document.querySelectorAll('.zone').forEach(el => {
+    const hit = (e) => { e.preventDefault(); tap(+el.dataset.k, el); };
+    el.addEventListener('pointerdown', hit);
+  });
+}
+/* 面對面坐：上排的地盤轉 180 度 */
+function zoneFlip(n, k) {
+  if (n === 2) return k === 0;
+  if (n === 3) return k === 0;
+  return k < 2;   // 4 人：上面兩格翻轉
+}
+
+/* ---------- 回合流程 ---------- */
+function startMatch() {
+  buildArena();
+  S.round = 0;
+  show('arena');
+  nextRound();
+}
+
+function nextRound() {
+  S.round++;
+  if (S.round > CONFIG.ROUNDS) return finish();
+  S.phase = 'wait';
+  setSignal('👀', `第 ${S.round} / ${CONFIG.ROUNDS} 回合`, 'getready');
+  SFX.tick();
+
+  const delay = CONFIG.DELAY_MIN + Math.random() * (CONFIG.DELAY_MAX - CONFIG.DELAY_MIN);
+  clearTimeout(S.timerId);
+  S.timerId = setTimeout(fire, delay);
+}
+
+function fire() {
+  S.kind = Math.random() < CONFIG.TRAP_RATE ? 'trap' : 'go';
+  const pool = SIGNALS[S.kind];
+  const sig = pool[Math.floor(Math.random() * pool.length)];
+  S.phase = 'live';
+  setSignal(sig.em, sig.lab, S.kind);
+  SFX.go();
+
+  clearTimeout(S.hideId);
+  S.hideId = setTimeout(() => {
+    if (S.phase !== 'live') return;
+    /* 沒人按：go = 大家都太慢；trap = 大家都忍住了，全體 +0 直接過 */
+    S.phase = 'idle';
+    setSignal(S.kind === 'trap' ? '😮‍💨' : '🐌', S.kind === 'trap' ? '大家都忍住了！' : '太慢啦！', '');
+    setTimeout(nextRound, 900);
+  }, CONFIG.SHOW_MS);
+}
+
+function setSignal(em, lab, cls) {
+  const s = $('signal');
+  s.className = cls || '';
+  s.querySelector('.em').textContent = em;
+  s.querySelector('.lab').textContent = lab;
+}
+
+/* ---------- 按地盤 ---------- */
+function tap(k, el) {
+  const f = S.fighters[k];
+  if (!f) return;
+
+  if (S.phase === 'wait') {
+    /* 信號還沒亮就偷按 → 扣 1 */
+    f.score--;
+    paintScore(k);
+    flashZone(el, k, '💥', 'bad');
+    SFX.bad();
+    return;
+  }
+  if (S.phase !== 'live') return;
+
+  if (S.kind === 'go') {
+    /* 最快的那一下 */
+    S.phase = 'idle';
+    clearTimeout(S.hideId);
+    f.score++;
+    paintScore(k);
+    flashZone(el, k, '🎉', 'win');
+    setSignal(f.p.emoji, `${f.p.name} 最快！`, 'go');
+    SFX.win();
+    setTimeout(nextRound, 1000);
+  } else {
+    /* 陷阱：按了扣 1（回合繼續，看還有誰上當） */
+    f.score--;
+    paintScore(k);
+    flashZone(el, k, '🫣', 'bad');
+    SFX.bad();
+  }
+}
+
+function paintScore(k) { $('sc' + k).textContent = S.fighters[k].score; }
+function flashZone(el, k, em, cls) {
+  const fx = $('fx' + k);
+  fx.textContent = em;
+  el.classList.remove('win','bad');
+  void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove('win','bad'), 700);
+}
+
+/* ---------- 結算 ---------- */
+function finish() {
+  SFX.done();
+  const sorted = [...S.fighters].sort((a,b) => b.score - a.score);
+  $('board').innerHTML = sorted.map((f,i) => `
+    <div class="row ${i===0 ? 'top' : ''}">
+      <div class="rk">${['🥇','🥈','🥉'][i] || (i+1)}</div>
+      <div class="nm">${f.p.emoji} ${f.p.name}</div>
+      <div class="sc">${f.score}</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('go').onclick = () => {
+  if (S.picks.size < 2) { beep([300], 0.12); return; }
+  beep([440], 0.06);
+  startMatch();
+};
+$('again').onclick = () => { renderWho(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101D16">
+<title>G10 誰是臥底</title>
+<style>
+:root{
+  --ink:#101D16; --ink-2:#1B3226; --line:#2C513D; --paper:#FDFCF7;
+  --wire:#7BE0A2; --spark:#FFD23F; --hot:#FF5C6C; --dim:#8FB39E; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:46px}
+h1{font-size:25px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:23em;line-height:1.7}
+
+.who{font-size:32px;color:var(--spark)}
+
+/* 偷看卡 */
+#peekCard{
+  width:min(300px,84vw);height:180px;border-radius:20px;background:#0A150F;
+  border:2px dashed var(--line);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;transition:.12s;
+}
+#peekCard.open{background:var(--spark);color:var(--ink);border-style:solid;border-color:var(--spark)}
+#peekCard .w{font-size:42px}
+#peekCard .t{font-size:13px;font-weight:500;opacity:.75}
+
+/* 投票 */
+.voteGrid{display:flex;flex-direction:column;gap:9px;width:min(320px,88vw)}
+.voteGrid button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+                 padding:15px;font-size:18px;transition:.12s;text-align:left}
+.voteGrid button:active{transform:scale(.96)}
+.voteGrid button[disabled]{opacity:.35}
+
+/* 揭曉 */
+.rev{background:var(--ink-2);border-radius:18px;padding:16px 20px;max-width:330px;
+     display:flex;flex-direction:column;gap:8px}
+.rev .line{font-size:15px;line-height:1.7}
+.rev .line b{color:var(--spark)}
+.verdict{font-size:26px}
+.verdict.good{color:var(--hit)}
+.verdict.bad{color:var(--hot)}
+.words{font-size:14px;color:var(--dim);font-weight:500}
+.words b{color:var(--paper)}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">🕵️ 🐑 🐑</div>
+  <h1>G10 <em>誰是臥底</em></h1>
+  <p class="sub">每個人偷看自己的詞——<b>其中一個人拿到的詞跟大家不一樣</b>，他就是臥底！<br><br>
+  輪流<b>形容自己的詞</b>（不能直接說出來），<br>再投票抓出臥底。<br>
+  <b>臥底自己也不知道自己是臥底</b>，要邊聽邊裝 😏</p>
+  <button class="big" id="go">開始（要 3 人以上）</button>
+  <p class="tiny">💡 形容範例：拿到「香蕉」可以說「它是黃色的」。太明顯會幫到臥底，太模糊大家會懷疑你！</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<!-- 傳平板偷看 -->
+<section id="peek" class="screen center">
+  <div class="who" id="peekWho">交給 George</div>
+  <p class="sub">別讓別人看到你的詞！</p>
+  <button id="peekCard">
+    <div class="w">👆</div>
+    <div class="t">按住偷看，放開藏起來</div>
+  </button>
+  <button class="big" id="peekNext">看好了，換下一個人</button>
+</section>
+
+<!-- 描述階段 -->
+<section id="talk" class="screen center">
+  <div class="hero">🗣️</div>
+  <h1>輪流形容你的詞</h1>
+  <p class="sub" id="talkOrder"></p>
+  <p class="tiny">規則：不能說出詞本身、不能說注音或英文。<br>每人講一句，講完可以再來第二輪。</p>
+  <button class="big" id="talkDone">講完了，投票！</button>
+</section>
+
+<!-- 投票（傳平板） -->
+<section id="vote" class="screen center">
+  <div class="who" id="voteWho">George 投票</div>
+  <p class="sub">你覺得<b>誰是臥底</b>？</p>
+  <div class="voteGrid" id="voteGrid"></div>
+</section>
+
+<!-- 揭曉 -->
+<section id="reveal" class="screen center">
+  <div class="hero" id="revEm">🕵️</div>
+  <div class="verdict" id="revVerdict">抓到臥底！</div>
+  <div class="rev" id="revBox"></div>
+  <button class="big" id="again">再來一局</button>
+</section>
+
+<script src="family-players.js?v=4"></script>
+<script>
+/* 詞對：〔大家的詞, 臥底的詞〕——像但不一樣，小孩也懂 */
+const PAIRS = [
+  ['貓','老虎'],['狗','狼'],['香蕉','玉米'],['蘋果','番茄'],['西瓜','籃球'],
+  ['汽車','公車'],['飛機','小鳥'],['太陽','電燈'],['月亮','餅乾'],['雨傘','帽子'],
+  ['牙刷','掃把'],['枕頭','棉花糖'],['冰淇淋','雪人'],['披薩','鬆餅'],['麵條','頭髮'],
+  ['眼鏡','望遠鏡'],['鉛筆','筷子'],['書包','行李箱'],['溜滑梯','樓梯'],['鞦韆','吊床'],
+  ['醫生','獸醫'],['警察','保全'],['老師','教練'],['廚師','媽媽'],['超人','蜘蛛人'],
+  ['游泳','洗澡'],['跑步','走路'],['唱歌','講話'],['畫畫','寫字'],['睡覺','躺著'],
+  ['蛋糕','麵包'],['糖果','藥丸'],['牛奶','豆漿'],['果汁','汽水'],['火鍋','湯'],
+  ['海邊','游泳池'],['動物園','農場'],['學校','補習班'],['公園','操場'],['夜市','超市'],
+  ['青蛙','蟾蜍'],['蝴蝶','蛾'],['烏龜','蝸牛'],['兔子','老鼠'],['企鵝','鴨子'],
+  ['襪子','手套'],['外套','雨衣'],['皇冠','帽子'],['戒指','手環'],['口罩','面具'],
+  ['電視','電腦'],['手機','平板'],['時鐘','手錶'],['電風扇','冷氣'],['冰箱','衣櫃'],
+  ['星星','鑽石'],['彩虹','橋'],['雲','棉花'],['山','溜滑梯'],['火','太陽'],
+];
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  go:   () => beep([392,523], 0.1, 'triangle', 0.12),
+  peek: () => beep([1100], 0.04, 'sine', 0.05),
+  vote: () => beep([700,900], 0.08, 'sine', 0.1),
+  win:  () => beep([523,659,784,1047,1319], 0.12, 'triangle', 0.18),
+  lose: () => beep([440,349,262], 0.15, 'sawtooth', 0.11),
+};
+
+const S = {
+  players: [], spy: -1,
+  wordAll: '', wordSpy: '',
+  peekAt: 0, voteAt: 0,
+  votes: [],           // votes[i] = 我投給誰的 index
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開局 ---------- */
+function newRound() {
+  S.players = FP.get();
+  if (S.players.length < 3) {
+    alert('這個遊戲要 3 人以上。回遊戲間按「改玩家」加人。');
+    return;
+  }
+  const pair = PAIRS[Math.floor(Math.random() * PAIRS.length)];
+  /* 隨機決定哪個詞給大家、哪個給臥底 */
+  const flip = Math.random() < 0.5;
+  S.wordAll = flip ? pair[0] : pair[1];
+  S.wordSpy = flip ? pair[1] : pair[0];
+  S.spy = Math.floor(Math.random() * S.players.length);
+  S.peekAt = 0;
+  S.voteAt = 0;
+  S.votes = new Array(S.players.length).fill(-1);
+  showPeek();
+}
+
+/* ---------- 偷看階段 ---------- */
+function showPeek() {
+  const p = S.players[S.peekAt];
+  $('peekWho').textContent = `交給 ${p.emoji} ${p.name}`;
+  closeCard();
+  show('peek');
+  SFX.go();
+}
+const card = $('peekCard');
+function openCard() {
+  const w = (S.peekAt === S.spy) ? S.wordSpy : S.wordAll;
+  card.classList.add('open');
+  card.innerHTML = `<div class="w">${w}</div><div class="t">記住它，別唸出來</div>`;
+  SFX.peek();
+}
+function closeCard() {
+  card.classList.remove('open');
+  card.innerHTML = `<div class="w">👆</div><div class="t">按住偷看，放開藏起來</div>`;
+}
+card.addEventListener('pointerdown', (e) => { e.preventDefault(); openCard(); });
+['pointerup','pointerleave','pointercancel'].forEach(ev =>
+  card.addEventListener(ev, closeCard));
+
+$('peekNext').onclick = () => {
+  S.peekAt++;
+  if (S.peekAt >= S.players.length) startTalk();
+  else showPeek();
+};
+
+/* ---------- 描述階段 ---------- */
+function startTalk() {
+  /* 隨機發言順序，避免第一個永遠是同一人 */
+  const order = S.players.map(p => `${p.emoji} ${p.name}`);
+  const start = Math.floor(Math.random() * order.length);
+  const rot = [...order.slice(start), ...order.slice(0, start)];
+  $('talkOrder').innerHTML = `發言順序：<b>${rot.join(' → ')}</b>`;
+  show('talk');
+  SFX.go();
+}
+$('talkDone').onclick = () => { showVote(); };
+
+/* ---------- 投票階段（傳平板） ---------- */
+function showVote() {
+  const p = S.players[S.voteAt];
+  $('voteWho').textContent = `${p.emoji} ${p.name} 投票`;
+  $('voteGrid').innerHTML = S.players.map((q, i) => `
+    <button data-i="${i}" ${i === S.voteAt ? 'disabled' : ''}>${q.emoji} ${q.name}</button>`).join('');
+  document.querySelectorAll('#voteGrid button').forEach(b =>
+    b.addEventListener('click', () => {
+      S.votes[S.voteAt] = +b.dataset.i;
+      SFX.vote();
+      S.voteAt++;
+      if (S.voteAt >= S.players.length) doReveal();
+      else showVote();
+    }));
+  show('vote');
+}
+
+/* ---------- 揭曉 ---------- */
+function doReveal() {
+  /* 計票 */
+  const cnt = new Array(S.players.length).fill(0);
+  S.votes.forEach(v => { if (v >= 0) cnt[v]++; });
+  const most = Math.max(...cnt);
+  const out = cnt.indexOf(most);
+  const tied = cnt.filter(c => c === most).length > 1;
+
+  const spyP = S.players[S.spy];
+  const caught = !tied && out === S.spy;
+
+  $('revEm').textContent = caught ? '🎉' : '😏';
+  const v = $('revVerdict');
+  v.textContent = caught ? '抓到臥底了！' : '臥底逃過一劫！';
+  v.className = 'verdict ' + (caught ? 'good' : 'bad');
+  if (caught) SFX.win(); else SFX.lose();
+
+  const lines = S.players.map((p, i) =>
+    `<div class="line">${p.emoji} ${p.name} 投給 ${S.votes[i] >= 0 ? S.players[S.votes[i]].emoji + ' ' + S.players[S.votes[i]].name : '—'}${i === S.spy ? '　<b>← 臥底！</b>' : ''}</div>`);
+
+  $('revBox').innerHTML =
+    lines.join('') +
+    `<div class="line" style="margin-top:6px">${tied ? '平票，沒人出局 → 臥底贏！' : `票最多：${S.players[out].emoji} ${S.players[out].name}`}</div>` +
+    `<div class="words" style="margin-top:6px">大家的詞是「<b>${S.wordAll}</b>」，臥底 ${spyP.emoji}${spyP.name} 拿到的是「<b>${S.wordSpy}</b>」</div>`;
+
+  show('reveal');
+}
+
+$('go').onclick = () => { beep([440], 0.06); newRound(); };
+$('again').onclick = newRound;
+</script>
+</body>
+</html>

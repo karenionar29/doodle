@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0E1F33">
+<title>G08 機器人記憶王</title>
+<style>
+:root{
+  --ink:#0E1F33; --ink-2:#183253; --line:#2A4C77; --paper:#FDFCF7;
+  --wire:#6FB6FF; --spark:#FFD23F; --hot:#FF5C6C; --dim:#8AA6C7; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+#start{align-items:center;text-align:center;gap:13px;padding:22px 20px;overflow-y:auto;justify-content:center}
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.8;max-width:22em}
+.sub b{color:var(--paper)}
+.pick{display:flex;flex-direction:column;gap:8px;width:min(320px,90vw)}
+.pick button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+             padding:13px;text-align:left;transition:.15s}
+.pick button:active{transform:scale(.96)}
+.pick button.hero2{border-color:var(--wire);background:#1E4066}
+.pick b{font-size:16px}
+.pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+
+#relay{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#relayWho{font-size:34px;color:var(--spark)}
+#relayNote{color:var(--dim);font-size:14px;font-weight:500;line-height:1.9;max-width:20em}
+#relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 38px;font-size:18px}
+
+/* 遊戲 */
+#play{padding:10px 12px 12px;gap:10px}
+.topbar{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.pill.spark{color:var(--spark)}
+#status{
+  flex:1;text-align:center;font-size:15px;background:var(--ink-2);
+  border-radius:99px;padding:6px 12px;transition:.15s;
+}
+#status.watch{color:var(--wire)}
+#status.you{color:var(--hit)}
+
+.padGrid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+         gap:10px;padding:2px}
+.padBtn{
+  border-radius:22px;font-size:52px;transition:filter .1s, transform .1s;
+  filter:brightness(.55);display:flex;align-items:center;justify-content:center;
+}
+.padBtn.lit{filter:brightness(1.35);transform:scale(1.03);
+            box-shadow:0 0 34px rgba(255,255,255,.35)}
+.padBtn:active{transform:scale(.97)}
+.padBtn[disabled]{pointer-events:none}
+
+#lvl{display:flex;align-items:center;justify-content:center;gap:8px;min-height:34px}
+#lvl .dot{width:11px;height:11px;border-radius:50%;background:var(--line)}
+#lvl .dot.done{background:var(--hit)}
+#lvl .dot.now{background:var(--spark);animation:pulse .7s infinite}
+@keyframes pulse{50%{transform:scale(1.3)}}
+
+#boom{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+      gap:8px;z-index:9;background:rgba(14,31,51,.94);pointer-events:none}
+#boom.on{display:flex}
+#boomEm{font-size:80px;animation:boomIn .5s cubic-bezier(.2,1.6,.4,1)}
+#boomTxt{font-size:28px;text-align:center;line-height:1.5;padding:0 20px}
+@keyframes boomIn{from{transform:scale(.3) rotate(-14deg);opacity:0}to{transform:scale(1);opacity:1}}
+
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px;overflow-y:auto}
+#over h2{font-size:24px}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:16px}
+#again{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:17px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on">
+  <div class="hero">🤖 🎹 🧠</div>
+  <h1>G08 <em>機器人記憶王</em></h1>
+  <p class="sub">機器人會<b>彈一段越來越長的旋律</b>，<br>看清楚、記起來，<b>照順序按回去</b>。<br>按錯就結束——看誰記得最長！</p>
+  <div class="pick" id="pickBox"></div>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="relay" class="screen">
+  <div class="hero">🧠</div>
+  <div id="relayWho">換 George！</div>
+  <p id="relayNote">機器人先彈，你再跟著按。</p>
+  <button id="relayGo">準備好了</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="topbar">
+    <div class="pill" id="whoTag">🧒 George</div>
+    <div class="pill spark">第 <span id="lvNum">1</span> 關</div>
+    <div id="status" class="watch">👀 看機器人彈…</div>
+  </div>
+
+  <div class="padGrid" id="padGrid"></div>
+
+  <div id="lvl"></div>
+</section>
+
+<div id="boom">
+  <div id="boomEm">💥</div>
+  <div id="boomTxt">按錯了！</div>
+</div>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h2 id="overTitle">記憶王排行</h2>
+  <div class="board" id="board"></div>
+  <button id="again">再玩一次</button>
+</section>
+
+<script src="family-players.js?v=4"></script>
+<script>
+const CONFIG = {
+  PADS: [
+    { em:'🐸', color:'#43AA8B', hz:392 },   // G
+    { em:'🐤', color:'#FCBF49', hz:494 },   // B
+    { em:'🐙', color:'#E63946', hz:587 },   // D
+    { em:'🐳', color:'#277DA1', hz:784 },   // G高
+  ],
+  /* 難度 → 機器人彈的速度（毫秒/格）與亮燈時間 */
+  SPEED: { easy:{gap:750,lit:520}, normal:{gap:560,lit:400}, hard:{gap:400,lit:290} },
+  START_LEN: 2,       // 第一關幾個音
+  BONUS_GAP: 260,     // 玩家按對的音效長度
+};
+
+let ac = null;
+function tone(hz, dur=0.22, type='triangle', gain=0.16) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = hz;
+    const t = ac.currentTime;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(gain, t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t+dur+0.02);
+  } catch(_) {}
+}
+function chord(f, dur=0.12, type='triangle', gain=0.14) {
+  f.forEach((hz,i) => setTimeout(() => tone(hz, dur, type, gain), i*dur*700));
+}
+const SFX = {
+  boom: () => chord([220,165,110], 0.18, 'sawtooth', 0.13),
+  pass: () => chord([659,880,1175], 0.1),
+  done: () => chord([523,659,784,1047,1319], 0.12),
+};
+
+const S = {
+  queue: [], cur: null, results: [], solo: true,
+  seq: [], at: 0, level: 0,
+  phase: 'idle',    // idle | show | input
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開場（FP 玩家） ---------- */
+function paintStart() {
+  const ps = FP.get();
+  const lvDesc = { easy:'機器人彈得慢', normal:'標準速度', hard:'機器人彈超快' };
+  $('pickBox').innerHTML =
+    (ps.length > 1 ? `
+      <button class="hero2" data-p="party">
+        <b>👨‍👦‍👦 大家比賽（${ps.length} 人）</b>
+        <span>輪流挑戰，看誰記得最長</span>
+      </button>` : '') +
+    ps.map((p, i) => `
+      <button data-p="${i}">
+        <b>${p.emoji} ${p.name}</b>
+        <span>${lvDesc[p.level] || lvDesc.normal}</span>
+      </button>`).join('');
+
+  document.querySelectorAll('#pickBox button').forEach(b =>
+    b.addEventListener('click', () => {
+      const ps2 = FP.get();
+      if (b.dataset.p === 'party') { S.solo = false; S.queue = ps2.map((_,i) => i); }
+      else { S.solo = true; S.queue = [+b.dataset.p]; }
+      S.results = [];
+      tone(440, 0.08);
+      nextPlayer();
+    }));
+}
+
+/* ---------- 四個琴鍵 ---------- */
+function buildPads() {
+  $('padGrid').innerHTML = CONFIG.PADS.map((p, i) => `
+    <button class="padBtn" id="pad${i}" style="background:${p.color}" data-i="${i}">${p.em}</button>`).join('');
+  document.querySelectorAll('.padBtn').forEach(b =>
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); press(+b.dataset.i); }));
+}
+
+function lit(i, ms) {
+  const el = $('pad' + i);
+  el.classList.add('lit');
+  tone(CONFIG.PADS[i].hz, ms / 1000 + 0.08);
+  setTimeout(() => el.classList.remove('lit'), ms);
+}
+
+/* ---------- 輪替 ---------- */
+function nextPlayer() {
+  if (!S.queue.length) return finish();
+  const ps = FP.get();
+  S.cur = ps[S.queue.shift()] || ps[0];
+  if (S.solo) startRun();
+  else {
+    $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
+    show('relay');
+  }
+}
+$('relayGo').onclick = startRun;
+
+function startRun() {
+  show('play');
+  buildPads();
+  $('whoTag').textContent = `${S.cur.emoji} ${S.cur.name}`;
+  S.seq = [];
+  S.level = 0;
+  nextLevel();
+}
+
+function nextLevel() {
+  S.level++;
+  $('lvNum').textContent = S.level;
+  /* 加一個新音（第一關直接給 START_LEN 個） */
+  const add = S.level === 1 ? CONFIG.START_LEN : 1;
+  for (let i = 0; i < add; i++) S.seq.push(Math.floor(Math.random() * 4));
+  paintDots(-1);
+  playSeq();
+}
+
+function paintDots(at) {
+  $('lvl').innerHTML = S.seq.map((_, i) =>
+    `<div class="dot ${i < at ? 'done' : i === at ? 'now' : ''}"></div>`).join('');
+}
+
+function playSeq() {
+  S.phase = 'show';
+  setStatus('👀 看機器人彈…', 'watch');
+  padsEnabled(false);
+  const sp = CONFIG.SPEED[S.cur.level] || CONFIG.SPEED.normal;
+
+  S.seq.forEach((v, i) => {
+    setTimeout(() => {
+      lit(v, sp.lit);
+      if (i === S.seq.length - 1) {
+        setTimeout(() => {
+          S.phase = 'input';
+          S.at = 0;
+          paintDots(0);
+          setStatus('✋ 換你！照順序按', 'you');
+          padsEnabled(true);
+        }, sp.lit + 150);
+      }
+    }, 600 + i * sp.gap);
+  });
+}
+
+function padsEnabled(on) {
+  document.querySelectorAll('.padBtn').forEach(b => b.disabled = !on);
+}
+function setStatus(txt, cls) {
+  const el = $('status');
+  el.textContent = txt;
+  el.className = cls;
+}
+
+/* ---------- 玩家按 ---------- */
+function press(i) {
+  if (S.phase !== 'input') return;
+  lit(i, CONFIG.BONUS_GAP);
+
+  if (i === S.seq[S.at]) {
+    S.at++;
+    paintDots(S.at);
+    if (S.at >= S.seq.length) {
+      /* 過關！ */
+      S.phase = 'idle';
+      padsEnabled(false);
+      SFX.pass();
+      setStatus('🎉 過關！', 'you');
+      setTimeout(nextLevel, 900);
+    }
+  } else {
+    /* 按錯 → 這個人結束 */
+    S.phase = 'idle';
+    padsEnabled(false);
+    SFX.boom();
+    const reached = S.level - 1;
+    $('boomEm').textContent = '💥';
+    $('boomTxt').innerHTML = `按錯了！<br>${S.cur.emoji} ${S.cur.name} 記到 <b style="color:var(--spark)">第 ${reached} 關</b>`;
+    $('boom').classList.add('on');
+    S.results.push({ name:S.cur.name, emoji:S.cur.emoji, score: reached, len: S.seq.length - 1 + CONFIG.START_LEN - 1 });
+    setTimeout(() => {
+      $('boom').classList.remove('on');
+      nextPlayer();
+    }, 1800);
+  }
+}
+
+/* ---------- 結算 ---------- */
+function finish() {
+  SFX.done();
+  const sorted = [...S.results].sort((a,b) => b.score - a.score);
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '記憶王排行' : '你的成績';
+  $('board').innerHTML = sorted.map((r,i) => `
+    <div class="row ${i===0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i+1)) : r.emoji}</div>
+      <div class="nm">${r.name}</div>
+      <div class="sc">第 ${r.score} 關</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('again').onclick = () => { paintStart(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>
