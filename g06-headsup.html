@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#12262B">
+<title>G06 頭上猜猜樂</title>
+<style>
+:root{
+  --ink:#12262B; --ink-2:#1C3A41; --line:#2E5560; --paper:#FDFCF7;
+  --wire:#5AD7E0; --spark:#FFD23F; --hot:#FF5C6C; --dim:#87A8AE; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+  transition:background .15s;
+}
+body.good{background:#1E4230}
+body.skip{background:#4A2430}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+#start{align-items:center;text-align:center;gap:13px;padding:22px 20px;overflow-y:auto;justify-content:center}
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.8;max-width:22em}
+.sub b{color:var(--paper)}
+.box{width:min(320px,90vw);background:var(--ink-2);border-radius:16px;padding:13px;
+     display:flex;flex-direction:column;gap:9px}
+.box h3{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:.08em;text-align:left}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:#0B1B1F;border:2px solid var(--line);border-radius:99px;
+              padding:7px 12px;font-size:12px;color:var(--dim);transition:.1s}
+.chips button.on{border-color:var(--wire);color:var(--wire);background:#1D4750}
+.chips .cnt{margin-left:auto;font-size:11px;color:var(--dim);font-weight:500;align-self:center}
+.pick{display:flex;flex-direction:column;gap:8px;width:min(320px,90vw)}
+.pick button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+             padding:13px;text-align:left;transition:.15s}
+.pick button:active{transform:scale(.96)}
+.pick button.hero2{border-color:var(--wire);background:#1D4750}
+.pick b{font-size:16px}
+.pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:22em;line-height:1.7}
+
+#relay{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#relayWho{font-size:34px;color:var(--spark)}
+#relayNote{color:var(--dim);font-size:14px;font-weight:500;line-height:1.9;max-width:20em}
+#relayNote b{color:var(--paper)}
+#relayGo{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 38px;font-size:18px}
+
+/* 倒數 */
+#count{justify-content:center;align-items:center}
+#countNum{font-size:120px;color:var(--spark);animation:pop .5s}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* 遊戲：字要超大，全家都看得到 */
+#play{justify-content:center;align-items:center;gap:10px;padding:16px;position:relative}
+.hud{position:absolute;top:12px;left:0;right:0;display:flex;justify-content:center;gap:10px;
+     padding:0 14px;padding-top:env(safe-area-inset-top)}
+.hud .pill{background:rgba(0,0,0,.25);border-radius:99px;padding:6px 13px;font-size:15px}
+.hud .pill.t{font-variant-numeric:tabular-nums;min-width:56px;text-align:center}
+.hud .pill.t.hot{color:var(--hot);animation:pulse .5s infinite}
+@keyframes pulse{50%{transform:scale(1.12)}}
+#word{font-size:min(17vw,110px);text-align:center;line-height:1.15;padding:0 10px}
+#wordEn{font-size:15px;color:var(--dim);font-weight:500}
+.tapRow{position:absolute;bottom:14px;left:14px;right:14px;display:flex;gap:10px;
+        padding-bottom:env(safe-area-inset-bottom)}
+.tapRow button{flex:1;border-radius:16px;padding:16px 0;font-size:17px}
+#okBtn{background:rgba(74,222,128,.22);color:var(--hit);border:2px solid var(--hit)}
+#noBtn{background:rgba(255,92,108,.18);color:var(--hot);border:2px solid var(--hot)}
+.flash{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+       font-size:70px;pointer-events:none}
+.flash.on{display:flex;animation:pop .4s}
+
+#over{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px;overflow-y:auto}
+#over h2{font-size:24px}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:19px}
+.got{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:330px}
+.got span{background:var(--ink-2);border-radius:99px;padding:5px 11px;font-size:13px}
+.got span.miss{opacity:.5;text-decoration:line-through}
+#again{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 34px;font-size:17px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on">
+  <div class="hero">🙆 📱 🤳</div>
+  <h1>G06 <em>頭上猜猜樂</em></h1>
+  <p class="sub"><b>平板舉到額頭上</b>——字自己看不到，全家看得到。<br>
+  大家用演的、用形容的提示你（<b>不能直接說出那個詞</b>）。<br>
+  猜到了：平板<b>往下倒</b> ✅　不會：<b>往上仰</b> ⏭</p>
+
+  <div class="box">
+    <h3>📚 題目範圍（可多選）</h3>
+    <div class="chips" id="cats"></div>
+  </div>
+
+  <div class="pick" id="pickBox"></div>
+  <p class="tiny">感應器不靈的話，也可以直接按畫面下方的按鈕。</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="relay" class="screen">
+  <div class="hero">🙆</div>
+  <div id="relayWho">換 George！</div>
+  <p id="relayNote">把平板<b>橫著舉到額頭上</b>，螢幕朝外。<br>其他人準備好提示了嗎？</p>
+  <button id="relayGo">舉好了，開始！</button>
+</section>
+
+<section id="count" class="screen">
+  <div id="countNum">3</div>
+</section>
+
+<section id="play" class="screen">
+  <div class="hud">
+    <div class="pill" id="pWho">🧒 George</div>
+    <div class="pill">✅ <span id="pScore">0</span></div>
+    <div class="pill t" id="pTimer">60</div>
+  </div>
+  <div id="word">大象</div>
+  <div id="wordEn">elephant</div>
+  <div class="tapRow">
+    <button id="noBtn">⏭ 跳過（往上仰）</button>
+    <button id="okBtn">✅ 猜到了（往下倒）</button>
+  </div>
+  <div class="flash" id="flash">🎉</div>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h2 id="overTitle">結果</h2>
+  <div class="board" id="board"></div>
+  <div class="got" id="got"></div>
+  <button id="again">再玩一次</button>
+</section>
+
+<script src="family-players.js?v=4"></script>
+<script>
+const CONFIG = {
+  BASE_SECONDS: 60,          // × 玩家難度乘數
+  TILT_DOWN: 145,            // beta 超過這個角度 = 往下倒 = 答對
+  TILT_UP: 35,               // beta 低於這個角度 = 往上仰 = 跳過
+  NEUTRAL: [60, 120],        // 要回到這個區間才能觸發下一次（防連跳）
+  NEXT_DELAY: 700,
+};
+
+/* 題庫：好演好形容的詞，依類別分組 */
+const BANK = {
+  animal: { name:'🐱 動物', words: [
+    ['大象','elephant'],['長頸鹿','giraffe'],['猴子','monkey'],['企鵝','penguin'],
+    ['蛇','snake'],['青蛙','frog'],['獅子','lion'],['兔子','rabbit'],['螃蟹','crab'],
+    ['大猩猩','gorilla'],['雞','chicken'],['鴨子','duck'],['貓','cat'],['狗','dog'],
+    ['蝴蝶','butterfly'],['鯊魚','shark'],['章魚','octopus'],['袋鼠','kangaroo'],
+    ['恐龍','dinosaur'],['蚊子','mosquito'],['無尾熊','koala'],['孔雀','peacock'],
+  ]},
+  action: { name:'🏃 動作', words: [
+    ['刷牙','brushing teeth'],['游泳','swimming'],['跳繩','jump rope'],['睡覺','sleeping'],
+    ['打噴嚏','sneezing'],['哭','crying'],['大笑','laughing'],['跳舞','dancing'],
+    ['打籃球','basketball'],['踢足球','soccer'],['釣魚','fishing'],['爬山','hiking'],
+    ['開車','driving'],['煮飯','cooking'],['拖地','mopping'],['自拍','selfie'],
+    ['打電動','gaming'],['彈鋼琴','piano'],['舉重','weightlifting'],['溜滑梯','slide'],
+  ]},
+  job: { name:'👮 職業·角色', words: [
+    ['醫生','doctor'],['警察','police'],['消防員','firefighter'],['老師','teacher'],
+    ['廚師','chef'],['太空人','astronaut'],['海盜','pirate'],['忍者','ninja'],
+    ['超人','superhero'],['公主','princess'],['巫師','wizard'],['殭屍','zombie'],
+    ['聖誕老人','Santa'],['機器人','robot'],['歌手','singer'],['農夫','farmer'],
+  ]},
+  thing: { name:'🏠 東西', words: [
+    ['雨傘','umbrella'],['冰箱','refrigerator'],['吸塵器','vacuum'],['牙刷','toothbrush'],
+    ['眼鏡','glasses'],['吹風機','hair dryer'],['馬桶','toilet'],['電風扇','fan'],
+    ['剪刀','scissors'],['枕頭','pillow'],['雨衣','raincoat'],['手電筒','flashlight'],
+    ['氣球','balloon'],['鞦韆','swing'],['溜冰鞋','skates'],['風箏','kite'],
+  ]},
+  food: { name:'🍜 食物', words: [
+    ['珍珠奶茶','bubble tea'],['冰淇淋','ice cream'],['披薩','pizza'],['熱狗','hot dog'],
+    ['棒棒糖','lollipop'],['爆米花','popcorn'],['西瓜','watermelon'],['麵條','noodles'],
+    ['漢堡','hamburger'],['壽司','sushi'],['火鍋','hot pot'],['蛋糕','cake'],
+    ['薯條','french fries'],['雞腿','chicken leg'],['玉米','corn'],['布丁','pudding'],
+  ]},
+  place: { name:'🌏 地點·大自然', words: [
+    ['海邊','beach'],['遊樂園','amusement park'],['動物園','zoo'],['學校','school'],
+    ['醫院','hospital'],['夜市','night market'],['火山','volcano'],['彩虹','rainbow'],
+    ['打雷','thunder'],['下雨','raining'],['地震','earthquake'],['露營','camping'],
+    ['游泳池','pool'],['電影院','cinema'],['太空','outer space'],['雪','snow'],
+  ]},
+};
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  good: () => beep([659,880,1175], 0.1, 'triangle', 0.18),
+  skip: () => beep([392,294], 0.11, 'sawtooth', 0.1),
+  go:   () => beep([392,523], 0.1, 'triangle', 0.12),
+  cd:   () => beep([660], 0.09, 'square', 0.08),
+  cdGo: () => beep([990], 0.18, 'square', 0.12),
+  tick: () => beep([880], 0.05, 'square', 0.05),
+  done: () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  queue: [], cur: null, results: [], solo: true,
+  cats: new Set(Object.keys(BANK)),
+  deck: [], target: null,
+  score: 0, log: [], left: 0,
+  timerId: null, playing: false,
+  tiltArmed: true, sensorOn: false,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開場 ---------- */
+function paintStart() {
+  const ps = FP.get();
+  $('pickBox').innerHTML =
+    (ps.length > 1 ? `
+      <button class="hero2" data-p="party">
+        <b>👨‍👦‍👦 大家輪流（${ps.length} 人）</b>
+        <span>每人一輪，看誰猜最多</span>
+      </button>` : '') +
+    ps.map((p, i) => `
+      <button data-p="${i}">
+        <b>${p.emoji} ${p.name}</b>
+        <span>${FP.secs(p, CONFIG.BASE_SECONDS)} 秒</span>
+      </button>`).join('');
+
+  document.querySelectorAll('#pickBox button').forEach(b =>
+    b.addEventListener('click', async () => {
+      const ps2 = FP.get();
+      if (b.dataset.p === 'party') { S.solo = false; S.queue = ps2.map((_,i) => i); }
+      else { S.solo = true; S.queue = [+b.dataset.p]; }
+      S.results = [];
+      beep([440], 0.06);
+      await askSensor();          // iOS 要在按鈕點擊裡要權限
+      nextPlayer();
+    }));
+
+  $('cats').innerHTML = Object.entries(BANK).map(([k, v]) =>
+    `<button data-c="${k}" class="${S.cats.has(k) ? 'on' : ''}">${v.name}</button>`).join('')
+    + `<div class="cnt" id="catCnt"></div>`;
+  document.querySelectorAll('#cats button').forEach(b =>
+    b.addEventListener('click', () => {
+      const c = b.dataset.c;
+      if (S.cats.has(c)) { if (S.cats.size > 1) S.cats.delete(c); }
+      else S.cats.add(c);
+      b.classList.toggle('on', S.cats.has(c));
+      paintCatCount();
+      beep([700], 0.04, 'sine', 0.05);
+    }));
+  paintCatCount();
+}
+function paintCatCount() {
+  let n = 0;
+  S.cats.forEach(c => n += BANK[c].words.length);
+  const el = $('catCnt');
+  if (el) el.textContent = `${n} 題`;
+}
+
+/* ---------- 傾斜感應（iOS 要先按允許） ---------- */
+async function askSensor() {
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const r = await DeviceOrientationEvent.requestPermission();
+      S.sensorOn = (r === 'granted');
+    } else if (typeof DeviceOrientationEvent !== 'undefined') {
+      S.sensorOn = true;
+    }
+  } catch (_) { S.sensorOn = false; }
+  if (S.sensorOn) window.addEventListener('deviceorientation', onTilt);
+}
+
+function onTilt(e) {
+  if (!S.playing || !S.target) return;
+  const beta = e.beta;   // 前後傾角：舉在額頭直立約 90
+  if (beta == null) return;
+
+  if (S.tiltArmed) {
+    if (beta > CONFIG.TILT_DOWN) { S.tiltArmed = false; mark(true); }
+    else if (beta < CONFIG.TILT_UP) { S.tiltArmed = false; mark(false); }
+  } else {
+    /* 要回到直立區才能再觸發，避免一路連跳 */
+    if (beta > CONFIG.NEUTRAL[0] && beta < CONFIG.NEUTRAL[1]) S.tiltArmed = true;
+  }
+}
+
+/* ---------- 題庫 ---------- */
+function buildDeck() {
+  const d = [];
+  S.cats.forEach(c => BANK[c].words.forEach(([zh, en]) => d.push({ zh, en })));
+  for (let i=d.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+/* ---------- 輪替 ---------- */
+function nextPlayer() {
+  if (!S.queue.length) return finish();
+  const ps = FP.get();
+  S.cur = ps[S.queue.shift()] || ps[0];
+  $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
+  show('relay');
+  SFX.go();
+}
+
+$('relayGo').onclick = () => {
+  show('count');
+  let n = 3;
+  $('countNum').textContent = n;
+  SFX.cd();
+  const cd = setInterval(() => {
+    n--;
+    if (n > 0) {
+      $('countNum').textContent = n;
+      SFX.cd();
+    } else {
+      clearInterval(cd);
+      SFX.cdGo();
+      startTurn();
+    }
+  }, 800);
+};
+
+function startTurn() {
+  show('play');
+  $('pWho').textContent = `${S.cur.emoji} ${S.cur.name}`;
+  S.score = 0; S.log = [];
+  $('pScore').textContent = '0';
+  S.deck = buildDeck();
+  S.playing = true;
+  S.tiltArmed = true;
+  nextWord();
+
+  S.left = FP.secs(S.cur, CONFIG.BASE_SECONDS);
+  paintTimer();
+  clearInterval(S.timerId);
+  S.timerId = setInterval(() => {
+    S.left--;
+    paintTimer();
+    if (S.left <= 3 && S.left > 0) SFX.tick();
+    if (S.left <= 0) endTurn();
+  }, 1000);
+}
+
+function paintTimer() {
+  $('pTimer').textContent = S.left;
+  $('pTimer').classList.toggle('hot', S.left <= 5);
+}
+
+function nextWord() {
+  if (!S.deck.length) S.deck = buildDeck();
+  S.target = S.deck.pop();
+  $('word').textContent = S.target.zh;
+  $('wordEn').textContent = S.target.en;
+}
+
+/* 答對 / 跳過 */
+let cool = false;
+function mark(good) {
+  if (!S.playing || !S.target || cool) return;
+  cool = true;
+  const t = S.target;
+  S.target = null;
+
+  if (good) {
+    S.score++;
+    $('pScore').textContent = S.score;
+    S.log.push({ zh: t.zh, ok: true });
+    SFX.good();
+    document.body.className = 'good';
+    $('flash').textContent = '🎉';
+  } else {
+    S.log.push({ zh: t.zh, ok: false });
+    SFX.skip();
+    document.body.className = 'skip';
+    $('flash').textContent = '⏭';
+  }
+  $('flash').classList.add('on');
+
+  setTimeout(() => {
+    document.body.className = '';
+    $('flash').classList.remove('on');
+    cool = false;
+    if (S.playing) nextWord();
+  }, CONFIG.NEXT_DELAY);
+}
+
+$('okBtn').onclick = () => mark(true);
+$('noBtn').onclick = () => mark(false);
+
+function endTurn() {
+  clearInterval(S.timerId); S.timerId = null;
+  S.playing = false;
+  S.target = null;
+  document.body.className = '';
+  S.results.push({ name:S.cur.name, emoji:S.cur.emoji, score:S.score, log:[...S.log] });
+  SFX.done();
+  nextPlayer();
+}
+
+function finish() {
+  const sorted = [...S.results].sort((a,b) => b.score - a.score);
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '猜猜大賽結果' : '你的成績';
+  $('board').innerHTML = sorted.map((r,i) => `
+    <div class="row ${i===0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i+1)) : r.emoji}</div>
+      <div class="nm">${r.name}</div>
+      <div class="sc">${r.score}</div>
+    </div>`).join('');
+  const all = sorted.flatMap(r => r.log);
+  $('got').innerHTML = all.length
+    ? all.map(x => `<span class="${x.ok ? '' : 'miss'}">${x.zh}</span>`).join('')
+    : '';
+  show('over');
+}
+
+$('again').onclick = () => { paintStart(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>

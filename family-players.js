@@ -87,6 +87,19 @@
     document.addEventListener('touchmove', function (e) {
       if (e.touches && e.touches.length > 1) e.preventDefault();
     }, { passive: false });
+
+    /* 第二道鎖：0.3 秒內連點兩下 = 雙擊放大 → 攔截。
+       但如果點的是按鈕/連結/輸入框就放行，不影響快速連按按鈕。 */
+    var lastTap = 0;
+    document.addEventListener('touchend', function (e) {
+      var now = Date.now();
+      if (now - lastTap <= 300) {
+        var t = e.target;
+        var interactive = t && t.closest && t.closest('button,a,input,textarea,select,label');
+        if (!interactive) e.preventDefault();
+      }
+      lastTap = now;
+    }, { passive: false });
   }
   lockZoom();
 
