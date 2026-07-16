@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101A33">
+<title>G12 大聲公挑戰</title>
+<style>
+:root{
+  --ink:#101A33; --ink-2:#1B2C52; --line:#2E477E; --paper:#FDFCF7;
+  --wire:#7C9BFF; --spark:#FFD23F; --hot:#FF5C6C; --dim:#8FA1C9; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.pick{display:flex;flex-direction:column;gap:8px;width:min(320px,90vw)}
+.pick button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+             padding:13px;text-align:left;transition:.15s}
+.pick button:active{transform:scale(.96)}
+.pick button.hero2{border-color:var(--wire);background:#233A6B}
+.pick b{font-size:16px}
+.pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:23em;line-height:1.7}
+.who{font-size:32px;color:var(--spark)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;
+     background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
+
+/* 吹氣球畫面 */
+#blow{padding:12px 14px 14px;gap:10px}
+.hud{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
+#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:19px;min-width:52px;text-align:center;
+       background:var(--ink-2);border-radius:99px;padding:6px 10px}
+#timer.hot{color:var(--hot);animation:pulse .5s infinite}
+@keyframes pulse{50%{transform:scale(1.14)}}
+
+.sky{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#balloon{font-size:60px;transition:transform .12s ease-out;will-change:transform}
+#popFx{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:110px}
+#popFx.on{display:flex;animation:popIn .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes popIn{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+.gauge{background:var(--ink-2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.gauge .head{display:flex;font-size:12px;color:var(--dim);font-weight:500}
+.gauge .head .r{margin-left:auto;color:var(--spark);font-size:14px;font-weight:700}
+.track{height:14px;background:#0A1226;border-radius:99px;overflow:hidden}
+.fill{height:100%;width:0%;background:linear-gradient(90deg,var(--wire),var(--spark),var(--hot));border-radius:99px;transition:width .1s}
+.vol{height:8px;background:#0A1226;border-radius:99px;overflow:hidden}
+.vol i{display:block;height:100%;width:0%;background:var(--hit);border-radius:99px}
+.tipRow{text-align:center;font-size:13px;color:var(--dim);font-weight:500}
+
+#over{overflow-y:auto}
+.board{display:flex;flex-direction:column;gap:8px;width:min(330px,88vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:15px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">📢 🎈 💥</div>
+  <h1>G12 <em>大聲公挑戰</em></h1>
+  <p class="sub">對著麥克風<b>大叫或吹氣</b>，把氣球灌爆！<br>
+  聲音越大灌得越快——<b>看誰最快把氣球弄爆</b>。</p>
+  <div class="pick" id="pickBox"></div>
+  <p class="tiny">🔒 聲音只拿來量大小聲，不錄音、不外傳。<br>⚠️ 提醒鄰居：等一下會很吵 😄</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="relay" class="screen center">
+  <div class="hero">📢</div>
+  <div class="who" id="relayWho">換 George！</div>
+  <p class="sub">嘴巴靠近麥克風（平板下面或旁邊的小洞），<br>準備深呼吸——</p>
+  <button class="big" id="relayGo">開始大叫！</button>
+  <p class="err" id="micErr" style="display:none"></p>
+</section>
+
+<section id="blow" class="screen">
+  <div class="hud">
+    <div class="pill" id="whoTag">🧒 George</div>
+    <div id="timer">12</div>
+  </div>
+  <div class="sky">
+    <div id="balloon">🎈</div>
+    <div id="popFx">💥</div>
+  </div>
+  <div class="gauge">
+    <div class="head">氣球飽滿度 <span class="r" id="pct">0%</span></div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="head" style="margin-top:2px">現在的音量</div>
+    <div class="vol"><i id="vol"></i></div>
+  </div>
+  <div class="tipRow" id="tip">大叫！吹氣！都可以！</div>
+</section>
+
+<section id="over" class="screen center">
+  <div class="hero">🏆</div>
+  <h2 style="font-size:24px" id="overTitle">大聲公排行</h2>
+  <div class="board" id="board"></div>
+  <button class="big" id="again">再比一輪</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+const CONFIG = {
+  TURN_SECONDS: 12,
+  /* 每一幀把（音量-底噪）加進氣球；到 NEED 就爆。難度改 NEED。 */
+  NEED: { easy: 5.5, normal: 8.0, hard: 11.0 },
+  NOISE_FLOOR: 0.045,     // 低於這個當環境音，不灌氣
+  BALLOON_MAX_SCALE: 4.2,
+};
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  pop:  () => { beep([120,90], 0.3, 'sawtooth', 0.2); beep([1500,1000,600], 0.1, 'square', 0.1); },
+  go:   () => beep([392,523], 0.1, 'triangle', 0.12),
+  done: () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  queue: [], cur: null, results: [],
+  fill: 0, need: 8, t0: 0, left: 0,
+  timerId: null, rafId: null, playing: false,
+  micOn: false,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開場 ---------- */
+function paintStart() {
+  const ps = FP.get();
+  const lvDesc = { easy:'小氣球，比較快爆', normal:'標準氣球', hard:'超大氣球，要吼很久' };
+  $('pickBox').innerHTML =
+    (ps.length > 1 ? `
+      <button class="hero2" data-p="party">
+        <b>👨‍👦‍👦 大家比賽（${ps.length} 人）</b>
+        <span>輪流吼，看誰最快爆</span>
+      </button>` : '') +
+    ps.map((p, i) => `
+      <button data-p="${i}">
+        <b>${p.emoji} ${p.name}</b>
+        <span>${lvDesc[p.level] || lvDesc.normal}</span>
+      </button>`).join('');
+  document.querySelectorAll('#pickBox button').forEach(b =>
+    b.addEventListener('click', () => {
+      const ps2 = FP.get();
+      if (b.dataset.p === 'party') S.queue = ps2.map((_,i) => i);
+      else S.queue = [+b.dataset.p];
+      S.results = [];
+      beep([440], 0.06);
+      nextPlayer();
+    }));
+}
+
+/* ---------- 麥克風（只量音量） ---------- */
+let analyser = null, buf = null;
+
+async function openMic() {
+  if (S.micOn) return true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    });
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') await ac.resume();
+    const src = ac.createMediaStreamSource(stream);
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 1024;
+    src.connect(analyser);
+    buf = new Float32Array(analyser.fftSize);
+    S.micOn = true;
+    return true;
+  } catch (e) {
+    $('micErr').style.display = '';
+    $('micErr').textContent = '打不開麥克風，請允許權限後重新整理。(' + e.name + ')';
+    return false;
+  }
+}
+
+function rms() {
+  analyser.getFloatTimeDomainData(buf);
+  let s = 0;
+  for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+  return Math.sqrt(s / buf.length);
+}
+
+/* ---------- 輪替 ---------- */
+function nextPlayer() {
+  if (!S.queue.length) return finish();
+  const ps = FP.get();
+  S.cur = ps[S.queue.shift()] || ps[0];
+  $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
+  show('relay');
+  SFX.go();
+}
+
+$('relayGo').onclick = async () => {
+  const ok = await openMic();
+  if (!ok) return;
+  startTurn();
+};
+
+function startTurn() {
+  show('blow');
+  $('whoTag').textContent = `${S.cur.emoji} ${S.cur.name}`;
+  S.fill = 0;
+  S.need = CONFIG.NEED[S.cur.level] || CONFIG.NEED.normal;
+  S.playing = true;
+  S.t0 = performance.now();
+  $('popFx').classList.remove('on');
+  $('balloon').style.display = '';
+  $('balloon').style.transform = 'scale(1)';
+  $('tip').textContent = '大叫！吹氣！都可以！';
+
+  S.left = CONFIG.TURN_SECONDS;
+  paintTimer();
+  clearInterval(S.timerId);
+  S.timerId = setInterval(() => {
+    S.left--;
+    paintTimer();
+    if (S.left <= 0) endTurn(false);
+  }, 1000);
+
+  cancelAnimationFrame(S.rafId);
+  loop();
+}
+
+function paintTimer() {
+  $('timer').textContent = S.left;
+  $('timer').classList.toggle('hot', S.left <= 4);
+}
+
+function loop() {
+  if (!S.playing) return;
+  const v = rms();
+  const over = Math.max(0, v - CONFIG.NOISE_FLOOR);
+  S.fill += over * 0.5;                 // 灌氣速度
+
+  const pctN = Math.min(1, S.fill / S.need);
+  $('pct').textContent = Math.round(pctN * 100) + '%';
+  $('fill').style.width = (pctN * 100) + '%';
+  $('vol').firstElementChild ? null : null;
+  $('vol').querySelector('i') && ($('vol').querySelector('i').style.width = Math.min(100, v * 260) + '%');
+  $('balloon').style.transform = `scale(${1 + pctN * (CONFIG.BALLOON_MAX_SCALE - 1)})`;
+
+  if (pctN >= 0.75) $('tip').textContent = '快爆了！再吼一下！';
+  if (S.fill >= S.need) { endTurn(true); return; }
+  S.rafId = requestAnimationFrame(loop);
+}
+
+function endTurn(popped) {
+  S.playing = false;
+  clearInterval(S.timerId); S.timerId = null;
+  cancelAnimationFrame(S.rafId);
+
+  const used = (performance.now() - S.t0) / 1000;
+  const pctN = Math.min(1, S.fill / S.need);
+
+  if (popped) {
+    SFX.pop();
+    if (navigator.vibrate) { try { navigator.vibrate([250,80,250]); } catch(_){} }
+    $('balloon').style.display = 'none';
+    $('popFx').classList.add('on');
+    $('tip').textContent = `💥 爆了！用時 ${used.toFixed(1)} 秒`;
+  } else {
+    $('tip').textContent = `時間到！灌到 ${Math.round(pctN*100)}%`;
+  }
+  S.results.push({ name:S.cur.name, emoji:S.cur.emoji, popped, time: used, pct: pctN });
+  setTimeout(nextPlayer, 1600);
+}
+
+/* ---------- 結算：爆的比誰快，沒爆的比誰滿 ---------- */
+function finish() {
+  SFX.done();
+  const sorted = [...S.results].sort((a,b) => {
+    if (a.popped && b.popped) return a.time - b.time;
+    if (a.popped) return -1;
+    if (b.popped) return 1;
+    return b.pct - a.pct;
+  });
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '大聲公排行' : '你的成績';
+  $('board').innerHTML = sorted.map((r,i) => `
+    <div class="row ${i===0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i+1)) : r.emoji}</div>
+      <div class="nm">${r.name}</div>
+      <div class="sc">${r.popped ? '💥 ' + r.time.toFixed(1) + ' 秒' : Math.round(r.pct*100) + '%（沒爆）'}</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('again').onclick = () => { paintStart(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>
