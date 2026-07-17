@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#132312">
+<title>G13 一二三木頭人</title>
+<style>
+:root{
+  --ink:#132312; --ink-2:#1F3A1E; --line:#345C32; --paper:#FDFCF7;
+  --wire:#8BE07C; --spark:#FFD23F; --hot:#FF5C6C; --dim:#94B58F; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:23em;line-height:1.7}
+.err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;
+     background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:320px}
+.chips span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+
+/* 遊戲 */
+#play{padding:10px 12px 12px;gap:9px}
+.hud{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.pill.spark{color:var(--spark)}
+.pill.right{margin-left:auto}
+
+.phase{
+  border-radius:18px;padding:13px;text-align:center;transition:.15s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.phase .em{font-size:34px}
+.phase .txt{font-size:24px}
+.phase.move{background:#1E4230;color:var(--hit)}
+.phase.warn{background:#4A3A15;color:var(--spark)}
+.phase.freeze{background:#4A1720;color:var(--hot)}
+.phase.freeze .em{animation:none}
+.phase.move .em{animation:bounce .6s infinite}
+@keyframes bounce{50%{transform:translateY(-6px)}}
+
+.lens{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#000;
+      box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#cam{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+.lens.hot{outline:5px solid var(--hot);outline-offset:-5px}
+.camNote{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+         color:var(--dim);font-size:14px;font-weight:600;text-align:center;padding:24px;background:#000}
+.camNote.gone{display:none}
+#busted{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+        background:rgba(20,5,8,.75);gap:8px}
+#busted.on{display:flex}
+#busted img{width:78%;border-radius:14px;border:4px solid var(--hot);transform:scaleX(-1)}
+#busted .t{font-size:24px;color:var(--hot);animation:popIn .4s}
+@keyframes popIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+.meter{background:var(--ink-2);border-radius:14px;padding:9px 12px;display:flex;flex-direction:column;gap:6px}
+.meter .head{display:flex;font-size:12px;color:var(--dim);font-weight:500}
+.meter .track{height:11px;background:#0B160A;border-radius:99px;overflow:hidden}
+.meter .fill{height:100%;width:0%;background:var(--wire);border-radius:99px;transition:width .12s}
+.meter .fill.over{background:var(--hot)}
+
+#over{overflow-y:auto}
+.resBox{background:var(--ink-2);border-radius:18px;padding:18px 24px;text-align:center}
+.resBox .n{font-size:52px;color:var(--spark)}
+.resBox .lab{font-size:13px;color:var(--dim);font-weight:500;margin-top:3px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">🤖 1️⃣2️⃣3️⃣ 🗿</div>
+  <h1>G13 <em>一二三木頭人</em></h1>
+  <p class="sub">平板立好當「鬼」，全家站到鏡頭前面。<br>
+  <b style="color:var(--hit)">「動！」</b>→ 用力跳舞扭動！<br>
+  <b style="color:var(--hot)">「木頭人！」</b>→ 全部定格！<br>
+  鏡頭抓到有人在動 → <b>拍照抓包給大家看</b> 📸</p>
+  <div class="chips" id="whoChips"></div>
+  <button class="big" id="go">開始（5 回合）</button>
+  <p class="tiny">🔒 鏡頭畫面只在這台裝置裡比對，不錄影、不外傳。<br>把平板靠在東西上，畫面裡要看得到大家。</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+  <p class="err" id="camErr" style="display:none"></p>
+</section>
+
+<section id="play" class="screen">
+  <div class="hud">
+    <div class="pill">回合 <span id="roundNum">1</span> / 5</div>
+    <div class="pill spark right">📸 抓包 <span id="bustCount">0</span> 次</div>
+  </div>
+
+  <div class="phase move" id="phase">
+    <div class="em" id="phaseEm">💃</div>
+    <div class="txt" id="phaseTxt">動！用力跳！</div>
+  </div>
+
+  <div class="lens" id="lens">
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="camNote" id="camNote">正在打開相機…</div>
+    <div id="busted">
+      <div class="t">📸 抓到有人動了！</div>
+      <img id="bustShot" alt="抓包照片">
+    </div>
+  </div>
+
+  <div class="meter">
+    <div class="head">畫面晃動程度（木頭人時超過線就抓包）</div>
+    <div class="track"><div class="fill" id="mFill"></div></div>
+  </div>
+</section>
+
+<section id="over" class="screen center">
+  <div class="hero" id="overEm">🏆</div>
+  <h2 style="font-size:24px" id="overTitle">過關！</h2>
+  <div class="resBox">
+    <div class="n" id="finBusts">0</div>
+    <div class="lab">總共被抓包幾次</div>
+  </div>
+  <p class="sub" id="overNote"></p>
+  <button class="big" id="again">再玩一次</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+const CONFIG = {
+  ROUNDS: 5,
+  MOVE_MS: [2600, 5200],      // 「動」階段隨機長度
+  WARN_MS: 900,               // 「要喊了…」預告
+  FREEZE_MS: [2800, 4200],    // 木頭人定格時間
+  GRACE_MS: 450,              // 喊完給人反應的緩衝
+  DIFF_W: 64, DIFF_H: 48,     // 比對用縮圖大小
+  CHECK_MS: 120,
+  THRESHOLD: 9,               // 平均像素差超過這個 = 有人在動
+  PERFECT: 0, GOOD: 2,
+};
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+function say(text) {
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW';
+    u.rate = 1.05;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch (_) {}
+}
+const SFX = {
+  move:   () => beep([523,659,784], 0.09, 'triangle', 0.13),
+  warn:   () => beep([880,880], 0.09, 'square', 0.1),
+  freeze: () => beep([220], 0.25, 'sawtooth', 0.14),
+  bust:   () => { beep([1200,800,500], 0.12, 'square', 0.13); },
+  done:   () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  round: 0, busts: 0, phase: 'idle',   // move | warn | freeze
+  camOn: false, prev: null,
+  checkId: null, phaseId: null, graceUntil: 0,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* 玩家名牌（純顯示，這遊戲全家同時上場） */
+$('whoChips').innerHTML = FP.get().map(p => `<span>${p.emoji} ${p.name}</span>`).join('');
+
+/* ---------- 相機 + 畫面差異偵測 ---------- */
+const cam = $('cam');
+const diffA = document.createElement('canvas');
+diffA.width = CONFIG.DIFF_W; diffA.height = CONFIG.DIFF_H;
+const dctx = diffA.getContext('2d', { willReadFrequently:true });
+const shot = document.createElement('canvas');   // 抓包快照用
+
+async function openCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'user' } }, audio: false
+    });
+    cam.srcObject = stream;
+    await cam.play();
+    S.camOn = true;
+    $('camNote').classList.add('gone');
+    return true;
+  } catch (e) {
+    $('camErr').style.display = '';
+    $('camErr').textContent = '打不開相機，請允許權限後重新整理。(' + e.name + ')';
+    show('start');
+    return false;
+  }
+}
+
+/* 回傳平均像素差（0~255） */
+function frameDiff() {
+  if (!cam.videoWidth) return 0;
+  dctx.drawImage(cam, 0, 0, CONFIG.DIFF_W, CONFIG.DIFF_H);
+  const now = dctx.getImageData(0, 0, CONFIG.DIFF_W, CONFIG.DIFF_H).data;
+  if (!S.prev) { S.prev = new Uint8ClampedArray(now); return 0; }
+  let sum = 0;
+  for (let i = 0; i < now.length; i += 4) {
+    const g1 = (now[i] + now[i+1] + now[i+2]) / 3;
+    const g2 = (S.prev[i] + S.prev[i+1] + S.prev[i+2]) / 3;
+    sum += Math.abs(g1 - g2);
+  }
+  S.prev.set(now);
+  return sum / (now.length / 4);
+}
+
+/* ---------- 流程 ---------- */
+async function startGame() {
+  const ok = S.camOn || await openCamera();
+  if (!ok) return;
+  S.round = 0; S.busts = 0;
+  $('bustCount').textContent = '0';
+  show('play');
+  S.prev = null;
+  clearInterval(S.checkId);
+  S.checkId = setInterval(tick, CONFIG.CHECK_MS);
+  nextRound();
+}
+
+function nextRound() {
+  S.round++;
+  if (S.round > CONFIG.ROUNDS) return finish();
+  $('roundNum').textContent = S.round;
+  enterMove();
+}
+
+const rnd = ([a,b]) => a + Math.random() * (b - a);
+
+function enterMove() {
+  S.phase = 'move';
+  setPhase('move', '💃', '動！用力跳！');
+  say('動！');
+  SFX.move();
+  clearTimeout(S.phaseId);
+  S.phaseId = setTimeout(enterWarn, rnd(CONFIG.MOVE_MS));
+}
+function enterWarn() {
+  S.phase = 'warn';
+  setPhase('warn', '👀', '要喊了…');
+  SFX.warn();
+  clearTimeout(S.phaseId);
+  S.phaseId = setTimeout(enterFreeze, CONFIG.WARN_MS);
+}
+function enterFreeze() {
+  S.phase = 'freeze';
+  setPhase('freeze', '🗿', '一二三，木頭人！');
+  say('一二三，木頭人！');
+  SFX.freeze();
+  S.graceUntil = performance.now() + CONFIG.GRACE_MS;
+  S.prev = null;   // 重新基準，別把「動」階段的殘影算進去
+  clearTimeout(S.phaseId);
+  S.phaseId = setTimeout(() => {
+    /* 撐過去了 */
+    beep([659,880], 0.1, 'triangle', 0.14);
+    nextRound();
+  }, rnd(CONFIG.FREEZE_MS));
+}
+
+function setPhase(cls, em, txt) {
+  const p = $('phase');
+  p.className = 'phase ' + cls;
+  $('phaseEm').textContent = em;
+  $('phaseTxt').textContent = txt;
+}
+
+function tick() {
+  if (!S.camOn) return;
+  const d = frameDiff();
+  const pct = Math.min(100, d / (CONFIG.THRESHOLD * 2) * 100);
+  const f = $('mFill');
+  f.style.width = pct + '%';
+  f.classList.toggle('over', d > CONFIG.THRESHOLD);
+
+  if (S.phase === 'freeze' &&
+      performance.now() > S.graceUntil &&
+      d > CONFIG.THRESHOLD) {
+    bust();
+  }
+}
+
+function bust() {
+  S.phase = 'idle';
+  clearTimeout(S.phaseId);
+  S.busts++;
+  $('bustCount').textContent = S.busts;
+  SFX.bust();
+  say('抓到了！');
+  if (navigator.vibrate) { try { navigator.vibrate(200); } catch(_){} }
+
+  /* 抓包快照 */
+  shot.width = cam.videoWidth; shot.height = cam.videoHeight;
+  shot.getContext('2d').drawImage(cam, 0, 0);
+  $('bustShot').src = shot.toDataURL('image/jpeg', 0.7);
+  $('lens').classList.add('hot');
+  $('busted').classList.add('on');
+
+  setTimeout(() => {
+    $('busted').classList.remove('on');
+    $('lens').classList.remove('hot');
+    nextRound();
+  }, 2600);
+}
+
+function finish() {
+  clearInterval(S.checkId); S.checkId = null;
+  clearTimeout(S.phaseId);
+  SFX.done();
+  $('finBusts').textContent = S.busts;
+  if (S.busts <= CONFIG.PERFECT) {
+    $('overEm').textContent = '🏆';
+    $('overTitle').textContent = '完美木頭人！';
+    $('overNote').textContent = '五回合全部撐住，你們是石像等級！';
+  } else if (S.busts <= CONFIG.GOOD) {
+    $('overEm').textContent = '👏';
+    $('overTitle').textContent = '不錯喔！';
+    $('overNote').textContent = '只被抓到幾次，再挑戰一次零失誤？';
+  } else {
+    $('overEm').textContent = '🤣';
+    $('overTitle').textContent = '木頭人大失敗！';
+    $('overNote').textContent = '一直被抓包！剛剛照片裡是誰在動？';
+  }
+  show('over');
+}
+
+$('go').onclick = () => { beep([440], 0.06); say(''); startGame(); };
+$('again').onclick = () => show('start');
+</script>
+</body>
+</html>

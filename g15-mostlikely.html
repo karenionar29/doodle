@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2B1A0A">
+<title>G15 就是你！</title>
+<style>
+:root{
+  --ink:#2B1A0A; --ink-2:#443014; --line:#6B4D24; --paper:#FDFCF7;
+  --wire:#FFC94D; --spark:#FFD23F; --hot:#FF5C6C; --dim:#C0A87E; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:46px}
+h1{font-size:25px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:13px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.who{font-size:30px;color:var(--spark)}
+
+.qCard{background:var(--ink-2);border-radius:22px;padding:22px 20px;max-width:330px;
+       display:flex;flex-direction:column;gap:8px;align-items:center}
+.qCard .lead{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.18em}
+.qCard .q{font-size:28px;line-height:1.4;text-align:center}
+.qNum{font-size:12px;color:var(--dim);font-weight:500}
+
+.voteGrid{display:flex;flex-direction:column;gap:9px;width:min(320px,88vw)}
+.voteGrid button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+                 padding:15px;font-size:18px;transition:.12s;text-align:left}
+.voteGrid button:active{transform:scale(.96)}
+
+/* 揭曉 */
+.bars{display:flex;flex-direction:column;gap:8px;width:min(320px,88vw)}
+.bRow{display:flex;align-items:center;gap:9px}
+.bRow .nm{width:96px;font-size:14px;text-align:left;white-space:nowrap;overflow:hidden}
+.bRow .track{flex:1;height:20px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.bRow .fill{height:100%;width:0%;background:var(--wire);border-radius:99px;transition:width .7s cubic-bezier(.2,.9,.3,1)}
+.bRow.top .fill{background:var(--hit)}
+.bRow .n{width:22px;font-size:15px;text-align:right}
+.callout{font-size:30px;color:var(--spark);animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+#over{overflow-y:auto}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">👉 😆</div>
+  <h1>G15 <em>就是你！</em></h1>
+  <p class="sub">機器人問：「<b>誰最會賴床？</b>」<br>
+  每個人<b>偷偷投票</b>選一個人（投自己也可以）——<br>
+  然後揭曉：<b>就是你！</b> 😂<br>五題定勝負，看誰是「被點名王」。</p>
+  <button class="big" id="go">開始（2 人以上，3 人更好玩）</button>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<!-- 出題 -->
+<section id="ask" class="screen center">
+  <div class="qNum" id="qNum">第 1 / 5 題</div>
+  <div class="qCard">
+    <div class="lead">誰 最 有 可 能</div>
+    <div class="q" id="qTxt">最會賴床？</div>
+  </div>
+  <p class="sub">大家想好心中的答案，<br>然後把平板傳下去偷偷投票。</p>
+  <button class="big" id="askGo">開始投票</button>
+</section>
+
+<!-- 投票（傳平板） -->
+<section id="vote" class="screen center">
+  <div class="who" id="voteWho">George 投票</div>
+  <p class="sub" id="voteQ">誰最會賴床？</p>
+  <div class="voteGrid" id="voteGrid"></div>
+</section>
+
+<!-- 揭曉 -->
+<section id="reveal" class="screen center">
+  <p class="sub" id="revQ">誰最會賴床？</p>
+  <div class="bars" id="bars"></div>
+  <div class="callout" id="callout">👉 就是你！</div>
+  <button class="big" id="nextQ">下一題 →</button>
+</section>
+
+<section id="over" class="screen center">
+  <div class="hero">👑</div>
+  <h2 style="font-size:24px">被點名王</h2>
+  <div class="board" id="board"></div>
+  <button class="big" id="again">再來五題</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+const CONFIG = { ROUNDS: 5 };
+
+const QUESTIONS = [
+  '最會賴床？','最愛吃零食？','最容易先笑出來？','最會撒嬌？','玩遊戲最認真（輸了會生氣）？',
+  '最怕蟑螂？','最會找到不見的東西？','房間最亂？','最愛看電視？','洗澡洗最久？',
+  '最會講笑話？','吃飯最慢？','最容易生氣又最快消氣？','最會畫畫？','跑最快？',
+  '講話聲音最大？','最愛問「為什麼」？','最會模仿別人？','睡覺會打呼？','最愛照鏡子？',
+  '出門準備最久？','最勇敢？','最怕打針？','最會安慰人？','最健忘？',
+  '最愛唱歌？','跳舞最好笑？','最會吹牛？','最挑食？','最愛喝飲料？',
+  '未來最可能當大明星？','最可能變成大富翁？','最可能當太空人？','最可能忘記帶鑰匙？','最可能把手機掉進馬桶？',
+  '最可能跟狗聊天聊很久？','最可能在電影院睡著？','最可能笑到噴飯？','最可能踩到香蕉皮滑倒？','最可能變成超級英雄？',
+  '打電動最強？','最會躲貓貓？','猜拳最常輸？','最會做鬼臉？','最愛抱抱？',
+  '放屁最臭還裝沒事？','最會找藉口？','最愛熬夜？','起床氣最重？','最常講到一半忘記要說什麼？',
+  '最可能當老師？','最會照顧人？','最常說「等一下」結果等超久？','吃冰吃最快？','最怕黑？',
+  '笑聲最好認（一聽就知道是他）？','最愛買玩具？','寫功課最會拖時間？','最常唱錯歌詞還唱很大聲？','最可能一秒睡著？',
+];
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  go:   () => beep([392,523], 0.1, 'triangle', 0.12),
+  vote: () => beep([700,900], 0.08, 'sine', 0.1),
+  drum: () => beep([220,220,220], 0.09, 'square', 0.09),
+  tada: () => beep([523,659,784,1047], 0.11, 'triangle', 0.18),
+  done: () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  players: [], deck: [],
+  round: 0, q: '',
+  voteAt: 0, votes: [],
+  tally: [],           // 每人累計被點名次數
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+function shuffle(a) {
+  for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function newGame() {
+  S.players = FP.get();
+  if (S.players.length < 2) { alert('這個遊戲要 2 人以上。回遊戲間按「改玩家」加人。'); return; }
+  S.deck = shuffle([...QUESTIONS]);
+  S.round = 0;
+  S.tally = new Array(S.players.length).fill(0);
+  nextQuestion();
+}
+
+function nextQuestion() {
+  S.round++;
+  if (S.round > CONFIG.ROUNDS) return finish();
+  if (!S.deck.length) S.deck = shuffle([...QUESTIONS]);
+  S.q = S.deck.pop();
+  S.voteAt = 0;
+  S.votes = new Array(S.players.length).fill(-1);
+  $('qNum').textContent = `第 ${S.round} / ${CONFIG.ROUNDS} 題`;
+  $('qTxt').textContent = S.q;
+  show('ask');
+  SFX.go();
+}
+
+$('askGo').onclick = showVote;
+
+function showVote() {
+  const p = S.players[S.voteAt];
+  $('voteWho').textContent = `${p.emoji} ${p.name} 投票`;
+  $('voteQ').textContent = `誰最有可能——${S.q}`;
+  $('voteGrid').innerHTML = S.players.map((q, i) =>
+    `<button data-i="${i}">${q.emoji} ${q.name}${i === S.voteAt ? '（我自己）' : ''}</button>`).join('');
+  document.querySelectorAll('#voteGrid button').forEach(b =>
+    b.addEventListener('click', () => {
+      S.votes[S.voteAt] = +b.dataset.i;
+      SFX.vote();
+      S.voteAt++;
+      if (S.voteAt >= S.players.length) doReveal();
+      else showVote();
+    }));
+  show('vote');
+}
+
+function doReveal() {
+  const cnt = new Array(S.players.length).fill(0);
+  S.votes.forEach(v => { if (v >= 0) cnt[v]++; });
+  const most = Math.max(...cnt);
+  const winners = S.players.filter((_, i) => cnt[i] === most && most > 0);
+  S.players.forEach((_, i) => { if (cnt[i] === most && most > 0) S.tally[i]++; });
+
+  $('revQ').textContent = `誰最有可能——${S.q}`;
+  /* 長條動畫 */
+  const maxN = Math.max(1, most);
+  $('bars').innerHTML = S.players.map((p, i) => `
+    <div class="bRow ${cnt[i] === most && most > 0 ? 'top' : ''}">
+      <div class="nm">${p.emoji} ${p.name}</div>
+      <div class="track"><div class="fill" data-w="${cnt[i]/maxN*100}"></div></div>
+      <div class="n">${cnt[i]}</div>
+    </div>`).join('');
+  $('callout').style.visibility = 'hidden';
+  $('nextQ').textContent = S.round >= CONFIG.ROUNDS ? '看誰是被點名王 →' : '下一題 →';
+  show('reveal');
+  SFX.drum();
+
+  setTimeout(() => {
+    document.querySelectorAll('#bars .fill').forEach(f => f.style.width = f.dataset.w + '%');
+  }, 120);
+  setTimeout(() => {
+    $('callout').style.visibility = '';
+    $('callout').textContent = winners.length === 1
+      ? `👉 ${winners[0].emoji} ${winners[0].name}，就是你！`
+      : `👉 ${winners.map(w => w.emoji + w.name).join('、')} 平手！都是你們！`;
+    SFX.tada();
+  }, 950);
+}
+
+$('nextQ').onclick = nextQuestion;
+
+function finish() {
+  SFX.done();
+  const idx = S.players.map((_, i) => i).sort((a,b) => S.tally[b] - S.tally[a]);
+  $('board').innerHTML = idx.map((i, k) => `
+    <div class="row ${k===0 && S.tally[i] > 0 ? 'top' : ''}">
+      <div class="rk">${['👑','🥈','🥉'][k] || (k+1)}</div>
+      <div class="nm">${S.players[i].emoji} ${S.players[i].name}</div>
+      <div class="sc">被點名 ${S.tally[i]} 次</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('go').onclick = () => { beep([440], 0.06); newGame(); };
+$('again').onclick = newGame;
+</script>
+</body>
+</html>

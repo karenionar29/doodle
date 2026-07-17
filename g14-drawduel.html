@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1C102B">
+<title>G14 畫畫對決</title>
+<style>
+:root{
+  --ink:#1C102B; --ink-2:#2E1B45; --line:#4A2E6B; --paper:#FDFCF7;
+  --wire:#C08BFF; --spark:#FFD23F; --hot:#FF5C6C; --dim:#A48FC0; --hit:#4ADE80;
+  --pA:#277DA1; --pB:#E63946;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:23em;line-height:1.7}
+.box{width:min(320px,90vw);background:var(--ink-2);border-radius:16px;padding:13px;
+     display:flex;flex-direction:column;gap:9px}
+.box h3{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:.08em;text-align:left}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:#140A20;border:2px solid var(--line);border-radius:99px;
+              padding:8px 13px;font-size:13px;color:var(--dim);transition:.1s}
+.chips button.on{border-color:var(--wire);color:var(--wire);background:#3A2358}
+
+#loading{justify-content:center;align-items:center;text-align:center;gap:16px;padding:30px}
+.bar{width:min(280px,80vw);height:10px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0%;background:var(--wire);transition:width .3s}
+#loadNote{color:var(--dim);font-size:13px;font-weight:500;line-height:1.7;max-width:22em}
+.err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;text-align:left;
+     background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
+
+#relay{justify-content:center;align-items:center;text-align:center;gap:14px;padding:26px}
+#relayTitle{font-size:30px;color:var(--spark)}
+#relayVs{font-size:19px;color:var(--dim);font-weight:500}
+
+/* 對決場：上下兩塊，上面轉 180 面對面 */
+#duel{gap:5px;padding:5px}
+.half{flex:1;min-height:0;display:flex;flex-direction:column;gap:4px;border-radius:16px;
+      padding:5px;background:var(--ink-2)}
+.half.flip{transform:rotate(180deg)}
+.half .bar2{display:flex;align-items:center;gap:6px}
+.half .nameTag{font-size:13px;padding:4px 10px;border-radius:99px;color:#fff}
+.half .wordTag{flex:1;text-align:center;font-size:17px;background:#140A20;border-radius:99px;padding:4px}
+.half .wordTag b{color:var(--spark)}
+.half .seen{font-size:11px;color:var(--dim);font-weight:500;white-space:nowrap}
+.half .sheet{position:relative;flex:1;min-height:0;background:var(--paper);border-radius:12px;overflow:hidden}
+.half canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.half .mini{display:flex;gap:5px}
+.half .mini button{flex:1;background:#140A20;border:2px solid var(--line);border-radius:10px;
+                   padding:8px 0;font-size:13px;color:var(--dim)}
+.half .mini button:active{transform:scale(.95)}
+.half.winner .sheet{outline:5px solid var(--hit);outline-offset:-5px}
+
+#midbar{flex:none;display:flex;align-items:center;justify-content:center;gap:10px}
+#midbar .pill{background:var(--ink-2);border-radius:99px;padding:6px 14px;font-size:14px}
+#midbar .pill b{color:var(--spark)}
+
+#roundFx{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+         gap:10px;z-index:9;background:rgba(28,16,43,.93);pointer-events:none;text-align:center;padding:20px}
+#roundFx.on{display:flex}
+#fxBig{font-size:64px;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+#fxTxt{font-size:28px;color:var(--spark)}
+#fxSub{font-size:15px;color:var(--dim);font-weight:500}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+#over{overflow-y:auto}
+.final{display:flex;align-items:center;gap:16px;background:var(--ink-2);border-radius:18px;padding:20px 26px}
+.final .n{font-size:42px}
+.final .lab{font-size:13px;color:var(--dim);font-weight:500;margin-top:2px}
+.final .vs{font-size:16px;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">✏️ ⚔️ ✏️</div>
+  <h1>G14 <em>畫畫對決</em></h1>
+  <p class="sub">兩個人<b>同一題、同時畫</b>，平板放中間面對面。<br>
+  AI 裁判同時看兩張畫——<b>誰的畫先被認出來，誰贏！</b><br>三戰兩勝。</p>
+  <div class="box">
+    <h3>⚔️ 誰對決？（選 2 個）</h3>
+    <div class="chips" id="who"></div>
+  </div>
+  <button class="big" id="go">開戰！</button>
+  <p class="tiny">💡 畫醜沒關係，AI 認得出來就好——比的是「畫重點」的速度。</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="loading" class="screen">
+  <div class="hero">🤖</div>
+  <div style="font-size:19px">AI 裁判正在搬進來…</div>
+  <div class="bar"><i id="barFill"></i></div>
+  <p id="loadNote">第一次要下載大腦（約 20MB），之後秒開。</p>
+</section>
+
+<section id="relay" class="screen">
+  <div class="hero">⚔️</div>
+  <div id="relayTitle">第 1 回合</div>
+  <div id="relayVs">🧒 George　vs　🧔 爸爸</div>
+  <p class="sub">平板放中間，兩人面對面坐好。<br>按下開始會倒數，題目同時出現！</p>
+  <button class="big" id="relayGo">開始倒數</button>
+</section>
+
+<section id="duel" class="screen">
+  <div class="half flip" id="halfA">
+    <div class="bar2">
+      <div class="nameTag" id="nameA" style="background:var(--pA)">🧒 George</div>
+      <div class="wordTag" id="wordA">準備…</div>
+      <div class="seen" id="seenA">AI：…</div>
+    </div>
+    <div class="sheet"><canvas id="padA"></canvas></div>
+    <div class="mini">
+      <button data-undo="A">↩️ 上一步</button>
+      <button data-wipe="A">🗑️ 重畫</button>
+    </div>
+  </div>
+
+  <div id="midbar">
+    <div class="pill" id="scoreMid">0 : 0</div>
+    <div class="pill">回合 <b id="roundMid">1</b> / 3</div>
+  </div>
+
+  <div class="half" id="halfB">
+    <div class="bar2">
+      <div class="nameTag" id="nameB" style="background:var(--pB)">🧔 爸爸</div>
+      <div class="wordTag" id="wordB">準備…</div>
+      <div class="seen" id="seenB">AI：…</div>
+    </div>
+    <div class="sheet"><canvas id="padB"></canvas></div>
+    <div class="mini">
+      <button data-undo="B">↩️ 上一步</button>
+      <button data-wipe="B">🗑️ 重畫</button>
+    </div>
+  </div>
+</section>
+
+<div id="roundFx">
+  <div id="fxBig">3</div>
+  <div id="fxTxt"></div>
+  <div id="fxSub"></div>
+</div>
+
+<section id="over" class="screen center">
+  <div class="hero">🏆</div>
+  <h2 style="font-size:25px" id="overTitle">勝者！</h2>
+  <div class="final">
+    <div><div class="n" id="finA">0</div><div class="lab" id="finAn">A</div></div>
+    <div class="vs">:</div>
+    <div><div class="n" id="finB">0</div><div class="lab" id="finBn">B</div></div>
+  </div>
+  <button class="big" id="again">再戰一場</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script type="module">
+const CONFIG = {
+  LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
+  MODEL: 'Xenova/quickdraw-mobilevit-small',
+  PAD_RES: 480, BRUSH: 16, CROP_PAD: 8, MIN_BOX: 22,
+  INFER_MS: 420,
+  ROUNDS: 3,
+  /* 難度 → 裁判對這個玩家多好說話 */
+  JUDGE: { easy:{topN:2,conf:0.22}, normal:{topN:1,conf:0.30}, hard:{topN:1,conf:0.42} },
+};
+
+const WORDS = {
+  'cat':'貓','dog':'狗','fish':'魚','bird':'鳥','snake':'蛇','spider':'蜘蛛',
+  'elephant':'大象','lion':'獅子','pig':'豬','cow':'牛','horse':'馬','rabbit':'兔子',
+  'duck':'鴨子','frog':'青蛙','owl':'貓頭鷹','penguin':'企鵝','butterfly':'蝴蝶',
+  'bee':'蜜蜂','ant':'螞蟻','snail':'蝸牛','crab':'螃蟹','octopus':'章魚','shark':'鯊魚',
+  'whale':'鯨魚','dolphin':'海豚','giraffe':'長頸鹿','zebra':'斑馬','panda':'熊貓','swan':'天鵝',
+  'apple':'蘋果','banana':'香蕉','strawberry':'草莓','grapes':'葡萄','watermelon':'西瓜',
+  'pineapple':'鳳梨','carrot':'紅蘿蔔','mushroom':'蘑菇','corn':'玉米',
+  'bread':'麵包','cake':'蛋糕','donut':'甜甜圈','cookie':'餅乾','pizza':'披薩',
+  'hamburger':'漢堡','hot dog':'熱狗','ice cream':'冰淇淋','lollipop':'棒棒糖','teapot':'茶壺',
+  'car':'汽車','bus':'公車','truck':'卡車','train':'火車','bicycle':'腳踏車',
+  'airplane':'飛機','helicopter':'直升機','rocket':'火箭','sailboat':'帆船',
+  'ambulance':'救護車','fire truck':'消防車','police car':'警車','hot air balloon':'熱氣球',
+  'sun':'太陽','moon':'月亮','star':'星星','cloud':'雲','rain':'雨','rainbow':'彩虹',
+  'lightning':'閃電','snowflake':'雪花','tornado':'龍捲風','fire':'火',
+  'tree':'樹','flower':'花','leaf':'葉子','cactus':'仙人掌','mountain':'山','beach':'海灘',
+  'house':'房子','door':'門','window':'窗戶','key':'鑰匙','ladder':'梯子',
+  'chair':'椅子','table':'桌子','bed':'床','couch':'沙發','lamp':'檯燈',
+  'clock':'時鐘','television':'電視','laptop':'筆電','telephone':'電話',
+  'light bulb':'電燈泡','candle':'蠟燭','fan':'電風扇','broom':'掃把','bucket':'水桶',
+  'toothbrush':'牙刷','umbrella':'雨傘','pillow':'枕頭','vase':'花瓶',
+  'fork':'叉子','spoon':'湯匙','knife':'刀子','scissors':'剪刀','hammer':'鎚子',
+  'eye':'眼睛','ear':'耳朵','nose':'鼻子','mouth':'嘴巴','hand':'手','foot':'腳',
+  'face':'臉','smiley face':'笑臉','t-shirt':'T恤','pants':'褲子','shoe':'鞋子',
+  'hat':'帽子','crown':'皇冠','sunglasses':'太陽眼鏡','eyeglasses':'眼鏡',
+  'basketball':'籃球','soccer ball':'足球','baseball':'棒球','guitar':'吉他','piano':'鋼琴',
+  'drums':'鼓','book':'書','pencil':'鉛筆','camera':'相機','headphones':'耳機',
+  'kite':'風箏','balloon':'氣球','castle':'城堡','bridge':'橋','windmill':'風車',
+  'lighthouse':'燈塔','tent':'帳篷','sword':'劍','ghost':'鬼','snowman':'雪人',
+  'robot':'機器人','alien':'外星人','skull':'骷髏頭','diamond':'鑽石','map':'地圖','flashlight':'手電筒',
+};
+
+const WORKER_SRC = `
+import { pipeline, RawImage, env } from '${CONFIG.LIB}';
+env.allowLocalModels = false;
+let clf = null;
+self.onmessage = async (e) => {
+  const m = e.data;
+  if (m.type === 'init') {
+    try {
+      clf = await pipeline('image-classification', m.model, {
+        quantized: false,
+        progress_callback: (p) => {
+          if (p.status === 'progress' && typeof p.progress === 'number')
+            self.postMessage({ type:'progress', progress: p.progress });
+        }
+      });
+      self.postMessage({ type:'ready', labels: Object.values(clf.model.config.id2label || {}) });
+    } catch (err) { self.postMessage({ type:'error', message: String(err && err.message || err) }); }
+    return;
+  }
+  if (m.type === 'classify' && clf) {
+    try {
+      const gray = new Uint8ClampedArray(m.data.length / 4);
+      for (let i = 0; i < gray.length; ++i) gray[i] = m.data[i * 4 + 3];
+      const img = new RawImage(gray, m.w, m.h, 1);
+      const out = await clf(img, { topk: 4 });
+      self.postMessage({ type:'result', out, tag: m.tag, seq: m.seq });
+    } catch (err) { self.postMessage({ type:'error', message: String(err && err.message || err) }); }
+  }
+};
+`;
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  cd:   () => beep([660], 0.09, 'square', 0.09),
+  go:   () => beep([990], 0.16, 'square', 0.12),
+  win:  () => beep([659,880,1175], 0.1, 'triangle', 0.17),
+  done: () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+/* ---------- 畫板工廠：一人一套 ---------- */
+function makePad(canvasId, flip) {
+  const el = document.getElementById(canvasId);
+  const ctx = el.getContext('2d', { willReadFrequently:true });
+  el.width = el.height = CONFIG.PAD_RES;
+  const ai = document.createElement('canvas');
+  ai.width = ai.height = CONFIG.PAD_RES;
+  const aic = ai.getContext('2d', { willReadFrequently:true });
+
+  const P = { el, ctx, aic, flip, strokes: [], cur: null, live: false };
+
+  function blank() {
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,el.width,el.height);
+    aic.clearRect(0,0,ai.width,ai.height);
+  }
+  function seg(a, b) {
+    [ [ctx,'#101820'], [aic,'#000'] ].forEach(([c, col]) => {
+      c.lineCap='round'; c.lineJoin='round'; c.lineWidth = CONFIG.BRUSH;
+      c.strokeStyle = col;
+      if (c === aic) { c.shadowColor='rgba(0,0,0,.9)'; c.shadowBlur = 1; }
+      c.beginPath(); c.moveTo(a.x,a.y); c.lineTo(b.x,b.y); c.stroke();
+    });
+  }
+  function replay() {
+    blank();
+    P.strokes.forEach(st => {
+      for (let i=1;i<st.length;i++) seg(st[i-1], st[i]);
+      if (st.length === 1) seg(st[0], { x:st[0].x+0.01, y:st[0].y });
+    });
+  }
+  function xy(e) {
+    const r = el.getBoundingClientRect();
+    let x = (e.clientX - r.left) / r.width;
+    let y = (e.clientY - r.top) / r.height;
+    if (P.flip) { x = 1 - x; y = 1 - y; }
+    return { x: x * el.width, y: y * el.height };
+  }
+  el.addEventListener('pointerdown', (e) => {
+    if (!P.live) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    P.cur = [xy(e)];
+    seg(P.cur[0], { x:P.cur[0].x+0.01, y:P.cur[0].y });
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!P.cur) return;
+    e.preventDefault();
+    const p = xy(e);
+    seg(P.cur[P.cur.length-1], p);
+    P.cur.push(p);
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev =>
+    el.addEventListener(ev, () => { if (P.cur) { P.strokes.push(P.cur); P.cur = null; } }));
+
+  P.blank = blank;
+  P.clear = () => { P.strokes = []; P.cur = null; blank(); };
+  P.undo  = () => { if (P.strokes.length) { P.strokes.pop(); replay(); } };
+  P.crop  = () => {
+    let bb = null;
+    const r = CONFIG.BRUSH / 2;
+    P.strokes.forEach(st => st.forEach(p => {
+      if (!bb) bb = [p.x-r,p.y-r,p.x+r,p.y+r];
+      else bb = [Math.min(bb[0],p.x-r), Math.min(bb[1],p.y-r),
+                 Math.max(bb[2],p.x+r), Math.max(bb[3],p.y+r)];
+    }));
+    if (!bb) return null;
+    const [x1,y1,x2,y2] = bb;
+    let left=x1, top=y1;
+    const w=x2-x1, h=y2-y1;
+    if (Math.max(w,h) < CONFIG.MIN_BOX) return null;
+    let size = 2*CONFIG.CROP_PAD;
+    if (w>=h) { size+=w; top = Math.max(top-(w-h)/2, 0); }
+    else      { size+=h; left = Math.max(left-(h-w)/2, 0); }
+    return aic.getImageData(Math.round(left-CONFIG.CROP_PAD), Math.round(top-CONFIG.CROP_PAD),
+                            Math.round(size), Math.round(size));
+  };
+  blank();
+  return P;
+}
+
+/* ---------- 狀態 ---------- */
+const S = {
+  picks: new Set([0,1]),
+  A: null, B: null,           // 玩家資料
+  padA: null, padB: null,
+  round: 0, winsA: 0, winsB: 0,
+  word: null, deck: [],
+  live: false, seq: 0, busy: false, turnTag: 'a',
+  inferId: null, ready: false,
+};
+let worker = null, LABELS = new Set();
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開場：選 2 人 ---------- */
+function paintStart() {
+  const ps = FP.get();
+  if (!ps[1]) S.picks = new Set([0]);
+  $('who').innerHTML = ps.map((p, i) =>
+    `<button data-i="${i}" class="${S.picks.has(i) ? 'on' : ''}">${p.emoji} ${p.name}</button>`).join('');
+  document.querySelectorAll('#who button').forEach(b =>
+    b.addEventListener('click', () => {
+      const i = +b.dataset.i;
+      if (S.picks.has(i)) S.picks.delete(i);
+      else { if (S.picks.size >= 2) S.picks.delete([...S.picks][0]); S.picks.add(i); }
+      paintStart();
+      beep([700], 0.04, 'sine', 0.05);
+    }));
+}
+
+$('go').onclick = () => {
+  if (S.picks.size !== 2) { beep([300], 0.12); return; }
+  const ps = FP.get();
+  const [a, b] = [...S.picks].sort((x,y)=>x-y);
+  S.A = ps[a]; S.B = ps[b];
+  beep([440], 0.06);
+  if (S.ready) startMatch();
+  else { show('loading'); bootWorker(); }
+};
+
+/* ---------- Worker ---------- */
+function bootWorker() {
+  const url = URL.createObjectURL(new Blob([WORKER_SRC], { type:'text/javascript' }));
+  worker = new Worker(url, { type:'module' });
+  worker.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === 'progress') $('barFill').style.width = Math.min(99,m.progress).toFixed(0)+'%';
+    else if (m.type === 'ready') {
+      LABELS = new Set(m.labels.map(s => String(s).toLowerCase().trim()));
+      S.ready = true;
+      startMatch();
+    }
+    else if (m.type === 'result') {
+      S.busy = false;
+      if (m.seq === S.seq && S.live) judge(m.tag, m.out);
+    }
+    else if (m.type === 'error') { S.busy = false; fail(m.message); }
+  };
+  worker.onerror = (e) => fail(e.message || '載不到裁判的大腦');
+  worker.postMessage({ type:'init', model: CONFIG.MODEL });
+}
+function fail(msg) {
+  show('loading');
+  $('loadNote').outerHTML =
+    `<div class="err"><b>裁判搬不進來</b><br>${msg}<br><br>需要能連到 cdn.jsdelivr.net 和 huggingface.co。</div>`;
+}
+
+function buildDeck() {
+  const d = Object.entries(WORDS)
+    .filter(([en]) => LABELS.has(en))
+    .map(([en, zh]) => ({ en, zh }));
+  for (let i=d.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+/* ---------- 比賽流程 ---------- */
+function startMatch() {
+  if (!S.padA) {
+    S.padA = makePad('padA', true);
+    S.padB = makePad('padB', false);
+    document.querySelectorAll('[data-undo]').forEach(b =>
+      b.addEventListener('click', () => (b.dataset.undo === 'A' ? S.padA : S.padB).undo()));
+    document.querySelectorAll('[data-wipe]').forEach(b =>
+      b.addEventListener('click', () => (b.dataset.wipe === 'A' ? S.padA : S.padB).clear()));
+  }
+  S.round = 0; S.winsA = 0; S.winsB = 0;
+  S.deck = buildDeck();
+  if (!S.deck.length) { fail('題庫跟裁判認得的類別對不起來。'); return; }
+  $('nameA').textContent = `${S.A.emoji} ${S.A.name}`;
+  $('nameB').textContent = `${S.B.emoji} ${S.B.name}`;
+  nextRound();
+}
+
+function nextRound() {
+  S.round++;
+  if (S.round > CONFIG.ROUNDS || S.winsA === 2 || S.winsB === 2) return finish();
+  $('relayTitle').textContent = `第 ${S.round} 回合`;
+  $('relayVs').textContent = `${S.A.emoji} ${S.A.name}　vs　${S.B.emoji} ${S.B.name}`;
+  show('relay');
+}
+
+$('relayGo').onclick = () => {
+  show('duel');
+  S.padA.clear(); S.padB.clear();
+  S.padA.live = false; S.padB.live = false;
+  paintMid();
+  $('wordA').textContent = '準備…';
+  $('wordB').textContent = '準備…';
+  $('seenA').textContent = 'AI：…';
+  $('seenB').textContent = 'AI：…';
+  $('halfA').classList.remove('winner');
+  $('halfB').classList.remove('winner');
+
+  /* 倒數 3 2 1 */
+  let n = 3;
+  const fx = $('roundFx');
+  $('fxTxt').textContent = ''; $('fxSub').textContent = '';
+  $('fxBig').textContent = n;
+  fx.classList.add('on');
+  SFX.cd();
+  const cd = setInterval(() => {
+    n--;
+    if (n > 0) { $('fxBig').textContent = n; SFX.cd(); }
+    else {
+      clearInterval(cd);
+      fx.classList.remove('on');
+      beginDraw();
+    }
+  }, 750);
+};
+
+function beginDraw() {
+  if (!S.deck.length) S.deck = buildDeck();
+  S.word = S.deck.pop();
+  $('wordA').innerHTML = `畫 <b>${S.word.zh}</b>`;
+  $('wordB').innerHTML = `畫 <b>${S.word.zh}</b>`;
+  S.padA.live = true; S.padB.live = true;
+  S.live = true;
+  S.turnTag = 'a';
+  SFX.go();
+  clearInterval(S.inferId);
+  S.inferId = setInterval(pump, CONFIG.INFER_MS);
+}
+
+function pump() {
+  if (!S.live || S.busy) return;
+  const tag = S.turnTag;
+  S.turnTag = (tag === 'a') ? 'b' : 'a';
+  const pad = tag === 'a' ? S.padA : S.padB;
+  const img = pad.crop();
+  if (!img) return;
+  S.busy = true; S.seq++;
+  worker.postMessage({ type:'classify', data:img.data, w:img.width, h:img.height, tag, seq:S.seq },
+                     [img.data.buffer]);
+}
+
+function judge(tag, out) {
+  if (!S.live || !Array.isArray(out) || !out.length) return;
+  const who = tag === 'a' ? S.A : S.B;
+  const seenEl = $(tag === 'a' ? 'seenA' : 'seenB');
+  const topEn = String(out[0].label).toLowerCase().trim();
+  seenEl.textContent = 'AI：' + (WORDS[topEn] || topEn);
+
+  const J = CONFIG.JUDGE[who.level] || CONFIG.JUDGE.normal;
+  const rank = out.findIndex(r => String(r.label).toLowerCase().trim() === S.word.en);
+  if (rank >= 0 && rank < J.topN && out[rank].score >= J.conf) roundWin(tag);
+}
+
+function roundWin(tag) {
+  S.live = false;
+  S.padA.live = false; S.padB.live = false;
+  clearInterval(S.inferId); S.inferId = null;
+  const who = tag === 'a' ? S.A : S.B;
+  if (tag === 'a') S.winsA++; else S.winsB++;
+  $(tag === 'a' ? 'halfA' : 'halfB').classList.add('winner');
+  paintMid();
+  SFX.win();
+
+  const fx = $('roundFx');
+  $('fxBig').textContent = who.emoji;
+  $('fxTxt').textContent = `${who.name} 這回合贏了！`;
+  $('fxSub').textContent = `AI 認出了他畫的「${S.word.zh}」`;
+  fx.classList.add('on');
+  setTimeout(() => {
+    fx.classList.remove('on');
+    nextRound();
+  }, 2000);
+}
+
+function paintMid() {
+  $('scoreMid').textContent = `${S.winsA} : ${S.winsB}`;
+  $('roundMid').textContent = Math.min(S.round, CONFIG.ROUNDS);
+}
+
+function finish() {
+  SFX.done();
+  const aWin = S.winsA > S.winsB;
+  const tie = S.winsA === S.winsB;
+  $('overTitle').textContent = tie ? '平手！'
+    : `🏆 ${(aWin ? S.A : S.B).emoji} ${(aWin ? S.A : S.B).name} 獲勝！`;
+  $('finA').textContent = S.winsA;
+  $('finB').textContent = S.winsB;
+  $('finAn').textContent = `${S.A.emoji} ${S.A.name}`;
+  $('finBn').textContent = `${S.B.emoji} ${S.B.name}`;
+  show('over');
+}
+
+$('again').onclick = () => { paintStart(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>
