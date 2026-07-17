@@ -56,6 +56,9 @@ h1 em{font-style:normal;color:var(--wire)}
 #ring.danger{border-color:var(--hot)}
 #ball{position:absolute;width:44px;height:44px;font-size:38px;line-height:44px;text-align:center;
       will-change:transform;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+#star{position:absolute;width:36px;height:36px;font-size:30px;line-height:36px;text-align:center;
+      animation:twinkle .9s ease-in-out infinite}
+@keyframes twinkle{50%{transform:scale(1.25);filter:brightness(1.4)}}
 
 #fall{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
       gap:8px;z-index:9;background:rgba(26,16,48,.94);text-align:center;padding:20px}
@@ -79,8 +82,8 @@ h1 em{font-style:normal;color:var(--wire)}
   <div class="hero">🥚 ⚖️</div>
   <h1>G20 <em>平衡大師</em></h1>
   <p class="sub"><b>平板平拿在手上</b>，用傾斜控制蛋蛋——<br>
-  別讓它滾出圈圈！<br>
-  圈圈會<b>越縮越小</b>，看誰撐最久。</p>
+  別讓它滾出圈圈！會有<b>陣風</b>亂吹蛋，<br>
+  圈圈越縮越小，<b>滾去吃 ⭐ 圈圈會變大</b>。看誰撐最久。</p>
   <div class="pick" id="pickBox"></div>
   <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
   <p class="err" id="senErr" style="display:none">這台裝置沒有傾斜感應器（電腦玩不了這款），請用手機或平板。</p>
@@ -100,6 +103,7 @@ h1 em{font-style:normal;color:var(--wire)}
       <div class="pill">⏱ <b id="pTime">0.0</b> 秒</div>
     </div>
     <div id="ring"></div>
+    <div id="star" style="display:none">⭐</div>
     <div id="ball">🥚</div>
   </div>
 </section>
@@ -126,6 +130,12 @@ const CONFIG = {
   RING_START: 0.92,          // 圈圈起始（相對短邊）
   RING_MIN: 0.30,
   SHRINK_PER_S: 0.022,       // 每秒縮多少
+  /* 反耍賴：就算平板放桌上，蛋也會被「風」吹走 */
+  GUST_MS: [1300, 2600],     // 每隔多久吹一陣
+  GUST_BASE: 1.6, GUST_GROW: 0.07,   // 風力隨時間變強
+  /* 星星：滾過去吃掉 → 圈圈變大一點 */
+  STAR_BONUS: 0.09,          // 吃一顆補回的圈圈（相對短邊）
+  STAR_GRAB: 36,
 };
 
 let ac = null;
@@ -157,6 +167,7 @@ const S = {
   sensorOn: false, tiltX: 0, tiltY: 0, zeroX: 0, zeroY: 0,
   x: 0, y: 0, vx: 0, vy: 0,
   t0: 0, ringR: 0, playing: false, rafId: null, warned: false,
+  ringBonus: 0, nextGust: 0, star: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -232,6 +243,10 @@ $('relayGo').onclick = () => {
   S.t0 = performance.now();
   S.playing = true;
   S.warned = false;
+  S.ringBonus = 0;
+  S.nextGust = performance.now() + 1200;
+  S.star = null;
+  spawnStar(W, H);
   $('pWho').textContent = `${S.cur.emoji} ${S.cur.name}`;
   cancelAnimationFrame(S.rafId);
   loop();
@@ -251,10 +266,35 @@ function loop() {
   S.vy = (S.vy + gy * 0.011 * sens) * CONFIG.FRICTION;
   S.x += S.vx; S.y += S.vy;
 
-  /* 圈圈縮小 */
-  const secs = (performance.now() - S.t0) / 1000;
+  /* 陣風：放桌上也躲不掉 */
+  const now = performance.now();
+  const secs = (now - S.t0) / 1000;
+  if (now >= S.nextGust) {
+    const pow = (CONFIG.GUST_BASE + secs * CONFIG.GUST_GROW) * sens;
+    const ang = Math.random() * Math.PI * 2;
+    S.vx += Math.cos(ang) * pow;
+    S.vy += Math.sin(ang) * pow;
+    S.nextGust = now + CONFIG.GUST_MS[0] + Math.random() * (CONFIG.GUST_MS[1] - CONFIG.GUST_MS[0]);
+    beep([520], 0.05, 'sine', 0.05);
+  }
+
+  /* 圈圈縮小（吃星星可以補回來） */
   const minR = Math.min(W,H)/2 * CONFIG.RING_MIN;
-  S.ringR = Math.max(minR, Math.min(W,H)/2 * CONFIG.RING_START - secs * CONFIG.SHRINK_PER_S * Math.min(W,H));
+  const maxR = Math.min(W,H)/2 * CONFIG.RING_START;
+  S.ringR = Math.max(minR, Math.min(maxR,
+    maxR - secs * CONFIG.SHRINK_PER_S * Math.min(W,H) + S.ringBonus));
+
+  /* 星星：滾過去吃掉 → 圈圈變大 */
+  if (S.star) {
+    const sd = Math.hypot(S.x - S.star.x, S.y - S.star.y);
+    if (sd < CONFIG.STAR_GRAB) {
+      S.ringBonus += CONFIG.STAR_BONUS * Math.min(W,H);
+      beep([880,1175], 0.08, 'triangle', 0.13);
+      S.star = null;
+      $('star').style.display = 'none';
+      setTimeout(() => { if (S.playing) spawnStar(W, H); }, 1500);
+    }
+  }
 
   /* 畫 */
   const ring = $('ring');
@@ -273,6 +313,17 @@ function loop() {
 
   if (dist > S.ringR) { fell(secs); return; }
   S.rafId = requestAnimationFrame(loop);
+}
+
+function spawnStar(W, H) {
+  const cx = W/2, cy = H/2;
+  const ang = Math.random() * Math.PI * 2;
+  const dist = S.ringR * (0.35 + Math.random() * 0.4);
+  S.star = { x: cx + Math.cos(ang)*dist, y: cy + Math.sin(ang)*dist };
+  const el = $('star');
+  el.style.display = '';
+  el.style.left = (S.star.x - 18) + 'px';
+  el.style.top  = (S.star.y - 18) + 'px';
 }
 
 function fell(secs) {

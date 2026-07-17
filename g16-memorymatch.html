@@ -88,7 +88,7 @@ h1 em{font-style:normal;color:var(--wire)}
   <h1>G16 <em>翻牌記憶對決</em></h1>
   <p class="sub">牌蓋著，輪流一次翻兩張——<br>
   翻到<b>一樣的就是你的</b>，而且<b>可以再翻一次</b>！<br>
-  翻錯就換人。看誰配對最多。</p>
+  小心 <b>💣 炸彈對</b>會扣一對還換人，<br><b>⭐ 星星對</b>能偷看全場一秒。</p>
   <div class="box">
     <h3>👥 誰要玩？</h3>
     <div class="chips" id="who"></div>
@@ -124,7 +124,8 @@ h1 em{font-style:normal;color:var(--wire)}
 <script src="family-players.js?v=5"></script>
 <script>
 const EMOJIS = ['🐱','🐶','🦊','🐼','🦁','🐸','🐙','🦄','🐳','🦕','🍎','🍌','🍕','🍩','🍦',
-                '🚗','🚀','✈️','⚽','🎈','🌈','⭐','🌵','🍄','👑','🤖','👻','🎁','🧲','💎'];
+                '🚗','🚀','✈️','⚽','🎈','🌈','🍀','🌵','🍄','👑','🤖','👻','🎁','🧲','💎'];
+const BOMB = '💣', STAR = '⭐';
 
 let ac = null;
 function beep(f, dur=0.1, type='sine', gain=0.12) {
@@ -198,7 +199,9 @@ function startGame() {
 
   const pool = [...EMOJIS];
   for (let i=pool.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
-  const faces = pool.slice(0, S.size/2);
+  /* 抽一般牌，再把其中兩對換成 💣 炸彈與 ⭐ 星星 */
+  const faces = pool.slice(0, S.size/2 - 2);
+  faces.push(BOMB, STAR);
   S.cards = [...faces, ...faces].map(em => ({ em, gone:false }));
   for (let i=S.cards.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [S.cards[i],S.cards[j]]=[S.cards[j],S.cards[i]]; }
   S.open = []; S.lock = false;
@@ -243,18 +246,44 @@ function flip(i) {
     if (same) {
       S.cards[a].gone = S.cards[b].gone = true;
       [a,b].forEach(k => document.querySelector(`.cardBtn[data-i="${k}"]`).classList.add('gone'));
-      f.score++;
       S.left--;
-      SFX.match();
-      $('mfEm').textContent = S.cards[a].em;
-      $('mfTxt').textContent = S.left ? `${f.p.name} 配對成功！再翻一次` : `${f.p.name} 拿下最後一對！`;
+      const em = S.cards[a].em;
+      let wait = 1000, passTurn = false;
+
+      if (em === BOMB) {
+        /* 炸彈：扣一對、換人 */
+        f.score = Math.max(0, f.score - 1);
+        beep([120,90], 0.25, 'sawtooth', 0.18);
+        $('mfEm').textContent = '💥';
+        $('mfTxt').textContent = `${f.p.name} 翻到炸彈！扣一對，換人！`;
+        passTurn = true;
+        wait = 1300;
+      } else if (em === STAR) {
+        /* 星星：得一對 + 偷看全場一秒 + 再翻一次 */
+        f.score++;
+        SFX.match();
+        $('mfEm').textContent = '⭐';
+        $('mfTxt').textContent = `${f.p.name} 星星！偷看全場一秒！`;
+        wait = 700;
+      } else {
+        f.score++;
+        SFX.match();
+        $('mfEm').textContent = em;
+        $('mfTxt').textContent = S.left ? `${f.p.name} 配對成功！再翻一次` : `${f.p.name} 拿下最後一對！`;
+      }
+
       $('matchFx').classList.add('on');
       setTimeout(() => {
         $('matchFx').classList.remove('on');
-        S.open = []; S.lock = false;
-        paintTurn();
-        if (!S.left) finish();
-      }, 1000);
+        const done = () => {
+          S.open = []; S.lock = false;
+          if (passTurn) S.turn++;
+          paintTurn();
+          if (!S.left) finish();
+        };
+        if (em === STAR && S.left) peekAll(done);
+        else done();
+      }, wait);
     } else {
       SFX.miss();
       [a,b].forEach(k => {
@@ -267,6 +296,26 @@ function flip(i) {
       paintTurn();
     }
   }, same ? 350 : 1000);
+}
+
+/* 星星特效：全場亮牌一秒再蓋回去 */
+function peekAll(after) {
+  const els = [];
+  S.cards.forEach((c, i) => {
+    if (c.gone) return;
+    const el = document.querySelector(`.cardBtn[data-i="${i}"]`);
+    el.classList.add('open');
+    el.innerHTML = c.em;
+    els.push([el, i]);
+  });
+  beep([1047,1319], 0.09, 'triangle', 0.13);
+  setTimeout(() => {
+    els.forEach(([el]) => {
+      el.classList.remove('open');
+      el.innerHTML = '<span class="q">❓</span>';
+    });
+    after();
+  }, 1100);
 }
 
 function finish() {

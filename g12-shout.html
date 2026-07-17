@@ -85,8 +85,10 @@ h1 em{font-style:normal;color:var(--wire)}
 <section id="start" class="screen on center">
   <div class="hero">📢 🎈 💥</div>
   <h1>G12 <em>大聲公挑戰</em></h1>
-  <p class="sub">對著麥克風<b>大叫或吹氣</b>，把氣球灌爆！<br>
-  聲音越大灌得越快——<b>看誰最快把氣球弄爆</b>。</p>
+  <p class="sub">30 秒闖三關：<br>
+  🎈 <b>第一關</b> 大叫把氣球灌爆！<br>
+  🤫 <b>第二關</b> 悄悄話——太大聲就重來！<br>
+  🌊 <b>第三關</b> 跟著指令忽大忽小！</p>
   <div class="pick" id="pickBox"></div>
   <p class="tiny">🔒 聲音只拿來量大小聲，不錄音、不外傳。<br>⚠️ 提醒鄰居：等一下會很吵 😄</p>
   <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
@@ -110,7 +112,7 @@ h1 em{font-style:normal;color:var(--wire)}
     <div id="popFx">💥</div>
   </div>
   <div class="gauge">
-    <div class="head">氣球飽滿度 <span class="r" id="pct">0%</span></div>
+    <div class="head"><span id="gLabel">氣球飽滿度</span> <span class="r" id="pct">0%</span></div>
     <div class="track"><div class="fill" id="fill"></div></div>
     <div class="head" style="margin-top:2px">現在的音量</div>
     <div class="vol"><i id="vol"></i></div>
@@ -128,11 +130,14 @@ h1 em{font-style:normal;color:var(--wire)}
 <script src="family-players.js?v=5"></script>
 <script>
 const CONFIG = {
-  TURN_SECONDS: 12,
-  /* 每一幀把（音量-底噪）加進氣球；到 NEED 就爆。難度改 NEED。 */
-  NEED: { easy: 5.5, normal: 8.0, hard: 11.0 },
-  NOISE_FLOOR: 0.045,     // 低於這個當環境音，不灌氣
+  TURN_SECONDS: 30,           // 30 秒內闖三關
+  NOISE_FLOOR: 0.045,
   BALLOON_MAX_SCALE: 4.2,
+  S1_NEED: { easy: 3.5, normal: 5.0, hard: 7.0 },   // 第一關：爆氣球
+  DUR_MUL: { easy: 0.75, normal: 1.0, hard: 1.3 },  // 二三關長度倍率
+  S2_HOLD: 3.0,   // 悄悄話要維持幾秒
+  S3_HOLD: 4.0,   // 忽大忽小要累積幾秒
+  S3_SWAP_MS: 1600,
 };
 
 let ac = null;
@@ -174,7 +179,7 @@ const show = (id) => {
 /* ---------- 開場 ---------- */
 function paintStart() {
   const ps = FP.get();
-  const lvDesc = { easy:'小氣球，比較快爆', normal:'標準氣球', hard:'超大氣球，要吼很久' };
+  const lvDesc = { easy:'關卡比較短', normal:'標準關卡', hard:'關卡加長版' };
   $('pickBox').innerHTML =
     (ps.length > 1 ? `
       <button class="hero2" data-p="party">
@@ -245,17 +250,30 @@ $('relayGo').onclick = async () => {
   startTurn();
 };
 
+function stageMeta(n) {
+  return [
+    null,
+    { em:'🎈', label:'第 1 關：氣球飽滿度', tip:'大叫！吹氣！把氣球灌爆！' },
+    { em:'🤫', label:'第 2 關：悄悄話進度', tip:'小小聲一直講話…太大聲就歸零！' },
+    { em:'🌊', label:'第 3 關：節奏進度',   tip:'看指令：忽大忽小！' },
+  ][n];
+}
+
 function startTurn() {
   show('blow');
   $('whoTag').textContent = `${S.cur.emoji} ${S.cur.name}`;
-  S.fill = 0;
-  S.need = CONFIG.NEED[S.cur.level] || CONFIG.NEED.normal;
+  S.stage = 1;
+  S.prog = 0;
+  S.s1need = CONFIG.S1_NEED[S.cur.level] || CONFIG.S1_NEED.normal;
+  S.durMul = CONFIG.DUR_MUL[S.cur.level] || 1;
   S.playing = true;
   S.t0 = performance.now();
+  S.last = S.t0;
+  S.stageT = S.t0;
   $('popFx').classList.remove('on');
   $('balloon').style.display = '';
   $('balloon').style.transform = 'scale(1)';
-  $('tip').textContent = '大叫！吹氣！都可以！';
+  setStage(1);
 
   S.left = CONFIG.TURN_SECONDS;
   paintTimer();
@@ -263,73 +281,130 @@ function startTurn() {
   S.timerId = setInterval(() => {
     S.left--;
     paintTimer();
-    if (S.left <= 0) endTurn(false);
+    if (S.left <= 0) endTurn();
   }, 1000);
 
   cancelAnimationFrame(S.rafId);
   loop();
 }
 
+function setStage(n) {
+  const m = stageMeta(n);
+  $('balloon').textContent = m.em;
+  $('balloon').style.transform = 'scale(1)';
+  $('gLabel').textContent = m.label;
+  $('tip').textContent = m.tip;
+  $('pct').textContent = '0%';
+  $('fill').style.width = '0%';
+  S.prog = 0;
+  S.stageT = performance.now();
+}
+
 function paintTimer() {
   $('timer').textContent = S.left;
-  $('timer').classList.toggle('hot', S.left <= 4);
+  $('timer').classList.toggle('hot', S.left <= 6);
 }
 
 function loop() {
   if (!S.playing) return;
+  const now = performance.now();
+  const dt = Math.min(0.1, (now - S.last) / 1000);
+  S.last = now;
   const v = rms();
-  const over = Math.max(0, v - CONFIG.NOISE_FLOOR);
-  S.fill += over * 0.5;                 // 灌氣速度
+  const volEl = $('vol').querySelector('i');
+  if (volEl) volEl.style.width = Math.min(100, v * 260) + '%';
 
-  const pctN = Math.min(1, S.fill / S.need);
+  let pctN = 0;
+  if (S.stage === 1) {
+    /* 🎈 大聲灌爆 */
+    S.prog += Math.max(0, v - CONFIG.NOISE_FLOOR) * 0.5;
+    pctN = Math.min(1, S.prog / S.s1need);
+    $('balloon').style.transform = `scale(${1 + pctN * (CONFIG.BALLOON_MAX_SCALE - 1)})`;
+    if (pctN >= 0.75) $('tip').textContent = '快爆了！再吼一下！';
+    if (S.prog >= S.s1need) return stageClear();
+  }
+  else if (S.stage === 2) {
+    /* 🤫 悄悄話：維持在小聲帶，太大聲歸零 */
+    const need = CONFIG.S2_HOLD * S.durMul;
+    if (v > 0.20) {
+      if (S.prog > 0) { S.prog = 0; $('tip').textContent = '太大聲！歸零重來 🤫'; beep([300], 0.1, 'sawtooth', 0.1); }
+    } else if (v >= 0.05 && v <= 0.16) {
+      S.prog += dt;
+      $('tip').textContent = '很好…就是這個音量…';
+    }
+    pctN = Math.min(1, S.prog / need);
+    $('balloon').style.transform = `scale(${1 + pctN * 1.2})`;
+    if (S.prog >= need) return stageClear();
+  }
+  else {
+    /* 🌊 忽大忽小：跟著指令切換 */
+    const need = CONFIG.S3_HOLD * S.durMul;
+    const wantLoud = Math.floor((now - S.stageT) / CONFIG.S3_SWAP_MS) % 2 === 0;
+    $('tip').textContent = wantLoud ? '🔊 現在要大聲！！' : '🤏 現在要小聲…';
+    const ok = wantLoud ? (v > 0.17) : (v >= 0.045 && v <= 0.13);
+    if (ok) S.prog += dt;
+    pctN = Math.min(1, S.prog / need);
+    $('balloon').style.transform = `scale(${1 + pctN * 1.2}) rotate(${wantLoud ? 6 : -6}deg)`;
+    if (S.prog >= need) return stageClear();
+  }
+
   $('pct').textContent = Math.round(pctN * 100) + '%';
   $('fill').style.width = (pctN * 100) + '%';
-  $('vol').firstElementChild ? null : null;
-  $('vol').querySelector('i') && ($('vol').querySelector('i').style.width = Math.min(100, v * 260) + '%');
-  $('balloon').style.transform = `scale(${1 + pctN * (CONFIG.BALLOON_MAX_SCALE - 1)})`;
-
-  if (pctN >= 0.75) $('tip').textContent = '快爆了！再吼一下！';
-  if (S.fill >= S.need) { endTurn(true); return; }
   S.rafId = requestAnimationFrame(loop);
 }
 
-function endTurn(popped) {
+function stageClear() {
+  cancelAnimationFrame(S.rafId);
+  SFX.pop();
+  if (navigator.vibrate) { try { navigator.vibrate(150); } catch(_){} }
+
+  if (S.stage >= 3) {
+    /* 三關全破 */
+    S.playing = false;
+    clearInterval(S.timerId); S.timerId = null;
+    const used = (performance.now() - S.t0) / 1000;
+    $('balloon').style.display = 'none';
+    $('popFx').textContent = '🏆';
+    $('popFx').classList.add('on');
+    $('tip').textContent = `三關全破！用時 ${used.toFixed(1)} 秒`;
+    S.results.push({ name:S.cur.name, emoji:S.cur.emoji, stages: 3, time: used });
+    setTimeout(nextPlayer, 1700);
+    return;
+  }
+
+  $('popFx').textContent = '💥';
+  $('popFx').classList.add('on');
+  S.stage++;
+  setTimeout(() => {
+    if (!S.playing) return;
+    $('popFx').classList.remove('on');
+    setStage(S.stage);
+    S.last = performance.now();
+    loop();
+  }, 900);
+}
+
+function endTurn() {
   S.playing = false;
   clearInterval(S.timerId); S.timerId = null;
   cancelAnimationFrame(S.rafId);
-
-  const used = (performance.now() - S.t0) / 1000;
-  const pctN = Math.min(1, S.fill / S.need);
-
-  if (popped) {
-    SFX.pop();
-    if (navigator.vibrate) { try { navigator.vibrate([250,80,250]); } catch(_){} }
-    $('balloon').style.display = 'none';
-    $('popFx').classList.add('on');
-    $('tip').textContent = `💥 爆了！用時 ${used.toFixed(1)} 秒`;
-  } else {
-    $('tip').textContent = `時間到！灌到 ${Math.round(pctN*100)}%`;
-  }
-  S.results.push({ name:S.cur.name, emoji:S.cur.emoji, popped, time: used, pct: pctN });
-  setTimeout(nextPlayer, 1600);
+  $('tip').textContent = `時間到！闖到第 ${S.stage} 關`;
+  S.results.push({ name:S.cur.name, emoji:S.cur.emoji, stages: S.stage - 1, time: CONFIG.TURN_SECONDS });
+  setTimeout(nextPlayer, 1500);
 }
 
-/* ---------- 結算：爆的比誰快，沒爆的比誰滿 ---------- */
+/* ---------- 結算：闖越多關越強，同關數比時間 ---------- */
 function finish() {
   SFX.done();
-  const sorted = [...S.results].sort((a,b) => {
-    if (a.popped && b.popped) return a.time - b.time;
-    if (a.popped) return -1;
-    if (b.popped) return 1;
-    return b.pct - a.pct;
-  });
+  const sorted = [...S.results].sort((a,b) =>
+    (b.stages - a.stages) || (a.time - b.time));
   const multi = sorted.length > 1;
   $('overTitle').textContent = multi ? '大聲公排行' : '你的成績';
   $('board').innerHTML = sorted.map((r,i) => `
     <div class="row ${i===0 && multi ? 'top' : ''}">
       <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i+1)) : r.emoji}</div>
       <div class="nm">${r.name}</div>
-      <div class="sc">${r.popped ? '💥 ' + r.time.toFixed(1) + ' 秒' : Math.round(r.pct*100) + '%（沒爆）'}</div>
+      <div class="sc">${r.stages >= 3 ? '🏆 全破 ' + r.time.toFixed(1) + ' 秒' : '闖到 ' + r.stages + ' / 3 關'}</div>
     </div>`).join('');
   show('over');
 }

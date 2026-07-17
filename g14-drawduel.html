@@ -72,6 +72,13 @@ h1 em{font-style:normal;color:var(--wire)}
 .half .mini button{flex:1;background:#140A20;border:2px solid var(--line);border-radius:10px;
                    padding:8px 0;font-size:13px;color:var(--dim)}
 .half .mini button:active{transform:scale(.95)}
+.half .mini button.on{border-color:var(--wire);color:var(--wire)}
+.half .cols{display:flex;gap:5px;overflow-x:auto;padding:2px 1px;-webkit-overflow-scrolling:touch}
+.half .cols button{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.25)}
+.half .cols button.on{border-color:#fff;transform:scale(1.15)}
+#skipWord{background:var(--ink-2);border:2px solid var(--line);border-radius:99px;
+          padding:6px 14px;font-size:14px;color:var(--spark)}
+#skipWord:active{transform:scale(.95)}
 .half.winner .sheet{outline:5px solid var(--hit);outline-offset:-5px}
 
 #midbar{flex:none;display:flex;align-items:center;justify-content:center;gap:10px}
@@ -132,15 +139,21 @@ h1 em{font-style:normal;color:var(--wire)}
       <div class="seen" id="seenA">AI：…</div>
     </div>
     <div class="sheet"><canvas id="padA"></canvas></div>
+    <div class="cols" id="colsA"></div>
     <div class="mini">
-      <button data-undo="A">↩️ 上一步</button>
-      <button data-wipe="A">🗑️ 重畫</button>
+      <button data-sz="A-S">細</button>
+      <button data-sz="A-M" class="on">中</button>
+      <button data-sz="A-L">粗</button>
+      <button data-er="A">🧽 擦子</button>
+      <button data-undo="A">↩️</button>
+      <button data-wipe="A">🗑️</button>
     </div>
   </div>
 
   <div id="midbar">
     <div class="pill" id="scoreMid">0 : 0</div>
     <div class="pill">回合 <b id="roundMid">1</b> / 3</div>
+    <button id="skipWord">⏭ 換一題</button>
   </div>
 
   <div class="half" id="halfB">
@@ -150,9 +163,14 @@ h1 em{font-style:normal;color:var(--wire)}
       <div class="seen" id="seenB">AI：…</div>
     </div>
     <div class="sheet"><canvas id="padB"></canvas></div>
+    <div class="cols" id="colsB"></div>
     <div class="mini">
-      <button data-undo="B">↩️ 上一步</button>
-      <button data-wipe="B">🗑️ 重畫</button>
+      <button data-sz="B-S">細</button>
+      <button data-sz="B-M" class="on">中</button>
+      <button data-sz="B-L">粗</button>
+      <button data-er="B">🧽 擦子</button>
+      <button data-undo="B">↩️</button>
+      <button data-wipe="B">🗑️</button>
     </div>
   </div>
 </section>
@@ -179,7 +197,10 @@ h1 em{font-style:normal;color:var(--wire)}
 const CONFIG = {
   LIB:   'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
   MODEL: 'Xenova/quickdraw-mobilevit-small',
-  PAD_RES: 480, BRUSH: 16, CROP_PAD: 8, MIN_BOX: 22,
+  PAD_RES: 480, CROP_PAD: 8, MIN_BOX: 22,
+  BRUSHES: { S: 8, M: 16, L: 26 },
+  COLORS: ['#101820','#E63946','#F77F00','#FCBF49','#43AA8B','#277DA1','#5E60CE',
+           '#9D4EDD','#FF5C8A','#8D5524','#6C757D','#2B9348','#00B4D8'],
   INFER_MS: 420,
   ROUNDS: 3,
   /* 難度 → 裁判對這個玩家多好說話 */
@@ -282,25 +303,35 @@ function makePad(canvasId, flip) {
   ai.width = ai.height = CONFIG.PAD_RES;
   const aic = ai.getContext('2d', { willReadFrequently:true });
 
-  const P = { el, ctx, aic, flip, strokes: [], cur: null, live: false };
+  const P = { el, ctx, aic, flip, strokes: [], cur: null, live: false,
+              col: CONFIG.COLORS[0], sz: CONFIG.BRUSHES.M, er: false };
 
   function blank() {
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,el.width,el.height);
     aic.clearRect(0,0,ai.width,ai.height);
   }
-  function seg(a, b) {
-    [ [ctx,'#101820'], [aic,'#000'] ].forEach(([c, col]) => {
-      c.lineCap='round'; c.lineJoin='round'; c.lineWidth = CONFIG.BRUSH;
-      c.strokeStyle = col;
-      if (c === aic) { c.shadowColor='rgba(0,0,0,.9)'; c.shadowBlur = 1; }
-      c.beginPath(); c.moveTo(a.x,a.y); c.lineTo(b.x,b.y); c.stroke();
-    });
+  /* 畫一小段：顯示層用筆畫自己的顏色；AI 層一律黑（擦子 = 挖掉 alpha） */
+  function seg(st, a, b) {
+    ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth = st.er ? st.sz*1.8 : st.sz;
+    ctx.strokeStyle = st.er ? '#FFFFFF' : st.col;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+
+    aic.lineCap='round'; aic.lineJoin='round'; aic.lineWidth = st.er ? st.sz*1.8 : st.sz;
+    if (st.er) {
+      aic.globalCompositeOperation = 'destination-out';
+      aic.strokeStyle = 'rgba(0,0,0,1)'; aic.shadowBlur = 0;
+    } else {
+      aic.globalCompositeOperation = 'source-over';
+      aic.strokeStyle = '#000'; aic.shadowColor = 'rgba(0,0,0,.9)'; aic.shadowBlur = 1;
+    }
+    aic.beginPath(); aic.moveTo(a.x,a.y); aic.lineTo(b.x,b.y); aic.stroke();
+    aic.globalCompositeOperation = 'source-over';
   }
   function replay() {
     blank();
     P.strokes.forEach(st => {
-      for (let i=1;i<st.length;i++) seg(st[i-1], st[i]);
-      if (st.length === 1) seg(st[0], { x:st[0].x+0.01, y:st[0].y });
+      for (let i=1;i<st.pts.length;i++) seg(st, st.pts[i-1], st.pts[i]);
+      if (st.pts.length === 1) seg(st, st.pts[0], { x:st.pts[0].x+0.01, y:st.pts[0].y });
     });
   }
   function xy(e) {
@@ -314,15 +345,15 @@ function makePad(canvasId, flip) {
     if (!P.live) return;
     e.preventDefault();
     el.setPointerCapture(e.pointerId);
-    P.cur = [xy(e)];
-    seg(P.cur[0], { x:P.cur[0].x+0.01, y:P.cur[0].y });
+    P.cur = { pts:[xy(e)], col:P.col, sz:P.sz, er:P.er };
+    seg(P.cur, P.cur.pts[0], { x:P.cur.pts[0].x+0.01, y:P.cur.pts[0].y });
   });
   el.addEventListener('pointermove', (e) => {
     if (!P.cur) return;
     e.preventDefault();
     const p = xy(e);
-    seg(P.cur[P.cur.length-1], p);
-    P.cur.push(p);
+    seg(P.cur, P.cur.pts[P.cur.pts.length-1], p);
+    P.cur.pts.push(p);
   });
   ['pointerup','pointercancel','pointerleave'].forEach(ev =>
     el.addEventListener(ev, () => { if (P.cur) { P.strokes.push(P.cur); P.cur = null; } }));
@@ -332,12 +363,15 @@ function makePad(canvasId, flip) {
   P.undo  = () => { if (P.strokes.length) { P.strokes.pop(); replay(); } };
   P.crop  = () => {
     let bb = null;
-    const r = CONFIG.BRUSH / 2;
-    P.strokes.forEach(st => st.forEach(p => {
-      if (!bb) bb = [p.x-r,p.y-r,p.x+r,p.y+r];
-      else bb = [Math.min(bb[0],p.x-r), Math.min(bb[1],p.y-r),
-                 Math.max(bb[2],p.x+r), Math.max(bb[3],p.y+r)];
-    }));
+    P.strokes.forEach(st => {
+      if (st.er) return;                     // 擦子不算進外框
+      const r = st.sz / 2;
+      st.pts.forEach(p => {
+        if (!bb) bb = [p.x-r,p.y-r,p.x+r,p.y+r];
+        else bb = [Math.min(bb[0],p.x-r), Math.min(bb[1],p.y-r),
+                   Math.max(bb[2],p.x+r), Math.max(bb[3],p.y+r)];
+      });
+    });
     if (!bb) return null;
     const [x1,y1,x2,y2] = bb;
     let left=x1, top=y1;
@@ -441,6 +475,34 @@ function startMatch() {
       b.addEventListener('click', () => (b.dataset.undo === 'A' ? S.padA : S.padB).undo()));
     document.querySelectorAll('[data-wipe]').forEach(b =>
       b.addEventListener('click', () => (b.dataset.wipe === 'A' ? S.padA : S.padB).clear()));
+
+    /* 13 色 + 三段粗細 + 擦子 */
+    ['A','B'].forEach(side => {
+      const pad = () => side === 'A' ? S.padA : S.padB;
+      const colBox = document.getElementById('cols' + side);
+      colBox.innerHTML = CONFIG.COLORS.map((c, i) =>
+        `<button data-c="${c}" class="${i===0 ? 'on' : ''}" style="background:${c}"></button>`).join('');
+      colBox.querySelectorAll('button').forEach(cb =>
+        cb.addEventListener('click', () => {
+          pad().col = cb.dataset.c;
+          pad().er = false;
+          colBox.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+          cb.classList.add('on');
+          const erB = document.querySelector(`[data-er="${side}"]`);
+          erB.classList.remove('on');
+        }));
+      document.querySelectorAll(`[data-sz^="${side}-"]`).forEach(sb =>
+        sb.addEventListener('click', () => {
+          pad().sz = CONFIG.BRUSHES[sb.dataset.sz.split('-')[1]];
+          document.querySelectorAll(`[data-sz^="${side}-"]`).forEach(x=>x.classList.remove('on'));
+          sb.classList.add('on');
+        }));
+      const erB = document.querySelector(`[data-er="${side}"]`);
+      erB.addEventListener('click', () => {
+        pad().er = !pad().er;
+        erB.classList.toggle('on', pad().er);
+      });
+    });
   }
   S.round = 0; S.winsA = 0; S.winsB = 0;
   S.deck = buildDeck();
@@ -563,6 +625,19 @@ function finish() {
   $('finBn').textContent = `${S.B.emoji} ${S.B.name}`;
   show('over');
 }
+
+/* AI 兩邊都認不出來 → 換一題重畫，這回合繼續 */
+$('skipWord').onclick = () => {
+  if (!S.live) return;
+  beep([392,294], 0.09, 'sine', 0.09);
+  if (!S.deck.length) S.deck = buildDeck();
+  S.word = S.deck.pop();
+  S.padA.clear(); S.padB.clear();
+  $('wordA').innerHTML = `畫 <b>${S.word.zh}</b>`;
+  $('wordB').innerHTML = `畫 <b>${S.word.zh}</b>`;
+  $('seenA').textContent = 'AI：…';
+  $('seenB').textContent = 'AI：…';
+};
 
 $('again').onclick = () => { paintStart(); show('start'); };
 

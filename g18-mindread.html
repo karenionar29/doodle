@@ -64,12 +64,23 @@ h1 em{font-style:normal;color:var(--wire)}
 <section id="start" class="screen on center">
   <div class="hero">🔮 🤖</div>
   <h1>G18 <em>機器人讀心術</em></h1>
-  <p class="sub"><b>心裡偷偷想一種動物</b>（不要說出來）。<br>
-  機器人會問你幾個問題，<br>然後——猜出你在想什麼 😏<br><br>
-  牠會的動物有 30 種，想常見一點的。</p>
+  <p class="sub"><b>心裡偷偷想一個東西</b>（不要說出來）——<br>
+  <b>動物、食物或職業</b>都可以。<br>
+  機器人問你幾個問題，就能猜出來 😏<br><br>
+  想常見一點的，機器人才認識。</p>
   <div class="vsbar" id="vsbar"></div>
   <button class="big" id="go">我想好了！</button>
   <a class="back" href="index.html">← 回遊戲間</a>
+</section>
+
+<section id="catsel" class="screen center">
+  <div class="hero">🔮</div>
+  <div class="guessTxt">你想的是哪一類？</div>
+  <div class="ansRow" style="max-width:280px;flex-direction:column">
+    <button class="yes" data-cat="animal">🐾 動物</button>
+    <button class="yes" data-cat="food">🍎 食物</button>
+    <button class="yes" data-cat="job">👮 職業</button>
+  </div>
 </section>
 
 <section id="ask" class="screen center">
@@ -104,9 +115,19 @@ h1 em{font-style:normal;color:var(--wire)}
 
 <script src="family-players.js?v=5"></script>
 <script>
-/* 動物資料庫：屬性 = [毛,飛,水,大,四腳,吃肉,寵物,紋斑,殼,危險,快,綠,長脖] 1=是 0=不是 */
+/* 讀心資料庫：三類，各有自己的屬性問題 */
 const A = (zh,em,v) => ({ zh, em, v });
-const ANIMALS = [
+const DB = {
+  animal: {
+    name: '🐾 動物',
+    questions: [
+      '牠有毛毛的嗎？','牠會飛嗎？','牠住在水裡（或常常泡在水裡）嗎？','牠比一個大人還大隻嗎？',
+      '牠有四隻腳嗎？','牠會吃肉（或吃小蟲小魚）嗎？','牠可以養在家裡當寵物嗎？',
+      '牠身上有條紋或斑點嗎？','牠有硬硬的殼嗎？','牠很危險、會咬人或螫人嗎？',
+      '牠動作很快嗎？','牠是綠色的嗎？','牠的脖子很長嗎？',
+    ],
+    items: [
+
   A('狗','🐶',[1,0,0,0,1,1,1,0,0,0,1,0,0]),
   A('貓','🐱',[1,0,0,0,1,1,1,1,0,0,1,0,0]),
   A('兔子','🐰',[1,0,0,0,1,0,1,0,0,0,1,0,0]),
@@ -137,13 +158,75 @@ const ANIMALS = [
   A('鸚鵡','🦜',[0,1,0,0,0,0,1,0,0,0,0,1,0]),
   A('蝴蝶','🦋',[0,1,0,0,0,0,0,1,0,0,0,0,0]),
   A('蜜蜂','🐝',[0,1,0,0,0,0,0,1,0,1,1,0,0]),
-];
-const QUESTIONS = [
-  '牠有毛毛的嗎？','牠會飛嗎？','牠住在水裡（或常常泡在水裡）嗎？','牠比一個大人還大隻嗎？',
-  '牠有四隻腳嗎？','牠會吃肉（或吃小蟲小魚）嗎？','牠可以養在家裡當寵物嗎？',
-  '牠身上有條紋或斑點嗎？','牠有硬硬的殼嗎？','牠很危險、會咬人或螫人嗎？',
-  '牠動作很快嗎？','牠是綠色的嗎？','牠的脖子很長嗎？',
-];
+    ],
+  },
+  food: {
+    name: '🍎 食物',
+    /* 屬性 = [甜,用喝的,水果,要煮,冰的,早餐,紅橘色,圓,夜市,健康,白色,脆] */
+    questions: [
+      '它是甜的嗎？','它是用喝的嗎？','它是水果嗎？','它要煮過或加熱才吃嗎？',
+      '它是冰冰的嗎？','早餐常常吃到它嗎？','它是紅色或橘色的嗎？','它圓圓的嗎？',
+      '夜市常常看到它嗎？','它算健康的食物嗎？','它是白色的嗎？','咬下去脆脆的嗎？',
+    ],
+    items: [
+      A('蘋果','🍎',[1,0,1,0,0,0,1,1,0,1,0,1]),
+      A('香蕉','🍌',[1,0,1,0,0,1,0,0,0,1,0,0]),
+      A('西瓜','🍉',[1,0,1,0,1,0,1,1,0,1,0,0]),
+      A('草莓','🍓',[1,0,1,0,0,0,1,1,0,1,0,0]),
+      A('葡萄','🍇',[1,0,1,0,0,0,0,1,0,1,0,0]),
+      A('冰淇淋','🍦',[1,0,0,0,1,0,0,1,1,0,0,0]),
+      A('蛋糕','🍰',[1,0,0,0,0,0,0,0,0,0,0,0]),
+      A('巧克力','🍫',[1,0,0,0,0,0,0,0,0,0,0,0]),
+      A('糖果','🍬',[1,0,0,0,0,0,0,1,1,0,0,1]),
+      A('餅乾','🍪',[1,0,0,0,0,0,0,1,0,0,0,1]),
+      A('麵包','🍞',[0,0,0,0,0,1,0,0,0,0,0,0]),
+      A('白飯','🍚',[0,0,0,1,0,1,0,0,0,1,1,0]),
+      A('麵條','🍜',[0,0,0,1,0,0,0,0,1,0,1,0]),
+      A('水餃','🥟',[0,0,0,1,0,0,0,0,1,0,1,0]),
+      A('披薩','🍕',[0,0,0,1,0,0,1,1,0,0,0,0]),
+      A('漢堡','🍔',[0,0,0,1,0,1,0,1,1,0,0,0]),
+      A('薯條','🍟',[0,0,0,1,0,0,0,0,1,0,0,1]),
+      A('熱狗','🌭',[0,0,0,1,0,1,1,0,1,0,0,0]),
+      A('蛋','🥚',[0,0,0,1,0,1,0,1,0,1,1,0]),
+      A('牛奶','🥛',[0,1,0,0,1,1,0,0,0,1,1,0]),
+      A('果汁','🧃',[1,1,0,0,1,1,0,0,1,0,0,0]),
+      A('汽水','🥤',[1,1,0,0,1,0,0,0,1,0,0,0]),
+      A('珍珠奶茶','🧋',[1,1,0,0,1,0,0,0,1,0,0,0]),
+      A('玉米','🌽',[1,0,0,1,0,0,0,0,1,1,0,0]),
+    ],
+  },
+  job: {
+    name: '👮 職業',
+    /* 屬性 = [制服,醫院,開交通工具,用火煮,保護大家,學校,戶外,電腦,表演,用球,剪刀,畫畫] */
+    questions: [
+      '這個工作要穿制服嗎？','會在醫院工作嗎？','會開車、開船或開飛機嗎？','工作會用到火或煮東西嗎？',
+      '是保護大家安全的工作嗎？','在學校看得到嗎？','大部分時間在戶外嗎？','常常要用電腦嗎？',
+      '會表演給大家看嗎？','工作會用到球嗎？','會拿剪刀嗎？','要很會畫畫嗎？',
+    ],
+    items: [
+      A('醫生','🧑‍⚕️',[1,1,0,0,0,0,0,1,0,0,0,0]),
+      A('護理師','💉',[1,1,0,0,0,0,0,0,0,0,0,0]),
+      A('獸醫','🐾',[1,0,0,0,0,0,0,0,0,0,0,0]),
+      A('警察','👮',[1,0,1,0,1,0,1,0,0,0,0,0]),
+      A('消防員','🧑‍🚒',[1,0,1,1,1,0,1,0,0,0,0,0]),
+      A('廚師','👨‍🍳',[1,0,0,1,0,0,0,0,0,0,0,0]),
+      A('老師','🧑‍🏫',[0,0,0,0,0,1,0,1,0,0,0,0]),
+      A('農夫','👨‍🌾',[0,0,0,0,0,0,1,0,0,0,0,0]),
+      A('漁夫','🎣',[0,0,1,0,0,0,1,0,0,0,0,0]),
+      A('公車司機','🚌',[1,0,1,0,0,0,0,0,0,0,0,0]),
+      A('飛機機師','✈️',[1,0,1,0,0,0,0,1,0,0,0,0]),
+      A('太空人','🧑‍🚀',[1,0,1,0,0,0,1,1,0,0,0,0]),
+      A('歌手','🎤',[0,0,0,0,0,0,0,0,1,0,0,0]),
+      A('魔術師','🎩',[0,0,0,0,0,0,0,0,1,0,0,0]),
+      A('畫家','🎨',[0,0,0,0,0,0,0,0,0,0,0,1]),
+      A('理髮師','💇',[0,0,0,0,0,0,0,0,0,0,1,0]),
+      A('籃球員','⛹️',[1,0,0,0,0,0,0,0,1,1,0,0]),
+      A('足球員','⚽',[1,0,0,0,0,0,1,0,1,1,0,0]),
+      A('郵差','📮',[1,0,1,0,0,0,1,0,0,0,0,0]),
+      A('建築工人','👷',[1,0,0,0,0,0,1,0,0,0,0,0]),
+    ],
+  },
+};
 
 let ac = null;
 function beep(f, dur=0.1, type='sine', gain=0.12) {
@@ -206,7 +289,7 @@ function scoreOf(an) {
   return s;
 }
 function topCandidates() {
-  const scored = ANIMALS.filter(a => !a.dead).map(a => ({ a, s: scoreOf(a) }));
+  const scored = S.db.items.filter(a => !a.dead).map(a => ({ a, s: scoreOf(a) }));
   scored.sort((x,y) => y.s - x.s);
   const best = scored.length ? scored[0].s : 0;
   return { list: scored.filter(x => x.s >= best - 1).map(x => x.a), all: scored };
@@ -216,7 +299,7 @@ function topCandidates() {
 function pickQuestion() {
   const { list } = topCandidates();
   let bestQ = -1, bestGap = 1e9;
-  for (let qi = 0; qi < QUESTIONS.length; qi++) {
+  for (let qi = 0; qi < S.db.questions.length; qi++) {
     if (S.asked.has(qi)) continue;
     const yes = list.filter(a => a.v[qi]).length;
     const gap = Math.abs(yes - (list.length - yes));
@@ -225,8 +308,9 @@ function pickQuestion() {
   return bestQ;
 }
 
-function newRound() {
-  ANIMALS.forEach(a => delete a.dead);
+function newRound(cat) {
+  S.db = DB[cat];
+  S.db.items.forEach(a => delete a.dead);
   S.answers = [];
   S.asked = new Set();
   S.qCount = 0;
@@ -238,14 +322,14 @@ function nextStep() {
   const { list } = topCandidates();
   /* 該猜了嗎？候選只剩 1~2 個，或問滿 9 題 */
   if (!list.length) return surrender();
-  if (list.length <= 2 || S.qCount >= 9 || S.asked.size >= QUESTIONS.length) return makeGuess();
+  if (list.length <= 2 || S.qCount >= 9 || S.asked.size >= S.db.questions.length) return makeGuess();
 
   const qi = pickQuestion();
   if (qi < 0) return makeGuess();
   S.curQ = qi;
   S.qCount++;
   $('qN').textContent = `問 題 ${S.qCount}`;
-  $('qTxt').textContent = QUESTIONS[qi];
+  $('qTxt').textContent = S.db.questions[qi];
   show('ask');
   SFX.q();
 }
@@ -289,12 +373,14 @@ function surrender() {
   S.human++; saveTally();
   $('rEm').textContent = '🏳️';
   $('rTxt').textContent = '機器人投降！你贏了！';
-  $('rSub').textContent = '你想的動物太厲害，machine 猜不到。快告訴大家答案是什麼！';
+  $('rSub').textContent = '你想的太厲害，機器人猜不到。快告訴大家答案是什麼！';
   show('result');
   SFX.lose();
 }
 
-$('go').onclick = () => { beep([440], 0.06); newRound(); };
+$('go').onclick = () => { beep([440], 0.06); show('catsel'); };
+document.querySelectorAll('[data-cat]').forEach(b =>
+  b.addEventListener('click', () => { beep([600], 0.05); newRound(b.dataset.cat); }));
 $('again').onclick = () => { paintVs(); show('start'); };
 
 paintVs();

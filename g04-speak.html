@@ -285,6 +285,38 @@ function editDist(a, b) {
       dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1] + (a[i-1]===b[j-1]?0:1));
   return dp[a.length][b.length];
 }
+/* 小孩口音常被 AI 聽成的近音字（只在整個單字層級比對） */
+const ALT = {
+  cat:['cut','kat'], dog:['dock','doug'], fish:['fis','fishy'], bird:['bert','burt','word'],
+  pig:['pick','peak'], cow:['cao','how'], duck:['duk','dark'], frog:['fog','flog'],
+  bear:['bare','beer'], tiger:['taiga','tigger'], lion:['line','lyon'], monkey:['money','monk'],
+  sun:['son','sung'], moon:['moo','moom'], star:['stall','stir'], rain:['wren','lane','ren'],
+  snow:['snore','no'], tree:['three'], flower:['flour','follower'], fire:['fired','fireo'],
+  apple:['app','apo'], banana:['banna','nana'], orange:['orang','oranje'], bread:['bred','brad'],
+  milk:['milc','mick'], water:['wata','watter','order'], cake:['cage','kek'], egg:['eck','ek'],
+  rice:['rise','lice'], 'ice cream':['icecream','ice green','i scream'], pizza:['pisa','pita'],
+  candy:['kandy','candi'], car:['core','ka'], bus:['boss','buzz'], train:['tren','chain'],
+  boat:['boot','vote'], airplane:['air plane','plane','aeroplane'], bike:['bik','baik'],
+  rocket:['rock it','rocked'], book:['buck','boo'], pencil:['pence','penso'], bag:['beg','back'],
+  clock:['cluck','clark'], key:['ki','kee'], ball:['bo','bald'], door:['dor','doll'],
+  chair:['cher','share'], bed:['bet','bad'], house:['hous','hows'],
+  school:['skool','scoo'], hand:['han','hant'], eye:['ai','eyes'], nose:['knows','noise'],
+  mouth:['mouf','mouse'], ear:['year','ir'], foot:['put','fut'], hair:['hare','her'],
+  shoe:['shu','sue'], hat:['hut','had'], shirt:['short','shot'], red:['read','led'],
+  blue:['blu','bloo'], green:['grin','gleen'], yellow:['yello','yellow'], black:['brack','block'],
+  white:['wide','why'], happy:['hoppy','hepi'], sad:['said','set'], angry:['hungry','angly'],
+  big:['bik','beek'], small:['smo','smol'], hot:['hut','hought'], cold:['gold','called'],
+};
+function altHit(h, want) {
+  const alts = ALT[want] || [];
+  if (!alts.length) return false;
+  const ws = h.split(' ');
+  return alts.some(a =>
+    a.includes(' ')
+      ? h.includes(a)
+      : ws.some(x => x === a || (a.length >= 3 && Math.abs(x.length - a.length) <= 1 && editDist(x, a) <= 1)));
+}
+
 function isMatch(heard, want, slack) {
   const h = clean(heard), w = clean(want);
   if (!h) return false;
@@ -495,9 +527,9 @@ function paintTimer() {
 function judge(text) {
   if (!S.target) return;
   const heard = clean(text) || '（沒聽到聲音）';
-  const slack = FP.lv(S.cur).loose;
+  const slack = FP.lv(S.cur).loose + 1;   // 全面放寬：AI 聽小孩口音本來就吃力
 
-  if (isMatch(text, S.target.en, slack)) {
+  if (isMatch(text, S.target.en, slack) || altHit(clean(text), S.target.en)) {
     $('hTxt').textContent = `"${heard}" ✓`;
     $('hTxt').className = 'txt good';
     passed();

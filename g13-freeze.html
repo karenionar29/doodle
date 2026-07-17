@@ -144,9 +144,10 @@ h1 em{font-style:normal;color:var(--wire)}
 <script>
 const CONFIG = {
   ROUNDS: 5,
-  MOVE_MS: [2600, 5200],      // 「動」階段隨機長度
+  MOVE_MS: [900, 4200],       // 「動」階段忽長忽短
   WARN_MS: 900,               // 「要喊了…」預告
-  FREEZE_MS: [2800, 4200],    // 木頭人定格時間
+  FREEZE_MS: [1500, 4500],    // 木頭人定格時間也忽長忽短
+  FAKE_RATE: 0.35,            // 假動作機率：「一二三…騙你的！」
   GRACE_MS: 450,              // 喊完給人反應的緩衝
   DIFF_W: 64, DIFF_H: 48,     // 比對用縮圖大小
   CHECK_MS: 120,
@@ -279,7 +280,24 @@ function enterWarn() {
   setPhase('warn', '👀', '要喊了…');
   SFX.warn();
   clearTimeout(S.phaseId);
-  S.phaseId = setTimeout(enterFreeze, CONFIG.WARN_MS);
+  if (Math.random() < CONFIG.FAKE_RATE) {
+    /* 假動作：騙大家定格，其實還要繼續動 */
+    S.phaseId = setTimeout(() => {
+      setPhase('warn', '😏', '一二三…騙你的！繼續動！');
+      say('一二三…騙你的！');
+      S.phaseId = setTimeout(fakeResume, 1100);
+    }, CONFIG.WARN_MS);
+  } else {
+    S.phaseId = setTimeout(enterFreeze, CONFIG.WARN_MS);
+  }
+}
+/* 假動作後的短「動」，馬上又要喊 */
+function fakeResume() {
+  S.phase = 'move';
+  setPhase('move', '💃', '動！用力跳！');
+  SFX.move();
+  clearTimeout(S.phaseId);
+  S.phaseId = setTimeout(enterWarn, 600 + Math.random() * 1800);
 }
 function enterFreeze() {
   S.phase = 'freeze';
