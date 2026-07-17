@@ -88,6 +88,9 @@ a.play:active{transform:scale(.98)}
 .taste .empty{font-size:12px;color:var(--dim);font-weight:500;line-height:1.75}
 
 .data{display:flex;flex-direction:column;gap:9px}
+#foldBtn{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+         padding:13px 0;font-size:14px;color:var(--dim)}
+.folded{display:none !important}
 #copyBtn{background:var(--wire);color:var(--ink);border-radius:16px;padding:15px 0;font-size:16px;width:100%}
 #copyBtn.done{background:var(--hit)}
 .backup{display:flex;gap:9px}
@@ -218,10 +221,12 @@ footer b{color:var(--paper)}
 
 <div class="shelf" id="shelf"></div>
 
+<div class="block"><button id="foldBtn">📊 展開評分資料區 ▾</button></div>
+
 <div class="block taste" id="taste"></div>
 
-<div class="block data">
-  <button id="copyBtn">📋 複製給 Claude</button>
+<div class="block data" id="dataBlock">
+  <button id="copyBtn">📋 複製評分</button>
   <div class="backup">
     <button id="exportBtn">💾 存成檔案</button>
     <button id="importBtn">📂 讀取檔案</button>
@@ -329,8 +334,18 @@ const GAMES = [
     desc:'兩人同題同時畫，AI 裁判誰的畫先被認出來。', tag:'2人', cats:['AI','畫畫','對戰'] },
   { id:'g15', file:'g15-mostlikely.html',icon:'👉', name:'就是你！',
     desc:'「誰最會賴床？」偷偷投票，揭曉大笑。', tag:'秒開', cats:['派對'] },
+  { id:'g16', file:'g16-memorymatch.html',icon:'🃏', name:'翻牌記憶對決',
+    desc:'輪流翻兩張，配對就是你的、還能再翻一次。', tag:'秒開', cats:['動腦','對戰'] },
+  { id:'g17', file:'g17-quizbuzz.html',  icon:'🔔', name:'搶答大作戰',
+    desc:'先按自己的按鈴才能作答！48 題兒童益智。', tag:'秒開', cats:['對戰','動腦','派對'] },
+  { id:'g18', file:'g18-mindread.html',  icon:'🔮', name:'機器人讀心術',
+    desc:'心裡想一種動物，機器人問幾個問題就猜中。', tag:'秒開', cats:['AI','動腦'] },
+  { id:'g19', file:'g19-colorhunt.html', icon:'🌈', name:'顏色獵人',
+    desc:'機器人喊顏色，用那個顏色的東西塞滿鏡頭！', tag:'要相機', cats:['鏡頭','動作'] },
+  { id:'g20', file:'g20-balance.html',   icon:'🥚', name:'平衡大師',
+    desc:'平板平拿控制蛋蛋別滾出圈圈，圈圈越縮越小。', tag:'秒開', cats:['動作','對戰'] },
 ];
-const NEXT_NO = 'G16';
+const NEXT_NO = 'G21';
 const CATS = ['全部','AI','畫畫','鏡頭','聲音','動作','對戰','派對','動腦'];
 
 const DIMS = [
@@ -669,7 +684,7 @@ $('copyBtn').addEventListener('click', async () => {
   if (ok) {
     $('copyBtn').classList.add('done');
     $('copyBtn').textContent = '✅ 已複製';
-    setTimeout(() => { $('copyBtn').classList.remove('done'); $('copyBtn').textContent = '📋 複製給 Claude'; }, 2000);
+    setTimeout(() => { $('copyBtn').classList.remove('done'); $('copyBtn').textContent = '📋 複製評分'; }, 2000);
   }
 });
 $('copyClose').addEventListener('click', () => $('copyBox').classList.remove('on'));
@@ -703,6 +718,22 @@ $('fileIn').addEventListener('change', async (e) => {
     $('copyBox').classList.add('on');
   }
   e.target.value = '';
+});
+
+/* ---------- 評分資料區收合 ---------- */
+const FKEY = 'lobby-fold-v1';
+function applyFold(open) {
+  $('taste').classList.toggle('folded', !open);
+  $('dataBlock').classList.toggle('folded', !open);
+  $('foldBtn').textContent = open ? '📊 收合評分資料區 ▴' : '📊 展開評分資料區 ▾';
+}
+let foldOpen = false;
+try { foldOpen = localStorage.getItem(FKEY) === 'open'; } catch(_) {}
+applyFold(foldOpen);
+$('foldBtn').addEventListener('click', () => {
+  foldOpen = !foldOpen;
+  applyFold(foldOpen);
+  try { localStorage.setItem(FKEY, foldOpen ? 'open' : 'shut'); } catch(_) {}
 });
 
 renderGate();

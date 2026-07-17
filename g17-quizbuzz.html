@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#241C0A">
+<title>G17 搶答大作戰</title>
+<style>
+:root{
+  --ink:#241C0A; --ink-2:#3C2F14; --line:#5E4B24; --paper:#FDFCF7;
+  --wire:#FFD23F; --spark:#FFD23F; --hot:#FF5C6C; --dim:#BCA878; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.box{width:min(320px,90vw);background:var(--ink-2);border-radius:16px;padding:13px;
+     display:flex;flex-direction:column;gap:9px}
+.box h3{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:.08em;text-align:left}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:#171106;border:2px solid var(--line);border-radius:99px;
+              padding:8px 13px;font-size:13px;color:var(--dim);transition:.1s}
+.chips button.on{border-color:var(--wire);color:var(--wire);background:#4A3A16}
+
+#play{padding:8px 10px 10px;gap:8px}
+.hud{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px;white-space:nowrap}
+#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:18px;min-width:50px;text-align:center;
+       background:var(--ink-2);border-radius:99px;padding:6px 10px}
+#timer.hot{color:var(--hot);animation:pulse .5s infinite}
+@keyframes pulse{50%{transform:scale(1.14)}}
+
+.qBox{background:var(--ink-2);border-radius:18px;padding:15px;text-align:center}
+.qBox .cat{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.14em}
+.qBox .q{font-size:22px;line-height:1.45;margin-top:4px}
+
+.opts{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opts button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+             font-size:19px;padding:8px;transition:.12s;line-height:1.3}
+.opts button:active{transform:scale(.95)}
+.opts button.right{background:#1E4230;border-color:var(--hit);color:var(--hit)}
+.opts button.wrong{background:#4A1720;border-color:var(--hot);color:var(--hot)}
+.opts button[disabled]{opacity:.5}
+.opts.locked button{pointer-events:none}
+
+.status{text-align:center;font-size:14px;background:var(--ink-2);border-radius:99px;padding:8px;min-height:37px}
+.status b{color:var(--spark)}
+
+.buzzers{display:flex;gap:8px}
+.buzzers button{flex:1;border-radius:16px;padding:16px 0;font-size:15px;color:#fff;transition:.1s;
+                border:3px solid transparent}
+.buzzers button:active{transform:scale(.94)}
+.buzzers button.me{border-color:#fff;animation:glow .5s infinite alternate}
+.buzzers button.out{opacity:.3;pointer-events:none}
+@keyframes glow{to{filter:brightness(1.3)}}
+.scoresLine{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.scoresLine span{background:var(--ink-2);border-radius:99px;padding:4px 10px;font-size:12px}
+
+#over{overflow-y:auto}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:17px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">🔔 ❓ ⚡</div>
+  <h1>G17 <em>搶答大作戰</em></h1>
+  <p class="sub">機器人出題，<b>先按自己按鈴的人才能作答</b>！<br>
+  答對 +1，答錯這題不能再搶（別人還有機會）。<br>共 10 題，看誰是搶答王。</p>
+  <div class="box">
+    <h3>👥 誰要比？（2～4 人）</h3>
+    <div class="chips" id="who"></div>
+  </div>
+  <button class="big" id="go">開始搶答</button>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="play" class="screen">
+  <div class="hud">
+    <div class="pill">第 <span id="qNum">1</span> / 10 題</div>
+    <div id="timer">15</div>
+  </div>
+  <div class="qBox">
+    <div class="cat" id="qCat">動 物</div>
+    <div class="q" id="qTxt">哪一種動物脖子最長？</div>
+  </div>
+  <div class="opts locked" id="opts"></div>
+  <div class="status" id="status">🔔 先按下面自己的按鈴才能作答！</div>
+  <div class="buzzers" id="buzzers"></div>
+  <div class="scoresLine" id="scoresLine"></div>
+</section>
+
+<section id="over" class="screen center">
+  <div class="hero">🏆</div>
+  <h2 style="font-size:24px">搶答王排行</h2>
+  <div class="board" id="board"></div>
+  <button class="big" id="again">再比一場</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+const CONFIG = {
+  ROUNDS: 10, Q_SECONDS: 15,
+  ZONE_COLORS: ['#E63946','#277DA1','#43AA8B','#B0722E'],
+};
+
+/* 題庫：[類別, 題目, 正解, 錯1, 錯2, 錯3] —— 選項會洗牌 */
+const QUIZ = [
+  ['動物','哪一種動物脖子最長？','長頸鹿','大象','斑馬','駱駝'],
+  ['動物','企鵝住在哪裡？','很冷的地方','沙漠','火山','雨林最熱的地方'],
+  ['動物','哪一種動物會織網抓蟲？','蜘蛛','螞蟻','蝴蝶','蝸牛'],
+  ['動物','貓頭鷹通常什麼時候出來活動？','晚上','中午','早上','下午'],
+  ['動物','哪一種動物身上有黑白條紋？','斑馬','獅子','大象','河馬'],
+  ['動物','蝌蚪長大會變成什麼？','青蛙','魚','烏龜','蛇'],
+  ['動物','蜜蜂採花蜜會做出什麼？','蜂蜜','牛奶','果汁','糖果'],
+  ['動物','哪一種動物跑最快？','獵豹','烏龜','豬','鴨子'],
+  ['自然','彩虹通常什麼時候出現？','雨後出太陽','半夜','下大雪','打雷的時候'],
+  ['自然','一年有幾個季節？','4 個','2 個','6 個','10 個'],
+  ['自然','太陽從哪邊升起來？','東邊','西邊','北邊','南邊'],
+  ['自然','水結冰會變成什麼？','冰塊','蒸氣','沙子','油'],
+  ['自然','植物長大最需要什麼？','陽光和水','糖果','電視','玩具'],
+  ['自然','月亮自己會發光嗎？','不會，是反射太陽光','會，像電燈','只有晚上會','只有夏天會'],
+  ['生活','過馬路要看什麼燈？','紅綠燈','檯燈','手電筒','聖誕燈'],
+  ['生活','飯前要做什麼？','洗手','睡覺','跑步','唱歌'],
+  ['生活','垃圾要丟到哪裡？','垃圾桶','地上','河裡','別人家'],
+  ['生活','發生火災要打幾號？','119','123','999','555'],
+  ['生活','看牙齒要找誰？','牙醫','警察','廚師','司機'],
+  ['生活','一個星期有幾天？','7 天','5 天','10 天','12 天'],
+  ['生活','冰淇淋放在太陽下會怎樣？','融化','變大','變硬','跳舞'],
+  ['生活','哪一個是交通工具？','公車','冰箱','沙發','電視'],
+  ['數學','5 + 3 = ？','8','7','9','6'],
+  ['數學','10 - 4 = ？','6','5','7','8'],
+  ['數學','2 + 2 + 2 = ？','6','4','8','2'],
+  ['數學','一隻手有幾根手指？','5 根','4 根','6 根','10 根'],
+  ['數學','三角形有幾個角？','3 個','4 個','2 個','5 個'],
+  ['數學','9 比 6 大還是小？','大','小','一樣','不知道'],
+  ['數學','12 - 6 = ？','6','5','7','4'],
+  ['數學','7 + 7 = ？','14','12','15','16'],
+  ['身體','我們用什麼聞味道？','鼻子','耳朵','眼睛','腳'],
+  ['身體','我們用什麼聽聲音？','耳朵','嘴巴','鼻子','手'],
+  ['身體','心臟在做什麼工作？','把血送到全身','幫忙想事情','消化食物','呼吸空氣'],
+  ['身體','吃進去的食物先到哪裡？','胃','腳','耳朵','頭髮'],
+  ['食物','葡萄乾是什麼做的？','葡萄','蘋果','西瓜','香蕉'],
+  ['食物','豆腐是什麼做的？','黃豆','米','麵粉','馬鈴薯'],
+  ['食物','哪一個是蔬菜？','花椰菜','巧克力','餅乾','布丁'],
+  ['食物','牛奶是哪種動物給我們的？','牛','貓','魚','蛇'],
+  ['常識','一天有幾個小時？','24 小時','12 小時','10 小時','100 小時'],
+  ['常識','地球是什麼形狀？','圓球形','正方形','三角形','扁扁的'],
+  ['常識','消防車通常是什麼顏色？','紅色','粉紅色','綠色','透明'],
+  ['常識','腳踏車有幾個輪子？','2 個','1 個','4 個','6 個'],
+  ['常識','鋼琴是用什麼彈的？','手指','腳','鼻子','肚子'],
+  ['常識','下雨天出門要帶什麼？','雨傘','冰淇淋','風箏','枕頭'],
+  ['常識','晚上睡覺前要做什麼？','刷牙','吃大餐','跑十圈','洗車'],
+  ['常識','圖書館裡面要怎麼樣？','小聲說話','大聲唱歌','跑來跑去','丟球'],
+  ['常識','紅燈的時候要怎麼辦？','停下來','趕快衝','閉眼睛','倒退走'],
+  ['常識','過年常常看到什麼顏色？','紅色','黑色','灰色','咖啡色'],
+];
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  buzz:  () => beep([990,1320], 0.08, 'square', 0.13),
+  right: () => beep([659,880,1175], 0.1, 'triangle', 0.17),
+  wrong: () => beep([300,220], 0.14, 'sawtooth', 0.12),
+  go:    () => beep([392,523], 0.1, 'triangle', 0.12),
+  tick:  () => beep([880], 0.05, 'square', 0.05),
+  done:  () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  picks: new Set(), fighters: [],
+  deck: [], round: 0, q: null,
+  buzzed: -1, outs: new Set(),
+  left: 0, timerId: null, phase: 'idle',
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+const shuffle = (a) => { for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+function paintStart() {
+  const ps = FP.get();
+  ps.forEach((_, i) => { if (i < 4) S.picks.add(i); });
+  renderWho();
+}
+function renderWho() {
+  const ps = FP.get();
+  $('who').innerHTML = ps.map((p, i) =>
+    `<button data-i="${i}" class="${S.picks.has(i) ? 'on' : ''}">${p.emoji} ${p.name}</button>`).join('');
+  document.querySelectorAll('#who button').forEach(b =>
+    b.addEventListener('click', () => {
+      const i = +b.dataset.i;
+      if (S.picks.has(i)) S.picks.delete(i);
+      else if (S.picks.size < 4) S.picks.add(i);
+      renderWho();
+      beep([700], 0.04, 'sine', 0.05);
+    }));
+}
+
+function startGame() {
+  const ps = FP.get();
+  S.fighters = [...S.picks].sort((a,b)=>a-b).map((i, k) => ({ p: ps[i], score: 0, k }));
+  S.deck = shuffle([...QUIZ]);
+  S.round = 0;
+  $('buzzers').innerHTML = S.fighters.map((f, k) => `
+    <button data-k="${k}" style="background:${CONFIG.ZONE_COLORS[k]}">
+      🔔 ${f.p.emoji} ${f.p.name}</button>`).join('');
+  document.querySelectorAll('#buzzers button').forEach(b =>
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); buzz(+b.dataset.k); }));
+  show('play');
+  nextQ();
+}
+
+function nextQ() {
+  S.round++;
+  if (S.round > CONFIG.ROUNDS || !S.deck.length) return finish();
+  const [cat, q, ok, ...bad] = S.deck.pop();
+  S.q = { cat, q, ok };
+  S.buzzed = -1;
+  S.outs = new Set();
+  $('qNum').textContent = S.round;
+  $('qCat').textContent = cat;
+  $('qTxt').textContent = q;
+
+  const opts = shuffle([ok, ...bad]);
+  $('opts').innerHTML = opts.map(o => `<button data-o="${o.replace(/"/g,'&quot;')}">${o}</button>`).join('');
+  $('opts').classList.add('locked');
+  document.querySelectorAll('#opts button').forEach(b =>
+    b.addEventListener('click', () => answer(b)));
+
+  document.querySelectorAll('#buzzers button').forEach(b => b.classList.remove('me','out'));
+  $('status').innerHTML = '🔔 先按下面自己的按鈴才能作答！';
+  paintScores();
+
+  S.phase = 'buzz';
+  S.left = CONFIG.Q_SECONDS;
+  paintTimer();
+  clearInterval(S.timerId);
+  S.timerId = setInterval(() => {
+    S.left--;
+    paintTimer();
+    if (S.left <= 3 && S.left > 0) SFX.tick();
+    if (S.left <= 0) timeUp();
+  }, 1000);
+  SFX.go();
+}
+
+function paintTimer() {
+  $('timer').textContent = S.left;
+  $('timer').classList.toggle('hot', S.left <= 4);
+}
+function paintScores() {
+  $('scoresLine').innerHTML = S.fighters.map(f =>
+    `<span>${f.p.emoji} ${f.p.name}：${f.score}</span>`).join('');
+}
+
+function buzz(k) {
+  if (S.phase !== 'buzz' || S.outs.has(k)) return;
+  S.phase = 'answer';
+  S.buzzed = k;
+  SFX.buzz();
+  const f = S.fighters[k];
+  document.querySelectorAll('#buzzers button').forEach((b, i) =>
+    b.classList.toggle('me', i === k));
+  $('status').innerHTML = `⚡ <b>${f.p.emoji} ${f.p.name}</b> 搶到了！選答案——`;
+  $('opts').classList.remove('locked');
+}
+
+function answer(btn) {
+  if (S.phase !== 'answer') return;
+  const f = S.fighters[S.buzzed];
+  const right = btn.dataset.o === S.q.ok;
+
+  if (right) {
+    S.phase = 'idle';
+    clearInterval(S.timerId);
+    btn.classList.add('right');
+    f.score++;
+    paintScores();
+    SFX.right();
+    $('status').innerHTML = `🎉 <b>${f.p.name}</b> 答對了 +1！`;
+    $('opts').classList.add('locked');
+    setTimeout(nextQ, 1400);
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    SFX.wrong();
+    S.outs.add(S.buzzed);
+    document.querySelectorAll('#buzzers button')[S.buzzed].classList.add('out');
+    document.querySelectorAll('#buzzers button')[S.buzzed].classList.remove('me');
+    if (S.outs.size >= S.fighters.length) {
+      S.phase = 'idle';
+      clearInterval(S.timerId);
+      revealAnswer('大家都答錯了');
+    } else {
+      S.phase = 'buzz';
+      $('opts').classList.add('locked');
+      $('status').innerHTML = `❌ ${f.p.name} 答錯，其他人快搶！`;
+    }
+  }
+}
+
+function timeUp() {
+  S.phase = 'idle';
+  clearInterval(S.timerId);
+  revealAnswer('時間到');
+}
+function revealAnswer(why) {
+  document.querySelectorAll('#opts button').forEach(b => {
+    if (b.dataset.o === S.q.ok) b.classList.add('right');
+  });
+  $('opts').classList.add('locked');
+  $('status').innerHTML = `⏰ ${why}！答案是「<b>${S.q.ok}</b>」`;
+  SFX.wrong();
+  setTimeout(nextQ, 1800);
+}
+
+function finish() {
+  clearInterval(S.timerId);
+  SFX.done();
+  const sorted = [...S.fighters].sort((a,b) => b.score - a.score);
+  $('board').innerHTML = sorted.map((f,k) => `
+    <div class="row ${k===0 ? 'top' : ''}">
+      <div class="rk">${['🥇','🥈','🥉'][k] || (k+1)}</div>
+      <div class="nm">${f.p.emoji} ${f.p.name}</div>
+      <div class="sc">${f.score} 題</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('go').onclick = () => {
+  if (S.picks.size < 2) { beep([300], 0.12); return; }
+  beep([440], 0.06);
+  startGame();
+};
+$('again').onclick = () => { renderWho(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>

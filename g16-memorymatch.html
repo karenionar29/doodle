@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F2230">
+<title>G16 翻牌記憶對決</title>
+<style>
+:root{
+  --ink:#0F2230; --ink-2:#1A3A50; --line:#2C5876; --paper:#FDFCF7;
+  --wire:#5CC8FF; --spark:#FFD23F; --hot:#FF5C6C; --dim:#8AAEC4; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.box{width:min(320px,90vw);background:var(--ink-2);border-radius:16px;padding:13px;
+     display:flex;flex-direction:column;gap:9px}
+.box h3{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:.08em;text-align:left}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:#0A1824;border:2px solid var(--line);border-radius:99px;
+              padding:8px 13px;font-size:13px;color:var(--dim);transition:.1s}
+.chips button.on{border-color:var(--wire);color:var(--wire);background:#1E4A66}
+.seg{display:flex;background:#0A1824;border-radius:99px;padding:3px;gap:3px}
+.seg button{flex:1;border-radius:99px;padding:8px 0;font-size:13px;color:var(--dim)}
+.seg button.on{background:var(--line);color:var(--paper)}
+
+#play{padding:8px 10px 10px;gap:8px}
+.turnbar{display:flex;align-items:center;gap:8px}
+.turnbar .now{flex:1;text-align:center;font-size:15px;background:var(--ink-2);border-radius:99px;padding:8px}
+.turnbar .now b{color:var(--spark)}
+.scores{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.scores span{background:var(--ink-2);border-radius:99px;padding:5px 11px;font-size:12px}
+.scores span.now{outline:2px solid var(--spark)}
+
+.grid{flex:1;min-height:0;display:grid;gap:7px;padding:2px}
+.cardBtn{
+  border-radius:14px;background:var(--ink-2);border:2px solid var(--line);
+  font-size:clamp(24px,8vw,44px);display:flex;align-items:center;justify-content:center;
+  transition:transform .18s, background .18s;position:relative;
+}
+.cardBtn .q{color:var(--dim);font-size:20px}
+.cardBtn.open{background:#FDFCF7;border-color:#FDFCF7;transform:scale(1.02)}
+.cardBtn.gone{opacity:.14;pointer-events:none}
+.cardBtn:active{transform:scale(.95)}
+
+#matchFx{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+         flex-direction:column;gap:6px;z-index:9;background:rgba(15,34,48,.85);pointer-events:none}
+#matchFx.on{display:flex}
+#mfEm{font-size:76px;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+#mfTxt{font-size:24px;color:var(--hit)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+#over{overflow-y:auto}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:17px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">🃏 🧠 🃏</div>
+  <h1>G16 <em>翻牌記憶對決</em></h1>
+  <p class="sub">牌蓋著，輪流一次翻兩張——<br>
+  翻到<b>一樣的就是你的</b>，而且<b>可以再翻一次</b>！<br>
+  翻錯就換人。看誰配對最多。</p>
+  <div class="box">
+    <h3>👥 誰要玩？</h3>
+    <div class="chips" id="who"></div>
+    <h3>🃏 牌有幾張？</h3>
+    <div class="seg" id="sizeSeg">
+      <button data-s="12" >12 張</button>
+      <button data-s="16" class="on">16 張</button>
+      <button data-s="20">20 張</button>
+    </div>
+  </div>
+  <button class="big" id="go">開始翻牌</button>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="play" class="screen">
+  <div class="turnbar"><div class="now" id="turnNow">輪到 <b>🧒 George</b></div></div>
+  <div class="scores" id="scores"></div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<div id="matchFx">
+  <div id="mfEm">🐱</div>
+  <div id="mfTxt">配對成功！再翻一次</div>
+</div>
+
+<section id="over" class="screen center">
+  <div class="hero">🏆</div>
+  <h2 style="font-size:24px" id="overTitle">記憶對決結果</h2>
+  <div class="board" id="board"></div>
+  <button class="big" id="again">再玩一局</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+const EMOJIS = ['🐱','🐶','🦊','🐼','🦁','🐸','🐙','🦄','🐳','🦕','🍎','🍌','🍕','🍩','🍦',
+                '🚗','🚀','✈️','⚽','🎈','🌈','⭐','🌵','🍄','👑','🤖','👻','🎁','🧲','💎'];
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  flip:  () => beep([600], 0.05, 'sine', 0.08),
+  match: () => beep([659,880,1175], 0.1, 'triangle', 0.17),
+  miss:  () => beep([392,294], 0.11, 'sine', 0.09),
+  done:  () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  picks: new Set(), size: 16,
+  fighters: [], turn: 0,
+  cards: [], open: [], lock: false, left: 0,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+/* ---------- 開場 ---------- */
+function paintStart() {
+  const ps = FP.get();
+  ps.forEach((_, i) => S.picks.add(i));
+  renderWho();
+}
+function renderWho() {
+  const ps = FP.get();
+  $('who').innerHTML = ps.map((p, i) =>
+    `<button data-i="${i}" class="${S.picks.has(i) ? 'on' : ''}">${p.emoji} ${p.name}</button>`).join('');
+  document.querySelectorAll('#who button').forEach(b =>
+    b.addEventListener('click', () => {
+      const i = +b.dataset.i;
+      if (S.picks.has(i)) { if (S.picks.size > 1) S.picks.delete(i); }
+      else S.picks.add(i);
+      renderWho();
+      beep([700], 0.04, 'sine', 0.05);
+    }));
+}
+document.querySelectorAll('#sizeSeg button').forEach(b =>
+  b.addEventListener('click', () => {
+    S.size = +b.dataset.s;
+    document.querySelectorAll('#sizeSeg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    beep([650], 0.04, 'sine', 0.05);
+  }));
+
+/* ---------- 佈牌 ---------- */
+function startGame() {
+  const ps = FP.get();
+  S.fighters = [...S.picks].sort((a,b)=>a-b).map(i => ({ p: ps[i], score: 0 }));
+  S.turn = Math.floor(Math.random() * S.fighters.length);
+  S.left = S.size / 2;
+
+  const pool = [...EMOJIS];
+  for (let i=pool.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  const faces = pool.slice(0, S.size/2);
+  S.cards = [...faces, ...faces].map(em => ({ em, gone:false }));
+  for (let i=S.cards.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [S.cards[i],S.cards[j]]=[S.cards[j],S.cards[i]]; }
+  S.open = []; S.lock = false;
+
+  const cols = S.size <= 12 ? 3 : 4;
+  const g = $('grid');
+  g.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+  g.innerHTML = S.cards.map((c, i) =>
+    `<button class="cardBtn" data-i="${i}"><span class="q">❓</span></button>`).join('');
+  document.querySelectorAll('.cardBtn').forEach(b =>
+    b.addEventListener('click', () => flip(+b.dataset.i)));
+
+  paintTurn();
+  show('play');
+}
+
+function paintTurn() {
+  const f = S.fighters[S.turn % S.fighters.length];
+  $('turnNow').innerHTML = `輪到 <b>${f.p.emoji} ${f.p.name}</b>`;
+  $('scores').innerHTML = S.fighters.map((x, k) =>
+    `<span class="${k === S.turn % S.fighters.length ? 'now' : ''}">${x.p.emoji} ${x.p.name}：${x.score}</span>`).join('');
+}
+
+/* ---------- 翻牌 ---------- */
+function flip(i) {
+  if (S.lock) return;
+  const c = S.cards[i];
+  if (c.gone || S.open.includes(i)) return;
+  const el = document.querySelector(`.cardBtn[data-i="${i}"]`);
+  el.classList.add('open');
+  el.innerHTML = c.em;
+  SFX.flip();
+  S.open.push(i);
+  if (S.open.length < 2) return;
+
+  S.lock = true;
+  const [a, b] = S.open;
+  const same = S.cards[a].em === S.cards[b].em;
+
+  setTimeout(() => {
+    const f = S.fighters[S.turn % S.fighters.length];
+    if (same) {
+      S.cards[a].gone = S.cards[b].gone = true;
+      [a,b].forEach(k => document.querySelector(`.cardBtn[data-i="${k}"]`).classList.add('gone'));
+      f.score++;
+      S.left--;
+      SFX.match();
+      $('mfEm').textContent = S.cards[a].em;
+      $('mfTxt').textContent = S.left ? `${f.p.name} 配對成功！再翻一次` : `${f.p.name} 拿下最後一對！`;
+      $('matchFx').classList.add('on');
+      setTimeout(() => {
+        $('matchFx').classList.remove('on');
+        S.open = []; S.lock = false;
+        paintTurn();
+        if (!S.left) finish();
+      }, 1000);
+    } else {
+      SFX.miss();
+      [a,b].forEach(k => {
+        const el2 = document.querySelector(`.cardBtn[data-i="${k}"]`);
+        el2.classList.remove('open');
+        el2.innerHTML = '<span class="q">❓</span>';
+      });
+      S.open = []; S.lock = false;
+      S.turn++;
+      paintTurn();
+    }
+  }, same ? 350 : 1000);
+}
+
+function finish() {
+  SFX.done();
+  const sorted = [...S.fighters].sort((a,b) => b.score - a.score);
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '記憶對決結果' : '你的成績';
+  $('board').innerHTML = sorted.map((f,k) => `
+    <div class="row ${k===0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][k] || (k+1)) : f.p.emoji}</div>
+      <div class="nm">${f.p.emoji} ${f.p.name}</div>
+      <div class="sc">${f.score} 對</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('go').onclick = () => { beep([440], 0.06); startGame(); };
+$('again').onclick = () => { renderWho(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>

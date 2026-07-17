@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D1F26">
+<title>G19 顏色獵人</title>
+<style>
+:root{
+  --ink:#0D1F26; --ink-2:#173540; --line:#28556A; --paper:#FDFCF7;
+  --wire:#4DD9C0; --spark:#FFD23F; --hot:#FF5C6C; --dim:#84A9B0; --hit:#4ADE80;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+.center{justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px}
+
+.hero{font-size:44px}
+h1{font-size:24px;line-height:1.35}
+h1 em{font-style:normal;color:var(--wire)}
+.sub{color:var(--dim);font-size:12px;font-weight:500;line-height:1.85;max-width:22em}
+.sub b{color:var(--paper)}
+.big{background:var(--wire);color:var(--ink);border-radius:18px;padding:16px 42px;font-size:19px}
+.big:active{transform:scale(.97)}
+.back{color:var(--dim);font-size:12px;text-decoration:underline}
+.tiny{font-size:11px;color:var(--dim);font-weight:500;max-width:23em;line-height:1.7}
+.pick{display:flex;flex-direction:column;gap:8px;width:min(320px,90vw)}
+.pick button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+             padding:13px;text-align:left;transition:.15s}
+.pick button:active{transform:scale(.96)}
+.pick button.hero2{border-color:var(--wire);background:#1E4552}
+.pick b{font-size:16px}
+.pick span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px}
+.err{color:var(--hot);font-size:13px;font-weight:500;max-width:24em;line-height:1.7;
+     background:var(--ink-2);padding:14px;border-radius:12px;border-left:3px solid var(--hot)}
+.who{font-size:32px;color:var(--spark)}
+
+#play{padding:8px 10px 10px;gap:7px}
+.topbar{display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.pill.spark{color:var(--spark)}
+#timer{margin-left:auto;font-variant-numeric:tabular-nums;font-size:19px;min-width:52px;text-align:center;
+       background:var(--ink-2);border-radius:99px;padding:6px 10px}
+#timer.hot{color:var(--hot);animation:pulse .5s infinite}
+@keyframes pulse{50%{transform:scale(1.14)}}
+
+.quest{border-radius:16px;padding:12px;text-align:center;transition:background .2s;color:#fff;
+       text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.quest .lead{font-size:11px;font-weight:500;letter-spacing:.16em;opacity:.85}
+.quest .what{font-size:30px;line-height:1.15;margin-top:1px}
+
+.lens{position:relative;flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#000;
+      box-shadow:0 10px 30px rgba(0,0,0,.45)}
+#cam{width:100%;height:100%;object-fit:cover;display:block}
+.frame{position:absolute;inset:16px;border:3px dashed rgba(255,255,255,.4);border-radius:14px;
+       pointer-events:none;transition:.15s}
+.lens.hot .frame{border-style:solid;border-color:var(--hit);
+                 box-shadow:0 0 0 9999px rgba(74,222,128,.15) inset}
+.camNote{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+         color:var(--dim);font-size:14px;font-weight:600;text-align:center;padding:24px;background:#000}
+.camNote.gone{display:none}
+
+.meter{background:var(--ink-2);border-radius:14px;padding:9px 12px;display:flex;flex-direction:column;gap:6px}
+.meter .head{display:flex;font-size:12px;color:var(--dim);font-weight:500}
+.meter .head .r{margin-left:auto;font-size:14px;color:var(--wire)}
+.track{height:13px;background:#081418;border-radius:99px;overflow:hidden;position:relative}
+.fill{height:100%;width:0%;border-radius:99px;transition:width .15s;background:var(--wire)}
+.goal{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--spark)}
+.tools{display:flex;gap:8px}
+.tools button{flex:1;background:var(--ink-2);border:2px solid var(--line);
+              border-radius:14px;padding:12px 0;font-size:15px;color:var(--dim)}
+
+#found{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+       gap:10px;z-index:9;background:rgba(13,31,38,.92);pointer-events:none}
+#found.on{display:flex}
+#foundIcon{font-size:70px;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+#foundWord{font-size:36px;color:var(--hit)}
+@keyframes pop{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:scale(1);opacity:1}}
+
+#over{overflow-y:auto}
+.board{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw)}
+.row{display:flex;align-items:center;gap:12px;background:var(--ink-2);border-radius:14px;padding:12px 16px}
+.row.top{background:var(--spark);color:var(--ink)}
+.row .rk{font-size:19px;width:28px}
+.row .nm{flex:1;text-align:left;font-size:16px}
+.row .sc{font-size:19px}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on center">
+  <div class="hero">🌈 🔍 📸</div>
+  <h1>G19 <em>顏色獵人</em></h1>
+  <p class="sub">機器人喊一個<b>顏色</b>——<br>
+  你衝去找那個顏色的東西，<b>用它塞滿鏡頭框框</b>！<br>
+  抓到顏色就得分，限時內找越多越好。</p>
+  <div class="pick" id="pickBox"></div>
+  <p class="tiny">🔒 鏡頭只在裝置裡看顏色比例，不錄影、不外傳。</p>
+  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+  <p class="err" id="camErr" style="display:none"></p>
+</section>
+
+<section id="relay" class="screen center">
+  <div class="hero">🏃</div>
+  <div class="who" id="relayWho">換 George！</div>
+  <p class="sub">平板交給他，聽到顏色就衝！</p>
+  <button class="big" id="relayGo">開始！</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="topbar">
+    <div class="pill" id="whoTag">🧒 George</div>
+    <div class="pill spark">🎨 <span id="score">0</span></div>
+    <div id="timer">60</div>
+  </div>
+
+  <div class="quest" id="quest">
+    <div class="lead">去 找 這 個 顏 色</div>
+    <div class="what" id="questWhat">紅色</div>
+  </div>
+
+  <div class="lens" id="lens">
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="frame"></div>
+    <div class="camNote" id="camNote">正在打開相機…</div>
+  </div>
+
+  <div class="meter">
+    <div class="head">畫面裡有多少 <span id="mColor">紅色</span> <span class="r" id="mPct">0%</span></div>
+    <div class="track"><div class="fill" id="mFill"></div><div class="goal" id="mGoal"></div></div>
+  </div>
+
+  <div class="tools"><button id="skipBtn">找不到，換一個顏色</button></div>
+</section>
+
+<div id="found">
+  <div id="foundIcon">🎯</div>
+  <div id="foundWord">紅色 ✓</div>
+</div>
+
+<section id="over" class="screen center">
+  <div class="hero">🏆</div>
+  <h2 style="font-size:24px" id="overTitle">顏色獵人排行</h2>
+  <div class="board" id="board"></div>
+  <button class="big" id="again">再獵一輪</button>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+const CONFIG = {
+  BASE_SECONDS: 60,
+  SAMPLE_W: 48, SAMPLE_H: 36, CHECK_MS: 250, HOLD: 3,
+  /* 難度 → 顏色要佔畫面幾成才算抓到 */
+  NEED: { easy: 0.32, normal: 0.45, hard: 0.58 },
+};
+
+/* 顏色定義：test(h 0-360, s 0-1, v 0-1) → 是不是這個顏色 */
+const COLORS = [
+  { zh:'紅色',   bg:'#D32F2F', test:(h,s,v)=> (h<16||h>344) && s>0.4 && v>0.22 },
+  { zh:'橘色',   bg:'#EF6C00', test:(h,s,v)=> h>=16 && h<44 && s>0.45 && v>0.4 },
+  { zh:'黃色',   bg:'#C9A400', test:(h,s,v)=> h>=44 && h<72 && s>0.35 && v>0.45 },
+  { zh:'綠色',   bg:'#2E7D32', test:(h,s,v)=> h>=72 && h<165 && s>0.28 && v>0.18 },
+  { zh:'藍色',   bg:'#1565C0', test:(h,s,v)=> h>=185 && h<255 && s>0.3 && v>0.2 },
+  { zh:'紫色',   bg:'#6A3AB2', test:(h,s,v)=> h>=255 && h<300 && s>0.25 && v>0.2 },
+  { zh:'粉紅色', bg:'#D81B8C', test:(h,s,v)=> ((h>=300&&h<345)||((h<16||h>344)&&s<0.45)) && s>0.14 && v>0.6 },
+  { zh:'白色',   bg:'#7A8B92', test:(h,s,v)=> s<0.16 && v>0.78 },
+  { zh:'黑色',   bg:'#37474F', test:(h,s,v)=> v<0.16 },
+  { zh:'咖啡色', bg:'#6D4C41', test:(h,s,v)=> h>=14 && h<48 && s>0.3 && v>=0.15 && v<0.55 },
+];
+
+let ac = null;
+function beep(f, dur=0.1, type='sine', gain=0.12) {
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    f.forEach((hz,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = hz;
+      const t = ac.currentTime + i*dur*0.8;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(gain, t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    });
+  } catch(_) {}
+}
+const SFX = {
+  found: () => beep([659,784,1047,1319], 0.1, 'triangle', 0.17),
+  near:  () => beep([1200], 0.04, 'sine', 0.05),
+  go:    () => beep([392,523], 0.1, 'triangle', 0.12),
+  skip:  () => beep([392,294], 0.09, 'sine', 0.09),
+  tick:  () => beep([880], 0.05, 'square', 0.05),
+  done:  () => beep([523,659,784,1047,1319], 0.13, 'triangle', 0.18),
+};
+
+const S = {
+  queue: [], cur: null, results: [], solo: true,
+  deck: [], target: null,
+  score: 0, left: 0, hold: 0,
+  timerId: null, checkId: null, camOn: false,
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+};
+
+function paintStart() {
+  const ps = FP.get();
+  $('pickBox').innerHTML =
+    (ps.length > 1 ? `
+      <button class="hero2" data-p="party">
+        <b>👨‍👦‍👦 大家比賽（${ps.length} 人）</b>
+        <span>輪流獵色，看誰抓最多</span>
+      </button>` : '') +
+    ps.map((p, i) => `
+      <button data-p="${i}">
+        <b>${p.emoji} ${p.name}</b>
+        <span>${FP.secs(p, CONFIG.BASE_SECONDS)} 秒 · 顏色要佔 ${Math.round((CONFIG.NEED[p.level]||0.45)*100)}%</span>
+      </button>`).join('');
+  document.querySelectorAll('#pickBox button').forEach(b =>
+    b.addEventListener('click', async () => {
+      const ps2 = FP.get();
+      if (b.dataset.p === 'party') { S.solo = false; S.queue = ps2.map((_,i) => i); }
+      else { S.solo = true; S.queue = [+b.dataset.p]; }
+      S.results = [];
+      beep([440], 0.06);
+      const ok = S.camOn || await openCamera();
+      if (ok) nextPlayer();
+    }));
+}
+
+/* ---------- 相機 + 顏色比例 ---------- */
+const cam = $('cam');
+const grab = document.createElement('canvas');
+grab.width = CONFIG.SAMPLE_W; grab.height = CONFIG.SAMPLE_H;
+const gctx = grab.getContext('2d', { willReadFrequently:true });
+
+async function openCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }, audio: false
+    });
+    cam.srcObject = stream;
+    await cam.play();
+    S.camOn = true;
+    $('camNote').classList.add('gone');
+    return true;
+  } catch (e) {
+    $('camErr').style.display = '';
+    $('camErr').textContent = '打不開相機，請允許權限後重新整理。(' + e.name + ')';
+    show('start');
+    return false;
+  }
+}
+
+function rgb2hsv(r, g, b) {
+  r/=255; g/=255; b/=255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+  let h = 0;
+  if (d) {
+    if (mx === r) h = ((g-b)/d) % 6;
+    else if (mx === g) h = (b-r)/d + 2;
+    else h = (r-g)/d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, mx ? d/mx : 0, mx];
+}
+
+function colorRatio(col) {
+  if (!cam.videoWidth) return 0;
+  const vw = cam.videoWidth, vh = cam.videoHeight;
+  /* 取中間 70% 區域 */
+  const cw = vw*0.7, ch = vh*0.7;
+  gctx.drawImage(cam, (vw-cw)/2, (vh-ch)/2, cw, ch, 0, 0, CONFIG.SAMPLE_W, CONFIG.SAMPLE_H);
+  const d = gctx.getImageData(0, 0, CONFIG.SAMPLE_W, CONFIG.SAMPLE_H).data;
+  let hit = 0, n = d.length/4;
+  for (let i = 0; i < d.length; i += 4) {
+    const [h, s, v] = rgb2hsv(d[i], d[i+1], d[i+2]);
+    if (col.test(h, s, v)) hit++;
+  }
+  return hit / n;
+}
+
+/* ---------- 流程 ---------- */
+function buildDeck() {
+  const d = [...COLORS];
+  for (let i=d.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+function needOf() { return CONFIG.NEED[S.cur.level] || CONFIG.NEED.normal; }
+
+function nextPlayer() {
+  if (!S.queue.length) return finish();
+  const ps = FP.get();
+  S.cur = ps[S.queue.shift()] || ps[0];
+  if (S.solo) startTurn();
+  else {
+    $('relayWho').textContent = `${S.cur.emoji} 換 ${S.cur.name}！`;
+    show('relay');
+  }
+}
+$('relayGo').onclick = startTurn;
+
+function startTurn() {
+  show('play');
+  $('whoTag').textContent = `${S.cur.emoji} ${S.cur.name}`;
+  S.score = 0;
+  $('score').textContent = '0';
+  S.deck = buildDeck();
+  $('mGoal').style.left = (needOf()*100) + '%';
+  nextColor();
+
+  S.left = FP.secs(S.cur, CONFIG.BASE_SECONDS);
+  paintTimer();
+  clearInterval(S.timerId);
+  S.timerId = setInterval(() => {
+    S.left--;
+    paintTimer();
+    if (S.left <= 3 && S.left > 0) SFX.tick();
+    if (S.left <= 0) endTurn();
+  }, 1000);
+
+  clearInterval(S.checkId);
+  S.checkId = setInterval(check, CONFIG.CHECK_MS);
+}
+
+function paintTimer() {
+  $('timer').textContent = S.left;
+  $('timer').classList.toggle('hot', S.left <= 5);
+}
+
+function nextColor() {
+  if (!S.deck.length) S.deck = buildDeck();
+  S.target = S.deck.pop();
+  S.hold = 0;
+  $('questWhat').textContent = S.target.zh;
+  $('quest').style.background = S.target.bg;
+  $('mColor').textContent = S.target.zh;
+  $('lens').classList.remove('hot');
+  SFX.go();
+}
+
+function check() {
+  if (!S.target || !S.camOn) return;
+  const r = colorRatio(S.target);
+  const pct = Math.round(r*100);
+  $('mPct').textContent = pct + '%';
+  $('mFill').style.width = Math.min(100, r/needOf()*100 * needOf()*100/100) + '%';
+  $('mFill').style.width = Math.min(100, pct) + '%';
+  $('mFill').style.background = S.target.bg;
+
+  if (r >= needOf()) {
+    S.hold++;
+    $('lens').classList.add('hot');
+    if (S.hold === 1) SFX.near();
+    if (S.hold >= CONFIG.HOLD) gotIt();
+  } else {
+    S.hold = 0;
+    $('lens').classList.remove('hot');
+  }
+}
+
+function gotIt() {
+  const zh = S.target.zh;
+  S.score++;
+  $('score').textContent = S.score;
+  S.target = null;
+  SFX.found();
+  $('foundWord').textContent = zh + ' ✓';
+  $('found').classList.add('on');
+  setTimeout(() => {
+    $('found').classList.remove('on');
+    if (S.timerId) nextColor();
+  }, 1000);
+}
+
+function endTurn() {
+  clearInterval(S.timerId); S.timerId = null;
+  clearInterval(S.checkId); S.checkId = null;
+  S.target = null;
+  S.results.push({ name:S.cur.name, emoji:S.cur.emoji, score:S.score });
+  SFX.done();
+  nextPlayer();
+}
+
+function finish() {
+  const sorted = [...S.results].sort((a,b) => b.score - a.score);
+  const multi = sorted.length > 1;
+  $('overTitle').textContent = multi ? '顏色獵人排行' : '你的成績';
+  $('board').innerHTML = sorted.map((r,i) => `
+    <div class="row ${i===0 && multi ? 'top' : ''}">
+      <div class="rk">${multi ? (['🥇','🥈','🥉'][i] || (i+1)) : r.emoji}</div>
+      <div class="nm">${r.name}</div>
+      <div class="sc">${r.score}</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('skipBtn').onclick = () => { if (S.target) { SFX.skip(); nextColor(); } };
+$('again').onclick = () => { paintStart(); show('start'); };
+
+paintStart();
+</script>
+</body>
+</html>
