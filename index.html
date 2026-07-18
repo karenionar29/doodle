@@ -133,6 +133,12 @@ footer b{color:var(--paper)}
 #addP{background:#0A1826;border:2px dashed var(--line);border-radius:14px;padding:12px 0;
       font-size:14px;color:var(--wire)}
 .emPick{display:flex;gap:6px;flex-wrap:wrap;background:#0A1826;border-radius:14px;padding:10px}
+.rosterHead{font-size:12px;color:var(--dim);font-weight:500;margin-bottom:6px}
+.rosterChips{display:flex;gap:6px;flex-wrap:wrap}
+.rchip{background:#0A1826;border:2px solid var(--line);border-radius:99px;padding:6px 10px;
+       font-size:13px;display:inline-flex;gap:6px;align-items:center}
+.rchip.used{opacity:.35}
+.rchip i{font-style:normal;color:var(--dim);font-size:12px;padding:0 3px}
 .emPick button{font-size:25px;padding:3px 5px;border-radius:8px}
 .emPick button.on{background:var(--wire)}
 
@@ -243,7 +249,8 @@ footer b{color:var(--paper)}
 <div class="veil" id="pVeil">
   <div class="panel">
     <h2>👥 玩家設定</h2>
-    <p class="note">最多 6 人。點按鈕循環切換難度／性別。</p>
+    <p class="note">最多 6 人。點按鈕循環切換難度／性別，🎲 抽好笑名字。</p>
+    <div id="rosterWrap"></div>
     <div id="pList"></div>
     <button id="addP">＋ 加一個人</button>
     <div class="emPick" id="emPick" style="display:none"></div>
@@ -495,6 +502,56 @@ function renderGate() {
 $('gateGo').addEventListener('click', () => $('gate').classList.add('off'));
 $('gateEdit').addEventListener('click', () => openPlayers());
 
+/* ---------- 好笑名字庫 ---------- */
+const FUN_BOY = [
+  '杜子騰','范統','郝帥','郝聰明','郝棒棒','郝會贏','蘇湖','甘單','侯塞雷','麥擱鬧',
+  '麥吵吵','賴在床','賴皮皮','莫再提','甄強壯','甄會跑','甄敢衝','朱古力','包剪錘','包青菜',
+  '呂布丁','洪吱吱','熊讚讚','雷公公','石頭哥','鐵金剛','常勝軍','秦好睏','潘達熊','柯基基',
+  '歐嗨唷','歐買尬','卜派派','丁滿滿','彭湃湃','米漿王','蛋餅王','滷肉飯','韓堡堡','薯條哥',
+  '可樂王','游泳圈','跑得快','睡不飽','吃不胖','打嗝王','放屁俠','無敵鐵牛','阿嗚嗚','翻滾吧',
+];
+const FUN_GIRL = [
+  '梅川依芙','梅煩惱','梅在怕','梅禮貌','梅力氣','梅睡飽','甄美麗','甄可愛','甄好笑','甄會吃',
+  '郝漂亮','郝可愛','郝溫柔','白雪雪','白泡泡','糖果果','布丁丁','棉花糖','小籠包','珍珠奶',
+  '芋圓圓','湯圓圓','蘇芙蕾','馬卡龍','蜜糖糖','草莓莓','桃太甜','柳丁丁','蘋果果','西瓜瓜',
+  '何美美','夏天天','秋香香','冬瓜瓜','春捲捲','米香香','麥芽糖','QQ醬','波波茶','仙草凍',
+  '愛玉冰','雪花冰','椰果果','貢丸妹','甜不辣','麻糬糬','銅鑼燒','泡芙芙','鬆餅餅','奶酪酪',
+];
+
+/* ---------- ⭐ 常用名單 ---------- */
+const ROSTER_KEY = 'fp-roster-v1';
+const loadRoster = () => { try { return JSON.parse(localStorage.getItem(ROSTER_KEY)) || []; } catch(_) { return []; } };
+const saveRoster = (a) => { try { localStorage.setItem(ROSTER_KEY, JSON.stringify(a.slice(0, 24))); } catch(_) {} };
+
+function renderRoster() {
+  const wrap = $('rosterWrap');
+  if (!wrap) return;
+  const ro = loadRoster();
+  if (!ro.length) { wrap.innerHTML = ''; return; }
+  const inDraft = new Set(draft.map(p => p.name));
+  wrap.innerHTML =
+    `<div class="rosterHead">⭐ 常用名單（點名字加入，✕ 從名單移除）</div><div class="rosterChips">` +
+    ro.map((p, i) =>
+      `<span class="rchip ${inDraft.has(p.name) ? 'used' : ''}" data-radd="${i}">${p.emoji} ${p.name}<i data-rdel="${i}">✕</i></span>`).join('') +
+    `</div>`;
+  wrap.querySelectorAll('[data-radd]').forEach(ch =>
+    ch.addEventListener('click', (e) => {
+      if (e.target.dataset.rdel !== undefined) return;
+      const p = loadRoster()[+ch.dataset.radd];
+      if (!p || draft.length >= 6 || draft.some(x => x.name === p.name)) return;
+      draft.push({ ...p });
+      paintDraft();
+    }));
+  wrap.querySelectorAll('[data-rdel]').forEach(x =>
+    x.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ro2 = loadRoster();
+      ro2.splice(+x.dataset.rdel, 1);
+      saveRoster(ro2);
+      renderRoster();
+    }));
+}
+
 /* ---------- 玩家編輯 ---------- */
 let draft = [], emTarget = -1;
 const LV_ORDER = ['easy','normal','hard'];
@@ -514,12 +571,14 @@ function paintDraft() {
     <div class="pRow">
       <button class="em" data-em="${i}">${p.emoji}</button>
       <input type="text" maxlength="8" value="${p.name.replace(/"/g,'&quot;')}" data-nm="${i}" placeholder="名字">
+      <button class="cyc" data-rnd="${i}">🎲</button>
       <button class="cyc ${lv.key}" data-lv="${i}">${lv.label}</button>
       <button class="cyc ${gd.key}" data-gd="${i}">${gd.label}</button>
       ${draft.length > 1 ? `<button class="del" data-del="${i}">✕</button>` : ''}
     </div>`;
   }).join('');
   $('addP').style.display = draft.length >= 6 ? 'none' : '';
+  renderRoster();
   document.querySelectorAll('[data-nm]').forEach(el =>
     el.addEventListener('input', () => { draft[+el.dataset.nm].name = el.value; }));
   document.querySelectorAll('[data-lv]').forEach(el =>
@@ -538,6 +597,17 @@ function paintDraft() {
     el.addEventListener('click', () => {
       draft.splice(+el.dataset.del, 1);
       $('emPick').style.display = 'none';
+      paintDraft();
+    }));
+  document.querySelectorAll('[data-rnd]').forEach(el =>
+    el.addEventListener('click', () => {
+      const i = +el.dataset.rnd;
+      const g = draft[i].gender;
+      const pool = g === 'boy' ? FUN_BOY : g === 'girl' ? FUN_GIRL : FUN_BOY.concat(FUN_GIRL);
+      let nm = draft[i].name;
+      for (let t = 0; t < 8 && nm === draft[i].name; t++)
+        nm = pool[Math.floor(Math.random() * pool.length)];
+      draft[i].name = nm;
       paintDraft();
     }));
   document.querySelectorAll('[data-em]').forEach(el =>
@@ -562,6 +632,14 @@ $('addP').addEventListener('click', () => {
 });
 $('pCancel').addEventListener('click', () => $('pVeil').classList.remove('on'));
 $('pSave').addEventListener('click', () => {
+  /* 存進 ⭐ 常用名單（同名就更新設定） */
+  const ro = loadRoster();
+  draft.forEach(p => {
+    if (!String(p.name).trim()) return;
+    const k = ro.findIndex(x => x.name === p.name);
+    if (k >= 0) ro[k] = { ...p }; else ro.push({ ...p });
+  });
+  saveRoster(ro);
   FP.set(draft);
   $('pVeil').classList.remove('on');
   renderPlayers();
