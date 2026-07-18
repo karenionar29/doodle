@@ -51,6 +51,8 @@ h1 em{font-style:normal;color:var(--wire)}
 .filters button{background:#0A1826;border:2px solid var(--line);border-radius:99px;
                 padding:6px 12px;font-size:12px;color:var(--dim);transition:.1s}
 .filters button.on{border-color:var(--wire);color:var(--wire);background:#153347}
+.filters button.ban{border-color:var(--hot);color:var(--hot);background:#3A1520;text-decoration:line-through}
+.banHead{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.06em}
 .toolRow{display:flex;gap:8px;align-items:center}
 .sortSeg{display:flex;background:#0A1826;border-radius:99px;padding:3px;gap:3px;flex:1}
 .sortSeg button{flex:1;border-radius:99px;padding:7px 0;font-size:12px;color:var(--dim)}
@@ -216,6 +218,8 @@ footer b{color:var(--paper)}
 <div class="block toolbox">
   <input id="search" type="search" placeholder="🔍 搜尋遊戲…" autocomplete="off">
   <div class="filters" id="filters"></div>
+  <div class="banHead">🚫 不要哪種？（可多選，隨機挑也會避開）</div>
+  <div class="filters" id="banFilters"></div>
   <div class="toolRow">
     <div class="sortSeg">
       <button id="sortNo" class="on">依編號</button>
@@ -371,7 +375,7 @@ const saveR = (d) => { try { localStorage.setItem(RKEY, JSON.stringify(d)); } ca
 const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
 
 /* 篩選狀態 */
-const V = { cat:'全部', q:'', sort:'no' };
+const V = { cat:'全部', q:'', sort:'no', ban: new Set() };
 
 function renderPlayers() {
   const ps = FP.get();
@@ -390,6 +394,22 @@ function renderFilters() {
   document.querySelectorAll('#filters button').forEach(b =>
     b.addEventListener('click', () => {
       V.cat = b.dataset.c;
+      V.ban.delete(b.dataset.c);      // 選了要的，就不能同時在不要裡
+      renderFilters();
+      renderShelf();
+    }));
+
+  /* 🚫 不要（可多選） */
+  $('banFilters').innerHTML = CATS.slice(1).map(c =>
+    `<button data-b="${c}" class="${V.ban.has(c) ? 'ban' : ''}">${c}</button>`).join('');
+  document.querySelectorAll('#banFilters button').forEach(b =>
+    b.addEventListener('click', () => {
+      const c = b.dataset.b;
+      if (V.ban.has(c)) V.ban.delete(c);
+      else {
+        V.ban.add(c);
+        if (V.cat === c) V.cat = '全部';   // 不要的跟要的撞到 → 回到全部
+      }
       renderFilters();
       renderShelf();
     }));
@@ -402,6 +422,7 @@ function filtered() {
   const data = loadR();
   let list = GAMES.filter(g =>
     (V.cat === '全部' || g.cats.includes(V.cat)) &&
+    ![...V.ban].some(b => g.cats.includes(b)) &&
     (!V.q || g.name.includes(V.q) || g.desc.includes(V.q) || g.id.includes(V.q.toLowerCase())));
   if (V.sort === 'star')
     list = [...list].sort((a,b) => totalOf(data[b.id]) - totalOf(data[a.id]));
@@ -444,9 +465,10 @@ function renderShelf() {
 
 /* ---------- 🎲 隨機挑 ---------- */
 $('luckyBtn').addEventListener('click', () => {
-  $('luckyScope').textContent = V.cat === '全部' && !V.q
+  const banTxt = V.ban.size ? `，避開：${[...V.ban].join('、')}` : '';
+  $('luckyScope').textContent = (V.cat === '全部' && !V.q && !V.ban.size)
     ? '從全部遊戲裡挑'
-    : `從目前篩選（${V.cat}${V.q ? '·「' + V.q + '」' : ''}）裡挑`;
+    : `從目前篩選（${V.cat}${V.q ? '·「' + V.q + '」' : ''}${banTxt}）裡挑`;
   $('luckyOut').innerHTML = '';
   $('luckyBox').classList.add('on');
 });
