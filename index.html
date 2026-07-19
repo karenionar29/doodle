@@ -359,7 +359,7 @@ footer b{color:var(--paper)}
 
 <div class="modalVeil" id="a2hsBox"><div class="modal">
   <h3>📱 裝成 App（全螢幕玩）</h3>
-  <div class="a2hsWhy">網頁在 Safari 直接開，上下會有網址列擋到、還容易誤觸。<br>裝成 App 後就<b style="color:var(--wire)">跟真的 App 一樣全螢幕</b>，只要做一次！</div>
+  <div class="a2hsWhy">網頁在 Safari 直接開，上下會有網址列擋到、還容易誤觸。<br>裝成 App 後就<b style="color:var(--wire)">跟真的 App 一樣全螢幕</b>，只要做一次！<br><b style="color:var(--spark)">記得：裝好要從「桌面圖示」打開才有效 👇</b></div>
   <div class="steps" id="stepsBox"></div>
   <button class="go" id="a2hsDone">好，我知道了</button>
 </div></div>
@@ -975,10 +975,10 @@ const isAndroid = () => /android/i.test(navigator.userAgent);
 
 function a2hsSteps() {
   if (isIOS()) return [
-    ['1', '點 Safari 最下面（或最上面）的<b>分享鈕</b> <span class="shot">⬆️ 方框加箭頭</span>'],
-    ['2', '往下滑，找到<b>「加入主畫面」</b> <span class="shot">➕ 加入主畫面</span>'],
-    ['3', '按右上角<b>「加入」</b>，桌面就會出現遊戲間圖示 🎮'],
-    ['4', '以後<b>從圖示打開</b>，就是全螢幕、沒有網址列！'],
+    ['1', '找 Safari 的<b>分享鈕</b> <span class="shot">⬆️ 方框加箭頭</span><br><span style="color:var(--dim);font-weight:500;font-size:12px">它可能在<b>網址列旁邊</b>、<b>畫面最下面中間</b>、或<b>右下角那排</b>，長得像方框冒出一個箭頭</span>'],
+    ['2', '在跳出的選單<b>往下滑</b>，找到<b>「加入主畫面」</b> <span class="shot">➕ 加入主畫面</span>'],
+    ['3', '按右上角<b>「加入」</b>，手機桌面就會多一個遊戲間圖示 🎮'],
+    ['4', '⚠️ <b>關鍵</b>：要回<b>手機桌面</b>、點那個<b>新圖示</b>打開，才是全螢幕！<br><span style="color:var(--dim);font-weight:500;font-size:12px">在 Safari 裡開永遠有網址列，這是 iPhone 的規定，只有從桌面圖示開才會乾淨</span>'],
   ];
   if (isAndroid()) return [
     ['1', '點 Chrome 右上角的<b>⋮ 選單</b>'],
