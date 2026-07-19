@@ -170,6 +170,17 @@ footer b{color:var(--paper)}
 #gateEdit{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
           padding:13px 0;font-size:14px;color:var(--wire);width:min(300px,86vw)}
 
+/* ⚙️ 設定與搬家 常駐入口 */
+.setEntry{width:100%;max-width:390px;background:var(--ink-2);border:2px solid var(--line);
+          border-radius:16px;padding:13px 15px;display:flex;align-items:center;gap:12px;
+          text-align:left;cursor:pointer;transition:.12s}
+.setEntry:active{transform:scale(.99);background:#153347}
+.setEntry .ic{font-size:24px;flex:none}
+.setEntry .tx{flex:1;min-width:0}
+.setEntry .tx b{display:block;font-size:15px;color:var(--wire);line-height:1.3}
+.setEntry .tx span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
+.setEntry .arrow{color:var(--dim);font-size:22px;flex:none}
+
 .veil{position:fixed;inset:0;background:rgba(5,12,20,.85);display:none;z-index:10;
       align-items:flex-end;justify-content:center}
 .veil.on{display:flex}
@@ -304,10 +315,6 @@ footer b{color:var(--paper)}
 
 <div class="block data" id="dataBlock">
   <button id="copyBtn">📋 複製評分</button>
-  <div class="backup">
-    <button id="exportBtn">💾 存成檔案</button>
-    <button id="importBtn">📂 讀取檔案</button>
-  </div>
   <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
   <p class="note">評分與玩家設定存在<b>這台裝置</b>裡。<br>要給 Claude 看 → 按「複製評分」貼進對話框。<br>要<b>備份 / 搬到 App / 換手機</b> → 用最上面的 <b style="color:var(--wire)">⚙️ 設定與搬家</b>。</p>
 </div>
