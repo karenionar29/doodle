@@ -102,6 +102,22 @@ h1 em{font-style:normal;color:var(--wire)}
 </head>
 <body>
 
+<div id="dlAsk" style="position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.7)">
+  <div style="max-width:340px;width:100%;background:#1a1a2e;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;text-align:center;color:#fff;font-family:'Noto Sans TC',sans-serif;font-weight:700">
+    <div style="font-size:46px">🤖⬇️</div>
+    <div style="font-size:20px">這款要先下載機器人大腦</div>
+    <div style="font-size:14px;font-weight:500;line-height:1.7;color:#b8b8d0">
+      這是 <b style="color:#fff">AI 遊戲</b>，第一次玩要下載<br>
+      <b style="color:#FFD23F;font-size:17px">約 20 MB</b> 的模型到這台裝置。<br>
+      下載完會<b style="color:#fff">記住</b>，下次一秒就開。<br>
+      <span style="font-size:12px">🔒 全程在你手機裡跑，不外傳</span>
+    </div>
+    <button id="dlYes" style="background:#3EE6D0;color:#0B1B2B;border:none;border-radius:16px;padding:15px 0;font-size:16px;font-weight:700;cursor:pointer">⬇️ 開始下載並遊玩</button>
+    <a href="index.html" style="color:#8AA6C7;font-size:13px;font-weight:500;text-decoration:underline">先不要，回遊戲間</a>
+  </div>
+</div>
+
+
 <section id="start" class="screen on center">
   <div class="hero">✏️ ⚔️ ✏️</div>
   <h1>G14 <em>畫畫對決</em></h1>
@@ -429,10 +445,20 @@ $('go').onclick = () => {
   S.A = ps[a]; S.B = ps[b];
   beep([440], 0.06);
   if (S.ready) startMatch();
-  else { show('loading'); bootWorker(); }
+  else { askDownload(); }
 };
 
 /* ---------- Worker ---------- */
+function askDownload() {
+  var ask = document.getElementById('dlAsk');
+  ask.style.display = 'flex';
+  document.getElementById('dlYes').onclick = function () {
+    ask.style.display = 'none';
+    show('loading');
+    bootWorker();
+  };
+}
+
 function bootWorker() {
   const url = URL.createObjectURL(new Blob([WORKER_SRC], { type:'text/javascript' }));
   worker = new Worker(url, { type:'module' });

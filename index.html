@@ -309,7 +309,7 @@ footer b{color:var(--paper)}
     <button id="importBtn">📂 讀取檔案</button>
   </div>
   <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
-  <p class="note">評分與玩家設定存在<b>這台裝置</b>裡。<br>要給 Claude 看 → 按「複製給 Claude」，貼進對話框。</p>
+  <p class="note">評分與玩家設定存在<b>這台裝置</b>裡。<br>要給 Claude 看 → 按「複製評分」貼進對話框。<br>要<b>備份 / 搬到 App / 換手機</b> → 用最上面的 <b style="color:var(--wire)">⚙️ 設定與搬家</b>。</p>
 </div>
 
 <footer>
@@ -377,15 +377,22 @@ footer b{color:var(--paper)}
 
   <div class="setPage" id="pageMove">
     <div class="moveWhy">
-      <b>為什麼要搬家？</b><br>
+      <b>為什麼紀錄會不見？</b><br>
       Safari 版和 App 版是<b>兩個分開的空間</b>，就像兩支手機。<br>
-      在 Safari 玩累積的評分、最愛、玩家，<span class="hi">裝成 App 後看不到</span>。<br>
-      而且 iPhone 有時會自動清掉 Safari 的紀錄。<br><br>
-      👉 <b>解法</b>：在有紀錄的那邊按「① 存成檔案」，到另一邊按「② 讀取檔案」，紀錄就搬過去了。<br><br>
-      💡 <span class="hi">一開始就在 App 版玩</span>，就不用搬——直接在 App 累積就好！
+      在 Safari 玩累積的評分、最愛、玩家，<span class="hi">裝成 App 後看不到</span>；iPhone 有時還會自動清掉 Safari 的紀錄。<br><br>
+      💡 <span class="hi">最省事：一開始就用 App 版玩</span>，紀錄直接存在 App 裡，永遠不用搬。
     </div>
-    <button class="bigAct save" id="exportBtn">① 💾 存成檔案（備份現在的紀錄）</button>
-    <button class="bigAct load" id="importBtn">② 📂 讀取檔案（把備份搬進來）</button>
+    <div class="moveWhy">
+      <b class="hi">🚚 要搬家？照這 3 步：</b><br><br>
+      <b>第 1 步</b>（在<b>有紀錄</b>那邊）按下面「① 存成檔案」<br>
+      → 跳出選單 → 選<b>「儲存到檔案」</b> → 存到「我的 iPhone」或 iCloud<br><br>
+      <b>第 2 步</b> 打開<b>另一邊</b>（例如桌面的遊戲間 App 圖示）<br><br>
+      <b>第 3 步</b> 按「② 讀取檔案」→ 找到剛存的檔 → 點它<br>
+      → 紀錄<b>全部搬過去</b>（評分、最愛、玩家都在）！
+    </div>
+    <button class="bigAct save" id="exportBtn">① 💾 存成檔案（存進手機）</button>
+    <button class="bigAct load" id="importBtn">② 📂 讀取檔案（從手機讀回來）</button>
+    <div class="moveWhy" style="text-align:center">📁 檔名是「<b>遊戲間備份-日期.json</b>」<br>在「檔案」App 找得到，也能傳給別人繼續玩</div>
   </div>
 
   <button class="go" id="a2hsDone">好，我知道了</button>
