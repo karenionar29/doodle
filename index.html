@@ -709,6 +709,11 @@ function renderGate() {
   }).join('');
 }
 $('gateGo').addEventListener('click', () => $('gate').classList.add('off'));
+/* 從遊戲按「離開」回來時，網址帶 #lobby → 直接進清單，跳過入場門 */
+if (location.hash === '#lobby') {
+  $('gate').classList.add('off');
+  history.replaceState(null, '', location.pathname);
+}
 $('gateEdit').addEventListener('click', () => openPlayers());
 
 /* ---------- 好笑名字庫 ---------- */
