@@ -579,7 +579,7 @@ function cardHTML(g, data) {
   return `
     <div class="card">
       <div class="top-line">
-        <a class="play" href="${g.file}">
+        <a class="play" href="${g.file}" data-game="${g.file}">
           <div class="icon">${g.icon}</div>
           <div class="meat">
             <div class="no">${g.id.toUpperCase()} · ${g.tag} · ${g.cats.join('·')}</div>
@@ -645,6 +645,11 @@ function renderShelf() {
     b.addEventListener('click', () => openRate(b.dataset.id)));
   document.querySelectorAll('[data-fav]').forEach(b =>
     b.addEventListener('click', () => toggleFav(b.dataset.fav)));
+  /* PWA(加到主畫面)內：用 location 導航，避免 iOS 把遊戲踢回 Safari */
+  document.querySelectorAll('a.play[data-game]').forEach(a =>
+    a.addEventListener('click', (e) => {
+      if (isStandalone()) { e.preventDefault(); location.href = a.dataset.game; }
+    }));
   const more = document.getElementById('moreBtn');
   if (more) more.addEventListener('click', () => { V.page++; renderShelf();
     requestAnimationFrame(() => more.scrollIntoView({ block:'center', behavior:'smooth' })); });
