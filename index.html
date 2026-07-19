@@ -394,12 +394,12 @@ body.locked{overflow:hidden;position:fixed;width:100%}
     <button id="tabMove">💾 搬家 / 備份</button>
   </div>
 
-  <div class="setPage on" id="pageApp">
+  <div class="setPage on" id="pageApp" style="display:flex;flex-direction:column;gap:12px;width:100%">
     <div class="a2hsWhy">想要<b style="color:var(--wire)">全螢幕、不誤觸</b>？把遊戲間裝成 App！只要做一次。<br><b style="color:var(--spark)">裝好要從「桌面圖示」打開才有效 👇</b></div>
     <div class="steps" id="stepsBox"></div>
   </div>
 
-  <div class="setPage" id="pageMove">
+  <div class="setPage" id="pageMove" style="display:none;flex-direction:column;gap:12px;width:100%">
     <div class="moveWhy">
       <b>為什麼紀錄會不見？</b><br>
       Safari 版和 App 版是<b>兩個分開的空間</b>，就像兩支手機。<br>
@@ -1069,8 +1069,11 @@ function switchSetTab(which) {
   const app = which === 'app';
   $('tabApp').classList.toggle('on', app);
   $('tabMove').classList.toggle('on', !app);
-  $('pageApp').classList.toggle('on', app);
-  $('pageMove').classList.toggle('on', !app);
+  $('pageApp').style.display = app ? 'flex' : 'none';
+  $('pageMove').style.display = app ? 'none' : 'flex';
+  /* 切分頁時把彈窗內容捲回最上面 */
+  const modal = $('a2hsBox').querySelector('.modal');
+  if (modal) modal.scrollTop = 0;
 }
 $('tabApp') && $('tabApp').addEventListener('click', () => switchSetTab('app'));
 $('tabMove') && $('tabMove').addEventListener('click', () => switchSetTab('move'));
@@ -1090,6 +1093,14 @@ $('a2hsDone') && $('a2hsDone').addEventListener('click', () => {
   document.body.classList.remove('locked');
 });
 maybeShowA2hs();
+
+/* iOS 背景鎖強化：彈窗開啟時，手指在 modal 以外拖動一律擋掉 */
+document.addEventListener('touchmove', function (e) {
+  if (!$('a2hsBox').classList.contains('on')) return;
+  const modal = $('a2hsBox').querySelector('.modal');
+  if (modal && modal.contains(e.target)) return;  // 在彈窗內容裡：放行
+  e.preventDefault();                              // 在外面：擋掉，不讓背景動
+}, { passive: false });
 
 renderGate();
 renderPlayers();
