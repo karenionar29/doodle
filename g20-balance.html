@@ -77,14 +77,12 @@ h1 em{font-style:normal;color:var(--wire)}
 </style>
 </head>
 <body>
-<a href="index.html#lobby" id="exitGame" aria-label="離開回遊戲間"
-   style="position:fixed;top:calc(8px + env(safe-area-inset-top));left:calc(8px + env(safe-area-inset-left));
-   z-index:60;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.45);
-   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-   display:flex;align-items:center;justify-content:center;font-size:20px;
-   text-decoration:none;color:#fff;border:1.5px solid rgba(255,255,255,.25)">✕</a>
-
-
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間"
+   style="position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+   z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+   display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+   text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)">← 離開</a>
 <section id="start" class="screen on center">
   <div class="hero">🥚 ⚖️</div>
   <h1>G20 <em>平衡大師</em></h1>
@@ -92,7 +90,7 @@ h1 em{font-style:normal;color:var(--wire)}
   別讓它滾出圈圈！會有<b>陣風</b>亂吹蛋，<br>
   圈圈越縮越小，<b>滾去吃 ⭐ 圈圈會變大</b>。看誰撐最久。</p>
   <div class="pick" id="pickBox"></div>
-  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
   <p class="err" id="senErr" style="display:none">這台裝置沒有傾斜感應器（電腦玩不了這款），請用手機或平板。</p>
 </section>
 

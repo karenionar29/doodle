@@ -79,14 +79,12 @@ h1 em{font-style:normal;color:var(--wire)}
 </style>
 </head>
 <body>
-<a href="index.html#lobby" id="exitGame" aria-label="離開回遊戲間"
-   style="position:fixed;top:calc(8px + env(safe-area-inset-top));left:calc(8px + env(safe-area-inset-left));
-   z-index:60;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.45);
-   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-   display:flex;align-items:center;justify-content:center;font-size:20px;
-   text-decoration:none;color:#fff;border:1.5px solid rgba(255,255,255,.25)">✕</a>
-
-
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間"
+   style="position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+   z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+   display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+   text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)">← 離開</a>
 <section id="start" class="screen on">
   <div class="hero">💣 🔢</div>
   <h1>G09 <em>數字炸彈</em></h1>
@@ -95,7 +93,7 @@ h1 em{font-style:normal;color:var(--wire)}
   <b>誰猜到那個數字，炸彈就爆！</b><br>
   爆到的人要接受機器人的懲罰 😈</p>
   <button id="go">開始（把平板放中間）</button>
-  <a class="back" href="index.html">← 回遊戲間（改玩家設定）</a>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
 </section>
 
 <section id="play" class="screen">
