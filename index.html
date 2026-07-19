@@ -181,9 +181,25 @@ footer b{color:var(--paper)}
 .setEntry .tx span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
 .setEntry .arrow{color:var(--dim);font-size:22px;flex:none}
 
+/* ⚙️ 設定彈窗：分頁 + 內容（之前漏掉，導致兩頁疊在一起）*/
+.setTabs{display:flex;gap:6px;background:#0A1826;border-radius:14px;padding:4px;width:100%}
+.setTabs button{flex:1;border-radius:11px;padding:11px 4px;font-size:14px;color:var(--dim);line-height:1.3;font-weight:700}
+.setTabs button.on{background:var(--wire);color:var(--ink)}
+.setPage{display:none;flex-direction:column;gap:12px;width:100%}
+.setPage.on{display:flex}
+.bigAct{width:100%;border-radius:14px;padding:15px 0;font-size:15px;font-weight:700;cursor:pointer;border:none}
+.bigAct.save{background:var(--wire);color:var(--ink)}
+.bigAct.load{background:#0A1826;border:2px solid var(--wire);color:var(--wire)}
+.bigAct:active{transform:scale(.98)}
+.moveWhy{font-size:13px;color:var(--dim);font-weight:500;line-height:1.75;text-align:left;
+         background:#0A1826;border-radius:12px;padding:13px}
+.moveWhy b{color:var(--paper)}
+.moveWhy b.hi,.moveWhy .hi{color:var(--wire)}
+
 .veil{position:fixed;inset:0;background:rgba(5,12,20,.85);display:none;z-index:10;
       align-items:flex-end;justify-content:center}
 .veil.on{display:flex}
+body.locked{overflow:hidden;position:fixed;width:100%}
 .panel{width:100%;max-width:440px;max-height:90vh;overflow-y:auto;
        background:var(--ink-2);border-radius:22px 22px 0 0;padding:20px 18px 30px;
        display:flex;flex-direction:column;gap:13px}
@@ -231,7 +247,8 @@ footer b{color:var(--paper)}
            align-items:center;justify-content:center;padding:20px}
 .modalVeil.on{display:flex}
 .modal{width:100%;max-width:420px;background:var(--ink-2);border-radius:20px;padding:18px;
-       display:flex;flex-direction:column;gap:12px;align-items:center;max-height:86vh;overflow-y:auto}
+       display:flex;flex-direction:column;gap:12px;align-items:center;max-height:86vh;overflow-y:auto;
+       -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .modal h3{font-size:16px;text-align:center}
 #copyText{width:100%;height:220px;background:#0A1826;border:2px solid var(--line);border-radius:14px;
           padding:12px;font-size:12px;font-weight:500;color:var(--paper);
@@ -958,6 +975,13 @@ $('copyBtn').addEventListener('click', async () => {
   }
 });
 $('copyClose').addEventListener('click', () => $('copyBox').classList.remove('on'));
+/* 點 a2hsBox 灰色外圍關閉 + 解鎖背景 */
+$('a2hsBox') && $('a2hsBox').addEventListener('click', (e) => {
+  if (e.target === $('a2hsBox')) {
+    $('a2hsBox').classList.remove('on');
+    document.body.classList.remove('locked');
+  }
+});
 
 /* ---------- 存檔 / 讀檔 ---------- */
 $('exportBtn').addEventListener('click', () => {
@@ -1039,6 +1063,7 @@ function openA2hs(tab) {
     `<div class="step"><div class="num">${n}</div><div class="body">${t}</div></div>`).join('');
   switchSetTab(tab || 'app');
   $('a2hsBox').classList.add('on');
+  document.body.classList.add('locked');
 }
 function switchSetTab(which) {
   const app = which === 'app';
@@ -1062,6 +1087,7 @@ $('a2hsClose') && $('a2hsClose').addEventListener('click', () => {
 });
 $('a2hsDone') && $('a2hsDone').addEventListener('click', () => {
   $('a2hsBox').classList.remove('on');
+  document.body.classList.remove('locked');
 });
 maybeShowA2hs();
 
