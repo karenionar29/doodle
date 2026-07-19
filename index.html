@@ -20,7 +20,16 @@ body{
   display:flex;flex-direction:column;align-items:center;
   padding:32px 16px 48px;gap:16px;
   padding-top:calc(32px + env(safe-area-inset-top));
+  -webkit-overflow-scrolling:touch;
 }
+/* 卡片按下有回饋，手感更順 */
+.card{transition:transform .08s}
+a.play:active{background:#183253}
+/* 面板從底部滑入更順 */
+.panel{animation:slideUp .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes slideUp{from{transform:translateY(40px);opacity:.5}to{transform:translateY(0);opacity:1}}
+.modal{animation:popModal .2s cubic-bezier(.2,1.4,.4,1)}
+@keyframes popModal{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input{font:inherit}
 header{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
@@ -76,6 +85,29 @@ a.play:active{transform:scale(.98)}
 .rateBtn{margin-left:auto;font-size:12px;color:var(--wire);border:1px solid var(--line);
          border-radius:99px;padding:5px 13px}
 .soon{opacity:.42;border-style:dashed;padding:15px;display:flex;gap:13px;align-items:center}
+/* ⭐ 最愛星 */
+.favStar{flex:none;width:38px;height:38px;border-radius:11px;background:#0A1826;border:1px solid var(--line);
+         display:flex;align-items:center;justify-content:center;font-size:18px;transition:.12s;filter:grayscale(1) opacity(.5)}
+.favStar.on{filter:none;background:#3A2E10;border-color:var(--spark)}
+.favStar:active{transform:scale(.85)}
+a.play{flex:1}
+.card .top-line{display:flex;align-items:stretch}
+.card .top-line a.play{padding-right:8px}
+.card .top-line .favWrap{display:flex;align-items:center;padding:0 12px 0 4px}
+/* 置頂區塊標題 */
+.shelfSec{font-size:12px;color:var(--dim);font-weight:600;letter-spacing:.06em;
+          margin:6px 2px 0;display:flex;align-items:center;gap:6px}
+.shelfSec .ln{flex:1;height:1px;background:var(--line)}
+/* 分頁 */
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px}
+.pager button{background:var(--ink-2);border:2px solid var(--line);border-radius:12px;
+              padding:10px 18px;font-size:14px;color:var(--wire)}
+.pager button:disabled{opacity:.3;color:var(--dim)}
+.pager button:active:not(:disabled){transform:scale(.95)}
+.pager .info{font-size:13px;color:var(--dim);font-weight:500;min-width:64px;text-align:center}
+.moreBtn{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;
+         padding:13px 0;font-size:14px;color:var(--wire);margin-top:4px}
+.moreBtn:active{transform:scale(.98)}
 .noHit{color:var(--dim);font-size:13px;font-weight:500;text-align:center;padding:18px}
 
 .taste{background:var(--ink-2);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -102,6 +134,28 @@ a.play:active{transform:scale(.98)}
 .note b{color:var(--paper)}
 footer{color:var(--dim);font-size:11px;font-weight:500;text-align:center;line-height:1.9;max-width:24em}
 footer b{color:var(--paper)}
+
+/* 📱 加到主畫面提示條 */
+#a2hs{width:100%;max-width:390px;background:linear-gradient(135deg,#1E4552,#153347);
+      border:2px solid var(--wire);border-radius:16px;padding:12px 14px;display:none;
+      align-items:center;gap:11px;cursor:pointer}
+#a2hs.show{display:flex}
+#a2hs .ic{font-size:26px;flex:none}
+#a2hs .tx{flex:1;font-size:13px;line-height:1.5}
+#a2hs .tx b{color:var(--wire)}
+#a2hs .go{background:var(--wire);color:var(--ink);border-radius:99px;padding:7px 13px;font-size:13px;flex:none}
+#a2hs .x{color:var(--dim);font-size:20px;padding:2px 6px;flex:none}
+#a2hsBox .modal{gap:14px}
+.steps{display:flex;flex-direction:column;gap:14px;width:100%}
+.step{display:flex;gap:12px;align-items:flex-start;text-align:left}
+.step .num{flex:none;width:30px;height:30px;border-radius:50%;background:var(--wire);color:var(--ink);
+           display:flex;align-items:center;justify-content:center;font-size:15px}
+.step .body{flex:1;font-size:14px;line-height:1.6;padding-top:3px}
+.step .body b{color:var(--wire)}
+.step .shot{display:inline-flex;align-items:center;gap:4px;background:#0A1826;border:1px solid var(--line);
+            border-radius:8px;padding:3px 9px;font-size:14px;margin:0 2px}
+.a2hsWhy{font-size:12px;color:var(--dim);font-weight:500;line-height:1.7;text-align:center;
+         background:#0A1826;border-radius:12px;padding:11px}
 
 #gate{position:fixed;inset:0;background:var(--ink);z-index:5;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -203,6 +257,13 @@ footer b{color:var(--paper)}
   <p class="sub">全部住在瀏覽器裡，畫面和聲音都不會傳出去。</p>
 </header>
 
+<div id="a2hs">
+  <div class="ic">📱</div>
+  <div class="tx">把遊戲間<b>裝成 App</b>，玩起來<b>全螢幕</b>、不會誤觸跳出去！</div>
+  <button class="go" id="a2hsOpen">教我</button>
+  <button class="x" id="a2hsClose">✕</button>
+</div>
+
 <div class="block">
   <div class="who">
     <div class="head"><h3>👥 玩家</h3><div class="n" id="pCount">3 人</div></div>
@@ -296,6 +357,13 @@ footer b{color:var(--paper)}
   <button class="go" id="qrClose">好</button>
 </div></div>
 
+<div class="modalVeil" id="a2hsBox"><div class="modal">
+  <h3>📱 裝成 App（全螢幕玩）</h3>
+  <div class="a2hsWhy">網頁在 Safari 直接開，上下會有網址列擋到、還容易誤觸。<br>裝成 App 後就<b style="color:var(--wire)">跟真的 App 一樣全螢幕</b>，只要做一次！</div>
+  <div class="steps" id="stepsBox"></div>
+  <button class="go" id="a2hsDone">好，我知道了</button>
+</div></div>
+
 <div class="modalVeil" id="luckyBox"><div class="modal">
   <h3>🎲 隨機挑幾款？</h3>
   <p class="note" id="luckyScope">從全部遊戲裡挑</p>
@@ -375,7 +443,19 @@ const saveR = (d) => { try { localStorage.setItem(RKEY, JSON.stringify(d)); } ca
 const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
 
 /* 篩選狀態 */
-const V = { cat:'全部', q:'', sort:'no', ban: new Set() };
+const V = { cat:'全部', q:'', sort:'no', ban: new Set(), page: 0 };
+const PAGE_SIZE = 12;
+
+/* ⭐ 最愛（存本機，之後 1000 款也靠它置頂） */
+const FAV_KEY = 'lobby-fav-v1';
+const loadFav = () => { try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY)) || []); } catch(_) { return new Set(); } };
+const saveFav = (set) => { try { localStorage.setItem(FAV_KEY, JSON.stringify([...set])); } catch(_) {} };
+let FAV = loadFav();
+function toggleFav(id) {
+  if (FAV.has(id)) FAV.delete(id); else FAV.add(id);
+  saveFav(FAV);
+  renderShelf();
+}
 
 function renderPlayers() {
   const ps = FP.get();
@@ -394,7 +474,8 @@ function renderFilters() {
   document.querySelectorAll('#filters button').forEach(b =>
     b.addEventListener('click', () => {
       V.cat = b.dataset.c;
-      V.ban.delete(b.dataset.c);      // 選了要的，就不能同時在不要裡
+      V.ban.delete(b.dataset.c);
+      V.page = 0;
       renderFilters();
       renderShelf();
     }));
@@ -408,15 +489,16 @@ function renderFilters() {
       if (V.ban.has(c)) V.ban.delete(c);
       else {
         V.ban.add(c);
-        if (V.cat === c) V.cat = '全部';   // 不要的跟要的撞到 → 回到全部
+        if (V.cat === c) V.cat = '全部';
       }
+      V.page = 0;
       renderFilters();
       renderShelf();
     }));
 }
-$('search').addEventListener('input', () => { V.q = $('search').value.trim(); renderShelf(); });
-$('sortNo').addEventListener('click', () => { V.sort='no'; $('sortNo').classList.add('on'); $('sortStar').classList.remove('on'); renderShelf(); });
-$('sortStar').addEventListener('click', () => { V.sort='star'; $('sortStar').classList.add('on'); $('sortNo').classList.remove('on'); renderShelf(); });
+$('search').addEventListener('input', () => { V.q = $('search').value.trim(); V.page = 0; renderShelf(); });
+$('sortNo').addEventListener('click', () => { V.sort='no'; V.page=0; $('sortNo').classList.add('on'); $('sortStar').classList.remove('on'); renderShelf(); });
+$('sortStar').addEventListener('click', () => { V.sort='star'; V.page=0; $('sortStar').classList.add('on'); $('sortNo').classList.remove('on'); renderShelf(); });
 
 function filtered() {
   const data = loadR();
@@ -430,37 +512,84 @@ function filtered() {
 }
 
 /* ---------- 遊戲架 ---------- */
-function renderShelf() {
-  const data = loadR();
-  const list = filtered();
-  $('shelf').innerHTML = (list.length ? list.map(g => {
-    const r = data[g.id];
-    const t = r ? totalOf(r) : 0;
-    const n = Math.round(t / 6);
-    const stars = r ? '★'.repeat(n) + '☆'.repeat(5 - n) : '☆☆☆☆☆';
-    return `
+function cardHTML(g, data) {
+  const r = data[g.id];
+  const t = r ? totalOf(r) : 0;
+  const n = Math.round(t / 6);
+  const stars = r ? '★'.repeat(n) + '☆'.repeat(5 - n) : '☆☆☆☆☆';
+  const fav = FAV.has(g.id);
+  return `
     <div class="card">
-      <a class="play" href="${g.file}">
-        <div class="icon">${g.icon}</div>
-        <div class="meat">
-          <div class="no">${g.id.toUpperCase()} · ${g.tag} · ${g.cats.join('·')}</div>
-          <b>${g.name}</b><span>${g.desc}</span>
+      <div class="top-line">
+        <a class="play" href="${g.file}">
+          <div class="icon">${g.icon}</div>
+          <div class="meat">
+            <div class="no">${g.id.toUpperCase()} · ${g.tag} · ${g.cats.join('·')}</div>
+            <b>${g.name}</b><span>${g.desc}</span>
+          </div>
+        </a>
+        <div class="favWrap">
+          <button class="favStar ${fav ? 'on' : ''}" data-fav="${g.id}"
+                  title="${fav ? '從最愛移除' : '加入最愛'}">${fav ? '⭐' : '☆'}</button>
         </div>
-      </a>
+      </div>
       <div class="foot">
         <div class="stars">${stars}</div>
         <div class="total">${r ? t + ' / 30' : '還沒評分'}</div>
         <button class="rateBtn" data-id="${g.id}">${r ? '改評分' : '⭐ 評分'}</button>
       </div>
     </div>`;
-  }).join('') : '<div class="noHit">沒有符合的遊戲，換個條件試試</div>') +
-  (V.cat === '全部' && !V.q ? `
+}
+
+function renderShelf() {
+  const data = loadR();
+  let list = filtered();
+  // 首次以外的重繪不跳動；分頁「看更多」自己處理捲動
+
+  /* ⭐ 最愛置頂（只在「全部 + 沒搜尋」時顯示置頂區，避免跟篩選打架） */
+  const plainView = V.cat === '全部' && !V.q && V.ban.size === 0;
+  const favList = plainView ? list.filter(g => FAV.has(g.id)) : [];
+  const restAll = plainView ? list.filter(g => !FAV.has(g.id)) : list;
+
+  /* 分頁：一次 PAGE_SIZE 款 */
+  const totalPages = Math.max(1, Math.ceil(restAll.length / PAGE_SIZE));
+  if (V.page >= totalPages) V.page = totalPages - 1;
+  const shown = restAll.slice(0, (V.page + 1) * PAGE_SIZE);
+
+  let html = '';
+  if (favList.length) {
+    html += `<div class="shelfSec">⭐ 我的最愛<div class="ln"></div></div>`;
+    html += favList.map(g => cardHTML(g, data)).join('');
+    html += `<div class="shelfSec">📚 全部遊戲<div class="ln"></div></div>`;
+  }
+  html += shown.length
+    ? shown.map(g => cardHTML(g, data)).join('')
+    : '<div class="noHit">沒有符合的遊戲，換個條件試試</div>';
+
+  /* 「看更多」按鈕 */
+  if (shown.length < restAll.length) {
+    const left = restAll.length - shown.length;
+    html += `<button class="moreBtn" id="moreBtn">看更多（還有 ${left} 款）▾</button>`;
+  }
+
+  /* 佔位卡（只在最後一頁、純視圖時） */
+  if (plainView && shown.length >= restAll.length) {
+    html += `
     <div class="card soon">
       <div class="icon">➕</div>
       <div class="meat"><div class="no">${NEXT_NO}</div><b>還沒做</b><span>下一個遊戲的位置</span></div>
-    </div>` : '');
+    </div>`;
+  }
+
+  $('shelf').innerHTML = html;
+
   document.querySelectorAll('.rateBtn').forEach(b =>
     b.addEventListener('click', () => openRate(b.dataset.id)));
+  document.querySelectorAll('[data-fav]').forEach(b =>
+    b.addEventListener('click', () => toggleFav(b.dataset.fav)));
+  const more = document.getElementById('moreBtn');
+  if (more) more.addEventListener('click', () => { V.page++; renderShelf();
+    requestAnimationFrame(() => more.scrollIntoView({ block:'center', behavior:'smooth' })); });
 }
 
 /* ---------- 🎲 隨機挑 ---------- */
@@ -835,6 +964,54 @@ $('foldBtn').addEventListener('click', () => {
   applyFold(foldOpen);
   try { localStorage.setItem(FKEY, foldOpen ? 'open' : 'shut'); } catch(_) {}
 });
+
+/* ---------- 📱 加到主畫面引導 ---------- */
+const A2HS_KEY = 'a2hs-dismiss-v1';
+const isStandalone = () =>
+  window.navigator.standalone === true ||
+  (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isAndroid = () => /android/i.test(navigator.userAgent);
+
+function a2hsSteps() {
+  if (isIOS()) return [
+    ['1', '點 Safari 最下面（或最上面）的<b>分享鈕</b> <span class="shot">⬆️ 方框加箭頭</span>'],
+    ['2', '往下滑，找到<b>「加入主畫面」</b> <span class="shot">➕ 加入主畫面</span>'],
+    ['3', '按右上角<b>「加入」</b>，桌面就會出現遊戲間圖示 🎮'],
+    ['4', '以後<b>從圖示打開</b>，就是全螢幕、沒有網址列！'],
+  ];
+  if (isAndroid()) return [
+    ['1', '點 Chrome 右上角的<b>⋮ 選單</b>'],
+    ['2', '選<b>「加到主畫面」</b>或「安裝應用程式」'],
+    ['3', '確認後桌面出現遊戲間圖示 🎮'],
+    ['4', '以後<b>從圖示打開</b>，就是全螢幕！'],
+  ];
+  return [
+    ['1', '打開瀏覽器的<b>選單</b>（通常在右上角）'],
+    ['2', '找<b>「加到主畫面」或「安裝」</b>'],
+    ['3', '確認後桌面會出現圖示 🎮'],
+    ['4', '從圖示打開就是全螢幕！'],
+  ];
+}
+function openA2hs() {
+  $('stepsBox').innerHTML = a2hsSteps().map(([n, t]) =>
+    `<div class="step"><div class="num">${n}</div><div class="body">${t}</div></div>`).join('');
+  $('a2hsBox').classList.add('on');
+}
+function maybeShowA2hs() {
+  if (isStandalone()) return;                 // 已經是 App 就不吵
+  try { if (localStorage.getItem(A2HS_KEY) === '1') return; } catch(_) {}
+  $('a2hs').classList.add('show');
+}
+$('a2hsOpen') && $('a2hsOpen').addEventListener('click', openA2hs);
+$('a2hsClose') && $('a2hsClose').addEventListener('click', () => {
+  $('a2hs').classList.remove('show');
+  try { localStorage.setItem(A2HS_KEY, '1'); } catch(_) {}
+});
+$('a2hsDone') && $('a2hsDone').addEventListener('click', () => {
+  $('a2hsBox').classList.remove('on');
+});
+maybeShowA2hs();
 
 renderGate();
 renderPlayers();
