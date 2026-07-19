@@ -264,6 +264,12 @@ footer b{color:var(--paper)}
   <button class="x" id="a2hsClose">✕</button>
 </div>
 
+<button class="setEntry" id="setEntry">
+  <div class="ic">⚙️</div>
+  <div class="tx"><b>設定與搬家</b><span>裝成 App 全螢幕 · 備份/搬移紀錄，不怕洗掉</span></div>
+  <div class="arrow">›</div>
+</button>
+
 <div class="block">
   <div class="who">
     <div class="head"><h3>👥 玩家</h3><div class="n" id="pCount">3 人</div></div>
@@ -358,9 +364,30 @@ footer b{color:var(--paper)}
 </div></div>
 
 <div class="modalVeil" id="a2hsBox"><div class="modal">
-  <h3>📱 裝成 App（全螢幕玩）</h3>
-  <div class="a2hsWhy">網頁在 Safari 直接開，上下會有網址列擋到、還容易誤觸。<br>裝成 App 後就<b style="color:var(--wire)">跟真的 App 一樣全螢幕</b>，只要做一次！<br><b style="color:var(--spark)">記得：裝好要從「桌面圖示」打開才有效 👇</b></div>
-  <div class="steps" id="stepsBox"></div>
+  <h3>⚙️ 設定與搬家</h3>
+  <div class="setTabs">
+    <button id="tabApp" class="on">📱 裝成 App</button>
+    <button id="tabMove">💾 搬家 / 備份</button>
+  </div>
+
+  <div class="setPage on" id="pageApp">
+    <div class="a2hsWhy">想要<b style="color:var(--wire)">全螢幕、不誤觸</b>？把遊戲間裝成 App！只要做一次。<br><b style="color:var(--spark)">裝好要從「桌面圖示」打開才有效 👇</b></div>
+    <div class="steps" id="stepsBox"></div>
+  </div>
+
+  <div class="setPage" id="pageMove">
+    <div class="moveWhy">
+      <b>為什麼要搬家？</b><br>
+      Safari 版和 App 版是<b>兩個分開的空間</b>，就像兩支手機。<br>
+      在 Safari 玩累積的評分、最愛、玩家，<span class="hi">裝成 App 後看不到</span>。<br>
+      而且 iPhone 有時會自動清掉 Safari 的紀錄。<br><br>
+      👉 <b>解法</b>：在有紀錄的那邊按「① 存成檔案」，到另一邊按「② 讀取檔案」，紀錄就搬過去了。<br><br>
+      💡 <span class="hi">一開始就在 App 版玩</span>，就不用搬——直接在 App 累積就好！
+    </div>
+    <button class="bigAct save" id="exportBtn">① 💾 存成檔案（備份現在的紀錄）</button>
+    <button class="bigAct load" id="importBtn">② 📂 讀取檔案（把備份搬進來）</button>
+  </div>
+
   <button class="go" id="a2hsDone">好，我知道了</button>
 </div></div>
 
@@ -993,17 +1020,28 @@ function a2hsSteps() {
     ['4', '從圖示打開就是全螢幕！'],
   ];
 }
-function openA2hs() {
+function openA2hs(tab) {
   $('stepsBox').innerHTML = a2hsSteps().map(([n, t]) =>
     `<div class="step"><div class="num">${n}</div><div class="body">${t}</div></div>`).join('');
+  switchSetTab(tab || 'app');
   $('a2hsBox').classList.add('on');
 }
+function switchSetTab(which) {
+  const app = which === 'app';
+  $('tabApp').classList.toggle('on', app);
+  $('tabMove').classList.toggle('on', !app);
+  $('pageApp').classList.toggle('on', app);
+  $('pageMove').classList.toggle('on', !app);
+}
+$('tabApp') && $('tabApp').addEventListener('click', () => switchSetTab('app'));
+$('tabMove') && $('tabMove').addEventListener('click', () => switchSetTab('move'));
+$('setEntry') && $('setEntry').addEventListener('click', () => openA2hs('app'));
 function maybeShowA2hs() {
   if (isStandalone()) return;                 // 已經是 App 就不吵
   try { if (localStorage.getItem(A2HS_KEY) === '1') return; } catch(_) {}
   $('a2hs').classList.add('show');
 }
-$('a2hsOpen') && $('a2hsOpen').addEventListener('click', openA2hs);
+$('a2hsOpen') && $('a2hsOpen').addEventListener('click', () => openA2hs('app'));
 $('a2hsClose') && $('a2hsClose').addEventListener('click', () => {
   $('a2hs').classList.remove('show');
   try { localStorage.setItem(A2HS_KEY, '1'); } catch(_) {}
