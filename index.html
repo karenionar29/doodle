@@ -181,6 +181,22 @@ footer b{color:var(--paper)}
 .setEntry .tx span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
 .setEntry .arrow{color:var(--dim);font-size:22px;flex:none}
 
+/* 🏷️ 版本資訊列（小小的，不擋路） */
+.verBar{width:100%;max-width:390px;display:flex;align-items:center;justify-content:center;
+        gap:8px;font-size:11px;color:var(--dim);font-weight:500;flex-wrap:wrap}
+.verBar button{background:none;border:none;color:var(--dim);font-size:11px;font-weight:500;
+               text-decoration:underline;padding:4px}
+.verBar .tag{background:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:3px 9px}
+.verBar .tag.new{border-color:var(--spark);color:var(--spark)}
+.verBar .upd{background:var(--spark);color:var(--ink);border-radius:99px;padding:4px 11px;
+             font-weight:700;text-decoration:none}
+#verLog{width:100%;max-width:390px;display:none;flex-direction:column;gap:10px;
+        background:var(--ink-2);border:2px solid var(--line);border-radius:16px;padding:14px;margin-top:4px}
+#verLog.on{display:flex}
+.logItem{font-size:12px;line-height:1.7;color:var(--dim);font-weight:500}
+.logItem b{color:var(--wire);font-size:13px;display:block;margin-bottom:3px}
+.logItem u{text-decoration:none;color:var(--paper)}
+
 /* ⚙️ 設定彈窗：分頁 + 內容（之前漏掉，導致兩頁疊在一起）*/
 .setTabs{display:flex;gap:6px;background:#0A1826;border-radius:14px;padding:4px;width:100%}
 .setTabs button{flex:1;border-radius:11px;padding:11px 4px;font-size:14px;color:var(--dim);line-height:1.3;font-weight:700}
@@ -340,6 +356,13 @@ body.locked{overflow:hidden;position:fixed;width:100%}
   第一次玩 AI 遊戲要等機器人下載大腦，<b>之後秒開</b>。<br>
   卡住的話，網址後面加 <b>?v=99</b> 逼它重抓。
 </footer>
+
+<div class="verBar">
+  <span class="tag" id="verNow">v—</span>
+  <span id="verState">檢查中…</span>
+  <button id="verToggle">更新紀錄 ▾</button>
+</div>
+<div id="verLog"></div>
 
 <div class="veil" id="pVeil">
   <div class="panel">
@@ -503,6 +526,48 @@ const saveR = (d) => { try { localStorage.setItem(RKEY, JSON.stringify(d)); } ca
 const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
 
 /* 篩選狀態 */
+/* ============================================================
+   🏷️ 版本系統
+   APP_VERSION：這份檔案的版本號（每次更新就 +1）
+   CHANGELOG：更新紀錄（新的放最上面）
+   自動比對：背景抓伺服器上的 index.html，比對版本號，
+            不同就代表這台裝置吃到舊快取 → 提示一鍵更新。
+   ============================================================ */
+const APP_VERSION = 37;
+const CHANGELOG = [
+  { v:37, d:'最新', items:[
+    '🧠 新遊戲 G21 心電感應上線（同心題／反骨題，60 題）',
+    '🏷️ 加入版本號與更新紀錄（就是你正在看的這個）',
+  ]},
+  { v:36, d:'', items:[
+    '🚪 20 款遊戲加「← 離開」鈕，玩到一半也能回大廳',
+    '📱 修好 iOS 裝成 App 後，進遊戲會冒出網址列的問題',
+    '🏠 所有「回遊戲間」改成直接回遊戲清單，不再重選玩家',
+  ]},
+  { v:35, d:'', items:[
+    '🤖 AI 遊戲玩前先問「要下載約 XX MB 嗎」，可以選擇不玩',
+    '⚙️ 設定與搬家整合成一個入口（裝 App／備份搬家兩個分頁）',
+  ]},
+  { v:34, d:'', items:[
+    '📲 加入「裝成 App 全螢幕」圖解教學',
+    '💾 加入「換裝置不掉紀錄」的搬家教學與一鍵存讀檔',
+  ]},
+  { v:33, d:'', items:[
+    '⭐ 遊戲卡片可加入最愛，最愛自動置頂',
+    '📄 遊戲清單分頁「看更多」，為以後上千款做準備',
+  ]},
+  { v:32, d:'', items:[
+    '👥 常用名單：存過的玩家一鍵加回來',
+    '🎲 隨機好笑名字（男女各 50 個諧音梗）',
+    '🚫 篩選加「不要哪種」多選排除，隨機挑也會避開',
+  ]},
+  { v:31, d:'', items:[
+    '🔧 修理批九款：G12 改三關挑戰、G13 加假動作、G16 加炸彈星星牌',
+    '🔧 G18 加食物職業兩類、G04 放寬容錯、G14 加換一題鈕',
+    '🔧 G20 加陣風與星星、G17 題庫 116 題、G19 顏色 13 種',
+  ]},
+];
+
 const V = { cat:'全部', q:'', sort:'no', ban: new Set(), page: 0 };
 const PAGE_SIZE = 12;
 
@@ -1105,6 +1170,45 @@ $('a2hsDone') && $('a2hsDone').addEventListener('click', () => {
   document.body.classList.remove('locked');
 });
 maybeShowA2hs();
+
+/* ---------- 🏷️ 版本列 ---------- */
+$('verNow').textContent = 'v' + APP_VERSION;
+$('verLog').innerHTML = CHANGELOG.map(c => `
+  <div class="logItem">
+    <b>v${c.v}${c.d ? ' · ' + c.d : ''}</b>
+    ${c.items.map(t => `<u>· ${t}</u><br>`).join('')}
+  </div>`).join('');
+
+$('verToggle').addEventListener('click', () => {
+  const open = !$('verLog').classList.contains('on');
+  $('verLog').classList.toggle('on', open);
+  $('verToggle').textContent = open ? '收起紀錄 ▴' : '更新紀錄 ▾';
+});
+
+/* 背景比對伺服器版本：抓到的版本比自己新 → 這台吃到舊快取 */
+(function checkNewVersion() {
+  const state = $('verState');
+  fetch('index.html?_=' + Date.now(), { cache: 'no-store' })
+    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(t => {
+      const m = t.match(/APP_VERSION\s*=\s*(\d+)/);
+      if (!m) { state.textContent = '已是最新'; return; }
+      const latest = +m[1];
+      if (latest > APP_VERSION) {
+        $('verNow').classList.add('new');
+        state.innerHTML = `有新版 <b style="color:var(--spark)">v${latest}</b>`;
+        const a = document.createElement('a');
+        a.className = 'upd';
+        a.textContent = '↻ 一鍵更新';
+        a.href = 'index.html?v=' + latest + '#lobby';
+        a.onclick = () => { try { location.reload(true); } catch(_) {} };
+        state.parentNode.insertBefore(a, $('verToggle'));
+      } else {
+        state.textContent = '已是最新 ✓';
+      }
+    })
+    .catch(() => { state.textContent = '離線中'; });
+})();
 
 /* iOS 背景鎖強化：彈窗開啟時，手指在 modal 以外拖動一律擋掉 */
 document.addEventListener('touchmove', function (e) {
