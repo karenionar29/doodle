@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G21 心電感應</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1B1030">
+<style>
+:root{
+  --ink:#1B1030;        /* 底色：深紫 */
+  --ink-2:#2A1B45;      /* 卡片 */
+  --line:#3E2A5F;       /* 邊線 */
+  --paper:#F5EEFF;      /* 主文字 */
+  --dim:#A48CC7;        /* 次文字 */
+  --wire:#FF8FD0;       /* 主題粉 */
+  --spark:#FFD84D;      /* 亮黃 */
+  --good:#6BE8A8;       /* 綠 */
+  --bad:#FF7B7B;        /* 紅 */
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{
+  min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+
+/* 頂部離開鈕（所有遊戲統一：頂部正中央小膠囊） */
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;
+        max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+
+/* 局數選擇 */
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;
+               padding:14px 0;font-size:15px;color:var(--dim);transition:.12s}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#3A2050}
+.lenRow button:active{transform:scale(.96)}
+
+.go{width:100%;background:var(--wire);color:#2A0E1F;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go.ghost{background:var(--ink-2);border:2px solid var(--line);color:var(--wire)}
+
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+
+/* 題型徽章 */
+.badge{border-radius:99px;padding:8px 17px;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.badge.same{background:#1C4A38;color:var(--good);border:2px solid var(--good)}
+.badge.diff{background:#4A1C2E;color:var(--bad);border:2px solid var(--bad)}
+
+/* 換人畫面 */
+.passName{font-size:32px;text-align:center;line-height:1.3}
+.passHint{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+/* 題目 */
+.qBox{width:100%;background:linear-gradient(135deg,#3A2050,#2A1B45);
+      border:2px solid var(--line);border-radius:18px;padding:18px 15px;text-align:center}
+.qBox .qTxt{font-size:20px;line-height:1.5}
+
+/* 選項 */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.opt{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+     padding:16px 8px;font-size:16px;display:flex;flex-direction:column;align-items:center;gap:5px;
+     transition:.12s;line-height:1.3}
+.opt .em{font-size:26px}
+.opt:active{transform:scale(.95);border-color:var(--wire)}
+
+/* 揭曉 */
+.revRow{width:100%;background:var(--ink-2);border:2px solid var(--line);
+        border-radius:15px;padding:12px 14px;display:flex;align-items:center;gap:11px}
+.revRow.hit{border-color:var(--good);background:#1C3A2E}
+.revRow.solo{border-color:var(--spark);background:#3E3416}
+.revRow .em{font-size:24px;flex:none}
+.revRow .nm{flex:1;font-size:15px;line-height:1.4}
+.revRow .nm i{font-style:normal;display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:2px}
+.revRow .pt{font-size:17px;color:var(--spark);flex:none}
+
+/* 排行 */
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);
+     border-radius:15px;padding:13px 15px}
+.row.top{background:var(--spark);color:#2A1400}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<!-- ========== 開場 ========== -->
+<section id="intro" class="screen on">
+  <div class="hero">🧠✨🧠</div>
+  <h1>G21 <b>心電感應</b></h1>
+  <p class="sub">
+    大家看同一題、<b>偷偷選一個</b>答案——<br>
+    🤝 <b>同心題</b>：跟越多人選一樣，分越高！<br>
+    😈 <b>反骨題</b>：要選<b>沒人會選</b>的才得分！<br>
+    <span style="color:var(--wire)">重點不是答案對不對，是「猜別人怎麼想」。</span>
+  </p>
+
+  <div class="who" id="whoRow"></div>
+
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">要玩幾題？</p>
+    <div class="lenRow">
+      <button data-len="5">5 題<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-len="8" class="on">8 題<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="12">12 題<br><span style="font-size:11px;color:var(--dim)">大戰</span></button>
+    </div>
+  </div>
+
+  <button class="go" id="startBtn">🧠 開始心電感應</button>
+  <p class="tip">📱 一台裝置輪流傳著玩<br>選的時候別讓別人看到喔！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<!-- ========== 換人 ========== -->
+<section id="pass" class="screen">
+  <div class="hero" id="passEm">🤝</div>
+  <div class="badge same" id="passBadge">🤝 同心題</div>
+  <div class="passName" id="passName">換 🧒 George</div>
+  <p class="passHint">把裝置交給他，<b>其他人先別看</b> 🙈</p>
+  <div class="dots" id="passDots"></div>
+  <button class="go" id="passBtn">好，我拿到了</button>
+</section>
+
+<!-- ========== 選答案 ========== -->
+<section id="pick" class="screen">
+  <div class="badge same" id="pickBadge">🤝 同心題</div>
+  <div class="qBox"><div class="qTxt" id="qTxt">說到冰的東西？</div></div>
+  <p class="tip" id="pickHint">選一個你覺得<b>大家也會選</b>的 👇</p>
+  <div class="opts" id="optsBox"></div>
+</section>
+
+<!-- ========== 揭曉 ========== -->
+<section id="reveal" class="screen">
+  <div class="badge same" id="revBadge">🤝 同心題</div>
+  <div class="qBox"><div class="qTxt" id="revQ"></div></div>
+  <div class="board" id="revBoard"></div>
+  <button class="go" id="nextBtn">下一題 →</button>
+</section>
+
+<!-- ========== 結算 ========== -->
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle">心電感應排行</h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再玩一次</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G21 心電感應
+   核心：猜「別人這次會選什麼」——內容是人，不是系統。
+   兩種題型策略完全相反，逼玩家每題重新讀空氣。
+   ============================================================ */
+
+const CONFIG = {
+  DIFF_RATE: 0.3,      // 反骨題出現機率（三成）
+  SAME_PT: 1,          // 同心題：每有一個人跟你一樣，得 1 分
+  SOLO_PT: 2,          // 反骨題：完全沒人跟你一樣，得 2 分
+  ALL_BONUS: 1,        // 同心題全員一致，每人再加 1 分
+};
+
+/* ---------- 題庫：每題一個問句 + 6 個選項（emoji + 字） ---------- */
+const QUESTIONS = [
+  ['說到冰冰涼涼的東西？', [['🍦','冰淇淋'],['🧊','冰塊'],['❄️','雪'],['🥤','汽水'],['🍧','剉冰'],['🌊','海水']]],
+  ['最想養哪一種寵物？', [['🐶','狗'],['🐱','貓'],['🐰','兔子'],['🐹','倉鼠'],['🐠','魚'],['🦜','鸚鵡']]],
+  ['早餐最想吃什麼？', [['🥞','鬆餅'],['🍞','吐司'],['🥛','牛奶'],['🍚','稀飯'],['🥟','小籠包'],['🍳','荷包蛋']]],
+  ['最討厭的天氣？', [['🌧️','下雨'],['🥵','超熱'],['🥶','超冷'],['🌪️','颱風'],['🌫️','起霧'],['⛈️','打雷']]],
+  ['說到黃色，想到什麼？', [['🍌','香蕉'],['☀️','太陽'],['🐤','小雞'],['🧀','起司'],['🌻','向日葵'],['🚕','計程車']]],
+  ['最想去哪裡玩？', [['🏖️','海邊'],['⛰️','爬山'],['🎢','遊樂園'],['🎬','電影院'],['🏊','游泳池'],['🦁','動物園']]],
+  ['超能力想選哪個？', [['✈️','飛行'],['👻','隱形'],['⏰','時間暫停'],['💪','超力氣'],['🧠','讀心術'],['🔮','預知未來']]],
+  ['最喜歡的顏色？', [['❤️','紅'],['💙','藍'],['💚','綠'],['💛','黃'],['💜','紫'],['🖤','黑']]],
+  ['說到很吵的東西？', [['🚨','警車'],['🐔','公雞'],['🎤','麥克風'],['🥁','鼓'],['📢','大聲公'],['🎆','煙火']]],
+  ['考試前最想做什麼？', [['😴','睡覺'],['📱','滑手機'],['🍫','吃零食'],['🏃','出去玩'],['📖','再看一次'],['🙏','拜拜']]],
+  ['最想變成哪種動物？', [['🦅','老鷹'],['🐬','海豚'],['🦁','獅子'],['🐢','烏龜'],['🐒','猴子'],['🐧','企鵝']]],
+  ['說到「圓圓的」？', [['⚽','球'],['🌕','月亮'],['🍩','甜甜圈'],['🎡','摩天輪'],['🪙','硬幣'],['😀','笑臉']]],
+  ['最想收到什麼禮物？', [['🎮','電動'],['📱','手機'],['🧸','玩偶'],['🚲','腳踏車'],['💰','現金'],['🐕','寵物']]],
+  ['夜市必吃哪一攤？', [['🍗','鹹酥雞'],['🧋','珍奶'],['🌭','大熱狗'],['🍜','麵線'],['🥞','蔥油餅'],['🍦','冰淇淋']]],
+  ['說到很慢的東西？', [['🐌','蝸牛'],['🐢','烏龜'],['🚶','走路'],['⏳','沙漏'],['🍯','蜂蜜'],['🚦','紅燈']]],
+  ['放假第一件事？', [['😴','睡到飽'],['📺','看電視'],['🎮','打電動'],['🛒','出去買'],['👫','找朋友'],['🍔','吃大餐']]],
+  ['最怕的東西？', [['🪳','蟑螂'],['🕷️','蜘蛛'],['👻','鬼'],['💉','打針'],['🌑','黑暗'],['🐍','蛇']]],
+  ['說到「軟軟的」？', [['☁️','雲'],['🍮','布丁'],['🧸','娃娃'],['🛏️','枕頭'],['🍡','麻糬'],['🐑','綿羊']]],
+  ['最想學會什麼？', [['🎸','樂器'],['🥋','武術'],['🎨','畫畫'],['🧑‍🍳','煮菜'],['🗣️','外語'],['🪄','魔術']]],
+  ['說到學校最開心的事？', [['🍱','午餐'],['⚽','下課'],['🎨','美術課'],['🏃','體育課'],['👫','跟朋友聊天'],['🔔','放學']]],
+  ['沙漠裡最想帶什麼？', [['💧','水'],['⛱️','遮陽傘'],['🐫','駱駝'],['🧭','指南針'],['📱','手機'],['🍉','西瓜']]],
+  ['說到「臭臭的」？', [['🧦','襪子'],['🗑️','垃圾'],['🧄','大蒜'],['🥚','壞掉的蛋'],['🚽','廁所'],['🐗','山豬']]],
+  ['最喜歡的季節？', [['🌸','春天'],['🏖️','夏天'],['🍁','秋天'],['⛄','冬天'],['🌧️','梅雨'],['🎋','過年']]],
+  ['說到「亮亮的」？', [['💎','鑽石'],['⭐','星星'],['💡','電燈'],['🔦','手電筒'],['✨','煙火'],['🪞','鏡子']]],
+  ['最想吃的水果？', [['🍉','西瓜'],['🍓','草莓'],['🍇','葡萄'],['🥭','芒果'],['🍌','香蕉'],['🍎','蘋果']]],
+  ['被媽媽罵通常因為？', [['📱','玩太久'],['🧹','沒收東西'],['🍽️','挑食'],['😴','太晚睡'],['📚','沒寫功課'],['🗣️','跟兄弟姊妹吵架']]],
+  ['說到「快快的」？', [['🐆','獵豹'],['🚀','火箭'],['⚡','閃電'],['🏍️','機車'],['💨','風'],['🏃','跑步']]],
+  ['想在家裡加什麼？', [['🏊','游泳池'],['🎮','電玩間'],['🛝','溜滑梯'],['🍿','電影院'],['🐕','養狗'],['🌳','大樹']]],
+  ['最喜歡的零食？', [['🍫','巧克力'],['🍪','餅乾'],['🍬','糖果'],['🍟','薯條'],['🍿','爆米花'],['🍡','果凍']]],
+  ['說到「重重的」？', [['🐘','大象'],['🪨','石頭'],['🚗','車'],['🏋️','啞鈴'],['📚','一堆書'],['🏔️','山']]],
+  ['最想當什麼職業？', [['🧑‍🚀','太空人'],['👮','警察'],['🧑‍⚕️','醫生'],['🎤','歌手'],['⚽','運動員'],['🧑‍🍳','廚師']]],
+  ['說到「圓形的食物」？', [['🍕','披薩'],['🥚','蛋'],['🍊','橘子'],['🍪','餅乾'],['🍡','丸子'],['🥯','貝果']]],
+  ['下雨天最想做什麼？', [['😴','睡覺'],['📺','看片'],['🎮','打電動'],['📖','看書'],['🍲','吃火鍋'],['🌧️','出去踩水']]],
+  ['最想去的國家？', [['🗾','日本'],['🇰🇷','韓國'],['🇺🇸','美國'],['🇫🇷','法國'],['🇦🇺','澳洲'],['🇹🇭','泰國']]],
+  ['說到「黑黑的」？', [['🌑','夜晚'],['☕','咖啡'],['🐈‍⬛','黑貓'],['🕳️','洞'],['🖤','墨水'],['🚗','黑車']]],
+  ['生日想怎麼過？', [['🎂','吃蛋糕'],['🎁','拆禮物'],['🎢','去玩'],['🍽️','吃大餐'],['👫','找朋友'],['😴','安靜過']]],
+  ['說到「會飛的」？', [['🐦','鳥'],['✈️','飛機'],['🦋','蝴蝶'],['🎈','氣球'],['🚀','火箭'],['🦇','蝙蝠']]],
+  ['最想要的房間佈置？', [['🌟','星空天花板'],['🎮','電競桌'],['📚','大書櫃'],['🛏️','超大床'],['🪴','很多植物'],['🎨','塗鴉牆']]],
+  ['說到「很甜的」？', [['🍯','蜂蜜'],['🍬','糖果'],['🍰','蛋糕'],['🥤','手搖飲'],['🍫','巧克力'],['🍉','西瓜']]],
+  ['最想跟誰交換一天？', [['👑','國王'],['🎤','明星'],['🐕','自己的狗'],['🧑‍🚀','太空人'],['👶','小嬰兒'],['🐦','小鳥']]],
+  ['說到「一對的東西」？', [['👟','鞋子'],['🧦','襪子'],['👀','眼睛'],['🥢','筷子'],['🧤','手套'],['👂','耳朵']]],
+  ['吃飯最愛配什麼？', [['📺','電視'],['📱','手機'],['🗣️','聊天'],['🎵','音樂'],['📖','書'],['🤐','安靜吃']]],
+  ['說到「會轉的」？', [['🎡','摩天輪'],['🌀','電風扇'],['🎠','旋轉木馬'],['⚽','陀螺'],['🚗','輪胎'],['🌍','地球']]],
+  ['最不想寫的作業？', [['🔢','數學'],['✍️','作文'],['🈶','國字'],['🔤','英文'],['🎨','美術'],['📖','背課文']]],
+  ['說到「小小的」？', [['🐜','螞蟻'],['🌱','種子'],['🪙','小錢'],['🐭','老鼠'],['💊','藥丸'],['⭐','星星']]],
+  ['家裡最舒服的地方？', [['🛏️','床上'],['🛋️','沙發'],['🛁','浴缸'],['🍽️','餐桌'],['🚪','自己房間'],['🪟','窗邊']]],
+  ['說到「硬硬的」？', [['🪨','石頭'],['🦴','骨頭'],['🧊','冰塊'],['🥜','堅果'],['🪵','木頭'],['🦷','牙齒']]],
+  ['遇到蟑螂會怎樣？', [['😱','尖叫'],['🏃','逃跑'],['🩴','打它'],['📢','叫大人'],['🧊','僵住'],['😐','沒事啊']]],
+  ['說到「會叫的」？', [['🐕','狗'],['📱','手機'],['🐓','公雞'],['🚨','警報器'],['👶','嬰兒'],['⏰','鬧鐘']]],
+  ['最想擁有的交通工具？', [['🏎️','跑車'],['🚁','直升機'],['🛥️','遊艇'],['🚲','腳踏車'],['🛹','滑板'],['🐎','馬']]],
+  ['說到「熱熱的」？', [['🔥','火'],['☕','熱茶'],['☀️','太陽'],['🍲','火鍋'],['🛁','熱水澡'],['🌋','火山']]],
+  ['被稱讚最開心的是？', [['🧠','很聰明'],['😄','很好笑'],['💪','很厲害'],['❤️','很善良'],['🎨','很有創意'],['⚡','動作很快']]],
+  ['說到「長長的」？', [['🐍','蛇'],['🦒','長頸鹿'],['🍜','麵'],['🛤️','鐵軌'],['💇','頭髮'],['🌈','彩虹']]],
+  ['露營最重要帶什麼？', [['⛺','帳篷'],['🔦','手電筒'],['🍖','食物'],['💧','水'],['🧴','防蚊液'],['🎸','吉他']]],
+  ['說到「會黏的」？', [['🍯','蜂蜜'],['🕸️','蜘蛛網'],['🍬','太妃糖'],['📎','膠帶'],['🐌','蝸牛'],['🧴','膠水']]],
+  ['最想砍掉哪一件事？', [['📚','寫作業'],['🧹','做家事'],['😴','早起'],['🥦','吃青菜'],['🚿','洗澡'],['🦷','刷牙']]],
+  ['說到「白色的」？', [['☁️','雲'],['🥛','牛奶'],['❄️','雪'],['🦢','天鵝'],['📄','紙'],['🦷','牙齒']]],
+  ['最喜歡的音樂？', [['🎸','搖滾'],['🎹','鋼琴'],['🥁','節奏強的'],['🎤','流行歌'],['🎻','古典'],['🔇','安靜就好']]],
+  ['說到「會爆的」？', [['🎈','氣球'],['🍿','爆米花'],['🎆','煙火'],['💣','炸彈'],['🌋','火山'],['🥤','汽水']]],
+  ['最想收集什麼？', [['🃏','卡片'],['🪙','錢幣'],['🧸','公仔'],['📚','漫畫'],['🐚','貝殼'],['⭐','貼紙']]],
+];
+
+/* ---------- 音效：Web Audio 合成，零音檔 ---------- */
+let AC = null;
+function beep(freqs, dur, type, vol) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    freqs.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'sine'; o.frequency.value = f;
+      const t0 = AC.currentTime + i * 0.06;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(vol || 0.12, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.14));
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + (dur || 0.14) + 0.02);
+    });
+  } catch (e) {}
+}
+const SFX = {
+  tap:   () => beep([620], 0.07, 'triangle', 0.1),
+  pass:  () => beep([440, 660], 0.1, 'sine', 0.11),
+  hit:   () => beep([784, 988, 1319], 0.13, 'triangle', 0.14),
+  solo:  () => beep([1047, 1319, 1568], 0.12, 'sine', 0.14),
+  miss:  () => beep([220, 165], 0.16, 'sawtooth', 0.09),
+  done:  () => beep([523, 659, 784, 1047], 0.16, 'triangle', 0.15),
+};
+
+/* ---------- 小工具 ---------- */
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+  window.scrollTo(0, 0);
+};
+const shuffle = (a) => { for (let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* ---------- 遊戲狀態 ---------- */
+const S = {
+  players: [],     // 玩家名單
+  scores: [],      // 各自累積分數
+  total: 8,        // 總題數
+  round: 0,        // 目前第幾題（0 起算）
+  pool: [],        // 這局用的題目（已洗牌）
+  q: null,         // 這題的題目
+  mode: 'same',    // 'same' 同心題 / 'diff' 反骨題
+  picks: [],       // 每個玩家選的選項 index
+  turn: 0,         // 換人輪到誰
+};
+
+/* ---------- 開場 ---------- */
+function boot() {
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players
+    .map(p => `<span>${p.emoji} ${p.name}</span>`).join('');
+  if (S.players.length < 2) {
+    $('startBtn').textContent = '⚠️ 至少要 2 個人才好玩';
+    $('startBtn').disabled = true;
+    $('startBtn').style.opacity = .5;
+  }
+}
+
+document.querySelectorAll('[data-len]').forEach(b =>
+  b.addEventListener('click', () => {
+    SFX.tap();
+    document.querySelectorAll('[data-len]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    S.total = +b.dataset.len;
+  }));
+
+$('startBtn').addEventListener('click', () => {
+  if (S.players.length < 2) return;
+  SFX.pass();
+  S.scores = S.players.map(() => 0);
+  S.round = 0;
+  /* 題目洗牌，題數不夠就循環補 */
+  S.pool = shuffle(QUESTIONS.slice());
+  while (S.pool.length < S.total) S.pool = S.pool.concat(shuffle(QUESTIONS.slice()));
+  newRound();
+});
+
+/* ---------- 每一題 ---------- */
+function newRound() {
+  S.q = S.pool[S.round];
+  S.mode = Math.random() < CONFIG.DIFF_RATE ? 'diff' : 'same';
+  S.picks = S.players.map(() => -1);
+  S.turn = 0;
+  showPass();
+}
+
+function modeInfo() {
+  return S.mode === 'diff'
+    ? { cls:'diff', em:'😈', label:'😈 反骨題', hint:'選一個你覺得<b>沒人會選</b>的 👇', pass:'😈' }
+    : { cls:'same', em:'🤝', label:'🤝 同心題', hint:'選一個你覺得<b>大家也會選</b>的 👇', pass:'🤝' };
+}
+
+function showPass() {
+  const m = modeInfo();
+  const p = S.players[S.turn];
+  $('passEm').textContent = m.pass;
+  $('passBadge').className = 'badge ' + m.cls;
+  $('passBadge').textContent = m.label;
+  $('passName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b>`;
+  $('passDots').innerHTML = S.players.map((_, i) =>
+    `<i class="${i < S.turn ? 'done' : (i === S.turn ? 'now' : '')}"></i>`).join('');
+  show('pass');
+}
+
+$('passBtn').addEventListener('click', () => { SFX.tap(); showPick(); });
+
+function showPick() {
+  const m = modeInfo();
+  $('pickBadge').className = 'badge ' + m.cls;
+  $('pickBadge').textContent = m.label;
+  $('qTxt').textContent = S.q[0];
+  $('pickHint').innerHTML = m.hint;
+  $('optsBox').innerHTML = S.q[1].map(([em, txt], i) =>
+    `<button class="opt" data-opt="${i}"><span class="em">${em}</span>${txt}</button>`).join('');
+  document.querySelectorAll('[data-opt]').forEach(b =>
+    b.addEventListener('click', () => {
+      SFX.tap();
+      S.picks[S.turn] = +b.dataset.opt;
+      S.turn++;
+      if (S.turn < S.players.length) showPass();
+      else doReveal();
+    }));
+  show('pick');
+}
+
+/* ---------- 揭曉＋計分 ---------- */
+function doReveal() {
+  const m = modeInfo();
+  $('revBadge').className = 'badge ' + m.cls;
+  $('revBadge').textContent = m.label;
+  $('revQ').textContent = S.q[0];
+
+  /* 統計每個選項被幾個人選 */
+  const count = {};
+  S.picks.forEach(v => { count[v] = (count[v] || 0) + 1; });
+  const allSame = Object.keys(count).length === 1;
+
+  /* 算分 */
+  const gained = S.players.map((_, i) => {
+    const same = count[S.picks[i]] - 1;   // 跟我一樣的人數（扣掉自己）
+    if (S.mode === 'diff') return same === 0 ? CONFIG.SOLO_PT : 0;
+    let g = same * CONFIG.SAME_PT;
+    if (allSame && S.players.length > 1) g += CONFIG.ALL_BONUS;
+    return g;
+  });
+  gained.forEach((g, i) => { S.scores[i] += g; });
+
+  /* 畫出每個人選了什麼、得幾分 */
+  $('revBoard').innerHTML = S.players.map((p, i) => {
+    const [em, txt] = S.q[1][S.picks[i]];
+    const same = count[S.picks[i]] - 1;
+    const g = gained[i];
+    let cls = '', note = '';
+    if (S.mode === 'diff') {
+      cls = g > 0 ? 'solo' : '';
+      note = g > 0 ? '只有你選這個！獨行俠 🎯' : `跟 ${same} 個人撞到了 😅`;
+    } else {
+      cls = g > 0 ? 'hit' : '';
+      note = same > 0 ? `跟 ${same} 個人心有靈犀 ✨` : '只有你這樣想 🤔';
+    }
+    return `
+      <div class="revRow ${cls}">
+        <div class="em">${em}</div>
+        <div class="nm">${p.emoji} ${p.name} 選了「${txt}」<i>${note}</i></div>
+        <div class="pt">${g > 0 ? '+' + g : '0'}</div>
+      </div>`;
+  }).join('');
+
+  if (allSame && S.mode === 'same') SFX.hit();
+  else if (gained.some(g => g > 0)) SFX.solo();
+  else SFX.miss();
+
+  $('nextBtn').textContent = (S.round + 1 >= S.total) ? '看最後成績 🏆' : `下一題 →（${S.round + 2} / ${S.total}）`;
+  show('reveal');
+}
+
+$('nextBtn').addEventListener('click', () => {
+  SFX.tap();
+  S.round++;
+  if (S.round >= S.total) finish();
+  else newRound();
+});
+
+/* ---------- 結算 ---------- */
+function finish() {
+  SFX.done();
+  const sorted = S.players
+    .map((p, i) => ({ p, sc: S.scores[i] }))
+    .sort((a, b) => b.sc - a.sc);
+  const best = sorted[0].sc;
+  $('overTitle').textContent = '心電感應排行';
+  $('board').innerHTML = sorted.map((r, i) => `
+    <div class="row ${r.sc === best && best > 0 ? 'top' : ''}">
+      <div class="rk">${['🥇','🥈','🥉'][i] || (i + 1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div>
+    </div>`).join('');
+  show('over');
+}
+
+$('again').addEventListener('click', () => {
+  SFX.tap();
+  S.scores = S.players.map(() => 0);
+  S.round = 0;
+  S.pool = shuffle(QUESTIONS.slice());
+  while (S.pool.length < S.total) S.pool = S.pool.concat(shuffle(QUESTIONS.slice()));
+  newRound();
+});
+
+boot();
+</script>
+</body>
+</html>
