@@ -82,6 +82,14 @@ h1 b{color:var(--wire)}
       border:2px solid var(--line);border-radius:18px;padding:18px 15px;text-align:center}
 .qBox .qTxt{font-size:20px;line-height:1.5}
 
+/* 倒數條 */
+.timeWrap{width:100%;height:12px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+.timeNum{font-size:34px;color:var(--wire);text-align:center;line-height:1}
+.timeNum.hot{color:var(--bad);animation:tnPulse .4s infinite alternate}
+@keyframes tnPulse{to{transform:scale(1.12)}}
+
 /* 選項 */
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
 .opt{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
@@ -124,7 +132,8 @@ h1 b{color:var(--wire)}
     大家看同一題、<b>偷偷選一個</b>答案——<br>
     🤝 <b>同心題</b>：跟越多人選一樣，分越高！<br>
     😈 <b>反骨題</b>：要選<b>沒人會選</b>的才得分！<br>
-    <span style="color:var(--wire)">重點不是答案對不對，是「猜別人怎麼想」。</span>
+    <span style="color:var(--wire)">重點不是答案對不對，是「猜別人怎麼想」。</span><br>
+    <span style="color:var(--bad)">⏰ 只有 7 秒！想太久系統會幫你亂選 😱</span>
   </p>
 
   <div class="who" id="whoRow"></div>
@@ -157,6 +166,8 @@ h1 b{color:var(--wire)}
 <section id="pick" class="screen">
   <div class="badge same" id="pickBadge">🤝 同心題</div>
   <div class="qBox"><div class="qTxt" id="qTxt">說到冰的東西？</div></div>
+  <div class="timeNum" id="pickTime">7</div>
+  <div class="timeWrap"><i id="pickBar"></i></div>
   <p class="tip" id="pickHint">選一個你覺得<b>大家也會選</b>的 👇</p>
   <div class="opts" id="optsBox"></div>
 </section>
@@ -187,6 +198,7 @@ h1 b{color:var(--wire)}
    ============================================================ */
 
 const CONFIG = {
+  PICK_SECONDS: 7,     // 每人選答案的秒數（時間到＝棄權）
   DIFF_RATE: 0.3,      // 反骨題出現機率（三成）
   SAME_PT: 1,          // 同心題：每有一個人跟你一樣，得 1 分
   SOLO_PT: 2,          // 反骨題：完全沒人跟你一樣，得 2 分
@@ -303,6 +315,7 @@ const S = {
   q: null,         // 這題的題目
   mode: 'same',    // 'same' 同心題 / 'diff' 反骨題
   picks: [],       // 每個玩家選的選項 index
+  late: [],        // 是否因逾時被隨機指定
   turn: 0,         // 換人輪到誰
 };
 
@@ -342,6 +355,7 @@ function newRound() {
   S.q = S.pool[S.round];
   S.mode = Math.random() < CONFIG.DIFF_RATE ? 'diff' : 'same';
   S.picks = S.players.map(() => -1);
+  S.late = S.players.map(() => false);
   S.turn = 0;
   showPass();
 }
@@ -366,6 +380,46 @@ function showPass() {
 
 $('passBtn').addEventListener('click', () => { SFX.tap(); showPick(); });
 
+let pickRaf = null;
+function stopPickTimer() { cancelAnimationFrame(pickRaf); pickRaf = null; }
+
+function runPickTimer() {
+  stopPickTimer();
+  const total = CONFIG.PICK_SECONDS * 1000;
+  const endAt = performance.now() + total;
+  let lastTick = -1;
+  const step = () => {
+    const left = endAt - performance.now();
+    const sec = Math.max(0, left / 1000);
+    $('pickBar').style.width = Math.max(0, left / total * 100) + '%';
+    $('pickTime').textContent = sec.toFixed(1);
+    const hot = sec <= 2.5;
+    $('pickBar').classList.toggle('hot', hot);
+    $('pickTime').classList.toggle('hot', hot);
+    const s = Math.ceil(sec);
+    if (hot && s !== lastTick && s > 0) { beep([1200], 0.04, 'square', 0.07); lastTick = s; }
+    if (left <= 0) {
+      /* 時間到＝來不及選，隨機幫他選一個（不會卡住流程） */
+      stopPickTimer();
+      const rnd = Math.floor(Math.random() * S.q[1].length);
+      beep([220, 165], 0.18, 'sawtooth', 0.1);
+      commitPick(rnd, true);
+      return;
+    }
+    pickRaf = requestAnimationFrame(step);
+  };
+  pickRaf = requestAnimationFrame(step);
+}
+
+function commitPick(idx, timeout) {
+  stopPickTimer();
+  S.picks[S.turn] = idx;
+  S.late[S.turn] = !!timeout;
+  S.turn++;
+  if (S.turn < S.players.length) showPass();
+  else doReveal();
+}
+
 function showPick() {
   const m = modeInfo();
   $('pickBadge').className = 'badge ' + m.cls;
@@ -375,14 +429,9 @@ function showPick() {
   $('optsBox').innerHTML = S.q[1].map(([em, txt], i) =>
     `<button class="opt" data-opt="${i}"><span class="em">${em}</span>${txt}</button>`).join('');
   document.querySelectorAll('[data-opt]').forEach(b =>
-    b.addEventListener('click', () => {
-      SFX.tap();
-      S.picks[S.turn] = +b.dataset.opt;
-      S.turn++;
-      if (S.turn < S.players.length) showPass();
-      else doReveal();
-    }));
+    b.addEventListener('click', () => { SFX.tap(); commitPick(+b.dataset.opt, false); }));
   show('pick');
+  runPickTimer();
 }
 
 /* ---------- 揭曉＋計分 ---------- */
@@ -420,10 +469,11 @@ function doReveal() {
       cls = g > 0 ? 'hit' : '';
       note = same > 0 ? `跟 ${same} 個人心有靈犀 ✨` : '只有你這樣想 🤔';
     }
+    const lateTag = S.late[i] ? ' ⏰<span style="color:var(--bad)">來不及！亂選的</span>' : '';
     return `
       <div class="revRow ${cls}">
         <div class="em">${em}</div>
-        <div class="nm">${p.emoji} ${p.name} 選了「${txt}」<i>${note}</i></div>
+        <div class="nm">${p.emoji} ${p.name} 選了「${txt}」${lateTag}<i>${note}</i></div>
         <div class="pt">${g > 0 ? '+' + g : '0'}</div>
       </div>`;
   }).join('');

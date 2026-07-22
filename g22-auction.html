@@ -92,6 +92,14 @@ h1 b{color:var(--wire)}
 .padRow button:active{transform:scale(.94);border-color:var(--wire)}
 .padRow button.wide{font-size:14px;color:var(--dim)}
 
+/* 倒數 */
+.timeWrap{width:100%;height:12px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+.timeNum{font-size:28px;color:var(--wire);text-align:center;line-height:1}
+.timeNum.hot{color:var(--bad);animation:tnP .4s infinite alternate}
+@keyframes tnP{to{transform:scale(1.12)}}
+
 /* 揭曉 */
 .bidRow{width:100%;background:var(--ink-2);border:2px solid var(--line);
         border-radius:15px;padding:12px 14px;display:flex;align-items:center;gap:11px}
@@ -126,7 +134,8 @@ h1 b{color:var(--wire)}
     <b>出最高的人得標</b>，拿走分數、付掉點數。<br>
     出一樣多 → <b>流標</b>，誰都拿不到！<br>
     <span style="color:var(--bad)">💀 有時會出現詛咒品——搶到反而扣分！<br>大家都出一樣 → 抽籤決定誰倒楣 😈</span><br>
-    <span style="color:var(--wire)">點數花完就沒本錢了，看誰會算。</span>
+    <span style="color:var(--wire)">值多少<b>只知道範圍</b>——開出來才知道賺還賠！</span><br>
+    <span style="color:var(--bad)">⏰ 出價只有 12 秒，別想太久 😱</span>
   </p>
 
   <div class="who" id="whoRow"></div>
@@ -176,6 +185,8 @@ h1 b{color:var(--wire)}
     <div class="nm" id="bidNm" style="font-size:16px">鑽石</div>
     <div class="val" id="bidVal" style="font-size:13px">值 6 分</div>
   </div>
+  <div class="timeNum" id="bidTime">12</div>
+  <div class="timeWrap"><i id="bidBar"></i></div>
   <div class="bidNum" id="bidNum">0</div>
   <div class="bidOf" id="bidOf">你有 20 點</div>
   <div class="padRow">
@@ -218,6 +229,7 @@ h1 b{color:var(--wire)}
    ============================================================ */
 
 const CONFIG = {
+  BID_SECONDS: 12,       // 每人出價秒數（時間到＝用目前數字送出）
   START_PT: 20,          // 每人起始點數
   CURSE_RATE: 0.25,      // 詛咒品出現機率
   LEFTOVER_PER: 5,       // 剩餘點數每 N 點換 1 分
@@ -320,7 +332,8 @@ function startGame() {
 function newItem() {
   const curse = Math.random() < CONFIG.CURSE_RATE;
   const [em, nm, lo, hi] = pick(curse ? CURSES : TREASURES);
-  S.item = { em, nm, val: rnd(lo, hi), curse };
+  /* 只給範圍，實際分數要得標後才揭曉 —— 不然看到數字就變算數學 */
+  S.item = { em, nm, val: rnd(lo, hi), lo, hi, curse };
   S.bids = S.players.map(() => 0);
   S.turn = 0;
 
@@ -329,7 +342,9 @@ function newItem() {
   $('itemCard').className = 'item' + (curse ? ' curse' : '');
   $('itemEm').textContent = em;
   $('itemNm').textContent = nm;
-  $('itemVal').textContent = curse ? `搶到扣 ${S.item.val} 分！` : `值 ${S.item.val} 分`;
+  $('itemVal').textContent = curse
+    ? `搶到扣 ${S.item.lo}～${S.item.hi} 分（多少要開了才知道）`
+    : `值 ${S.item.lo}～${S.item.hi} 分（多少要開了才知道）`;
   $('itemHint').innerHTML = curse
     ? '💀 <b style="color:var(--bad)">詛咒品</b>：出價最高的人要收下並扣分<br>大家出一樣多 → <b>抽籤</b>決定誰倒楣，躲不掉的！'
     : '出價最高的人得標，付掉出的點數<br>出一樣多 → 流標，誰都拿不到';
@@ -366,9 +381,10 @@ function openBid() {
   $('bidItem').className = 'item' + (it.curse ? ' curse' : '');
   $('bidEm').textContent = it.em;
   $('bidNm').textContent = it.nm;
-  $('bidVal').textContent = it.curse ? `搶到扣 ${it.val} 分！` : `值 ${it.val} 分`;
+  $('bidVal').textContent = it.curse ? `搶到扣 ${it.lo}～${it.hi} 分` : `值 ${it.lo}～${it.hi} 分`;
   paintBid();
   show('bid');
+  runBidTimer();
 }
 function paintBid() {
   $('bidNum').textContent = curBid;
@@ -386,13 +402,36 @@ document.querySelectorAll('[data-set]').forEach(b =>
     SFX.add(); paintBid();
   }));
 
-$('bidOk').addEventListener('click', () => {
-  SFX.lock();
+let bidRaf = null;
+function stopBidTimer() { cancelAnimationFrame(bidRaf); bidRaf = null; }
+function runBidTimer() {
+  stopBidTimer();
+  const total = CONFIG.BID_SECONDS * 1000;
+  const endAt = performance.now() + total;
+  let lastTick = -1;
+  const step = () => {
+    const left = endAt - performance.now();
+    const sec = Math.max(0, left / 1000);
+    $('bidBar').style.width = Math.max(0, left / total * 100) + '%';
+    $('bidTime').textContent = sec.toFixed(1);
+    const hot = sec <= 3;
+    $('bidBar').classList.toggle('hot', hot);
+    $('bidTime').classList.toggle('hot', hot);
+    const k = Math.ceil(sec);
+    if (hot && k !== lastTick && k > 0) { beep([1200], 0.04, 'square', 0.07); lastTick = k; }
+    if (left <= 0) { stopBidTimer(); beep([220,165],0.18,'sawtooth',0.1); commitBid(); return; }
+    bidRaf = requestAnimationFrame(step);
+  };
+  bidRaf = requestAnimationFrame(step);
+}
+function commitBid() {
+  stopBidTimer();
   S.bids[S.turn] = curBid;
   S.turn++;
   if (S.turn < S.players.length) showPass();
   else doReveal();
-});
+}
+$('bidOk').addEventListener('click', () => { SFX.lock(); commitBid(); });
 
 /* ---------- 揭曉 ---------- */
 function it0() { return S.item; }
@@ -415,16 +454,19 @@ function doReveal() {
   }
 
   $('revEm').textContent = tie ? '🤝' : it.em;
+  /* 這裡才公開實際值多少分 */
+  const valTxt = it.curse ? `扣 ${it.val} 分` : `值 ${it.val} 分`;
   if (tie) {
-    $('revTitle').innerHTML = `<b style="color:var(--dim)">流標！</b>`;
+    $('revTitle').innerHTML = `<b style="color:var(--dim)">流標！</b><br><span style="font-size:15px;color:var(--dim)">（這件${valTxt}，沒人拿到）</span>`;
     SFX.fail();
   } else if (it.curse) {
-    $('revTitle').innerHTML = drawn
+    $('revTitle').innerHTML = (drawn
       ? `大家都想閃…<b style="color:var(--bad)">抽到 ${S.players[winner].name}</b> 😈`
-      : `${S.players[winner].name} <b style="color:var(--bad)">被塞了 ${it.nm}</b>`;
+      : `${S.players[winner].name} <b style="color:var(--bad)">被塞了 ${it.nm}</b>`)
+      + `<br><span style="font-size:16px;color:var(--bad)">開出來 ${valTxt}</span>`;
     SFX.fail();
   } else {
-    $('revTitle').innerHTML = `${S.players[winner].name} <b>標到 ${it.nm}</b>！`;
+    $('revTitle').innerHTML = `${S.players[winner].name} <b>標到 ${it.nm}</b>！<br><span style="font-size:16px;color:var(--wire)">開出來 ${valTxt}</span>`;
     SFX.win();
   }
 

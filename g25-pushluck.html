@@ -87,6 +87,14 @@ h1 b{color:var(--wire)}
 .potBox .b .k{font-size:11px;color:var(--dim);font-weight:500}
 .potBox .b .v{font-size:26px;color:var(--wire);line-height:1.2;margin-top:2px}
 .potBox .b.risk .v{color:var(--bad)}
+.potBox .b .v.pop{animation:potPop .55s cubic-bezier(.2,1.6,.4,1)}
+@keyframes potPop{0%{transform:scale(1)}40%{transform:scale(1.65);color:var(--spark)}100%{transform:scale(1)}}
+.gemFly{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+        font-size:28px;color:var(--spark);pointer-events:none;white-space:nowrap;
+        animation:gemFly 1.1s ease-out forwards;text-shadow:0 2px 12px rgba(101,232,255,.7)}
+@keyframes gemFly{0%{opacity:0;transform:translate(-50%,-10%) scale(.7)}
+                  25%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}
+                  100%{opacity:0;transform:translate(-50%,-130%) scale(1)}}
 
 .actRow{display:flex;gap:10px;width:100%}
 .actRow button{flex:1;border-radius:18px;padding:20px 8px;font-size:17px;line-height:1.35}
@@ -114,6 +122,7 @@ h1 b{color:var(--wire)}
   <p class="sub">
     輪到你 → <b>一直骰</b>，分數一直疊上去。<br>
     但骰到 <b style="color:var(--bad)">💀 骷髏</b> → <b>這輪全部歸零</b>！<br>
+    骰到 <b style="color:var(--spark)">💎 寶石</b> → <b>這輪分數 ×2 再加 2</b>！<br>
     <b style="color:var(--good)">隨時可以收下</b>，落袋為安。<br>
     <span style="color:var(--bad)">越骰越危險——骷髏機率一次比一次高。</span><br>
     <span style="color:var(--wire)">先到目標分數的人贏！</span>
@@ -356,8 +365,17 @@ function settle(bust, gem, val) {
   }
   if (gem) {
     face.textContent = '💎';
-    $('cap').innerHTML = `<b style="color:var(--spark)">寶石！這輪分數翻倍</b>`;
+    const before = S.pot;
     S.pot = S.pot * 2 + 2;      // 空手骰到寶石也給一點甜頭
+    /* 明確告訴玩家「幾分變幾分」，不然看不出有加倍 */
+    $('cap').innerHTML = `<b style="color:var(--spark)">💎 寶石！${before} 分 → ${S.pot} 分</b>`;
+    const fly = document.createElement('div');
+    fly.className = 'gemFly';
+    fly.textContent = `${before} ×2 ＋2 ＝ ${S.pot}`;
+    dial.appendChild(fly);
+    setTimeout(() => fly.remove(), 1150);
+    $('potVal').classList.add('pop');
+    setTimeout(() => $('potVal').classList.remove('pop'), 600);
     SFX.gem();
   } else {
     face.textContent = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'][val - 1] || '⭐';
