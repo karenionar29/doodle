@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G23 誰是臥底・畫畫版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0E1424">
+<style>
+:root{
+  --ink:#0E1424;        /* 深靛 */
+  --ink-2:#1A2440;      /* 卡片 */
+  --line:#2C3A5E;       /* 邊線 */
+  --paper:#EAF1FF;      /* 主文字 */
+  --dim:#8CA0C8;        /* 次文字 */
+  --wire:#FF7A59;       /* 主題橘紅 */
+  --spark:#FFD84D;
+  --good:#6BE8A8;
+  --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{
+  min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:13px;
+        max-width:460px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:44px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+
+.who{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px;
+          display:inline-flex;align-items:center;gap:5px}
+.who span i{width:9px;height:9px;border-radius:50%;font-style:normal;flex:none}
+
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:14px}
+.lenRow{display:flex;gap:8px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;
+               padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#33223A}
+.lenRow button:active{transform:scale(.96)}
+
+.go{width:100%;background:var(--wire);color:#2A0C00;border-radius:18px;padding:16px 0;font-size:17px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.go.ghost{background:var(--ink-2);border:2px solid var(--line);color:var(--wire)}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 換人 */
+.passName{font-size:29px;text-align:center;line-height:1.3}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+/* 秘密看題目 */
+.peekBtn{width:100%;background:var(--ink-2);border:2px dashed var(--line);border-radius:18px;
+         padding:26px 14px;text-align:center;font-size:17px;color:var(--dim);user-select:none}
+.peekBtn.on{border-style:solid;border-color:var(--wire);background:#33223A;color:var(--paper)}
+.wordBig{font-size:34px;color:var(--wire);line-height:1.3}
+.wordSub{font-size:12px;color:var(--dim);font-weight:500;margin-top:6px}
+
+/* 畫布 */
+.canvasWrap{width:100%;position:relative}
+canvas{width:100%;aspect-ratio:1/1;background:#fff;border-radius:16px;display:block;touch-action:none}
+.hudBar{width:100%;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+.hudBar .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px;
+              display:inline-flex;align-items:center;gap:5px}
+.hudBar .chip i{width:11px;height:11px;border-radius:50%;font-style:normal;flex:none}
+.hudBar .chip b{color:var(--spark)}
+
+/* 投票 */
+.voteGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.voteBtn{background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:15px 8px;
+         font-size:15px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.voteBtn i{width:14px;height:14px;border-radius:50%;font-style:normal}
+.voteBtn:active{transform:scale(.95);border-color:var(--wire)}
+.voteBtn:disabled{opacity:.3}
+
+/* 結果 */
+.resRow{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;
+        padding:11px 13px;display:flex;align-items:center;gap:10px}
+.resRow.out{border-color:var(--bad);background:#2E1620}
+.resRow.spy{border-color:var(--spark);background:#332B10}
+.resRow i{width:13px;height:13px;border-radius:50%;font-style:normal;flex:none}
+.resRow .nm{flex:1;font-size:15px}
+.resRow .vt{font-size:14px;color:var(--dim)}
+
+.bigResult{font-size:24px;text-align:center;line-height:1.4}
+.bigResult b{color:var(--wire)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<!-- ========== 開場 ========== -->
+<section id="intro" class="screen on">
+  <div class="hero">🕵️🎨</div>
+  <h1>G23 <b>誰是臥底・畫畫版</b></h1>
+  <p class="sub">
+    大家拿到<b>同一個題目</b>——只有<b style="color:var(--wire)">一個人不一樣</b>（他自己不知道）。<br>
+    輪流在<b>同一張紙</b>上畫，每人用<b>自己的顏色</b>。<br>
+    畫完投票抓臥底。<br>
+    <span style="color:var(--spark)">臥底被抓到還有機會：猜中大家的題目就翻盤！</span>
+  </p>
+
+  <div class="who" id="whoRow"></div>
+
+  <div class="card">
+    <p class="sub" style="margin-bottom:9px">每人畫幾輪？</p>
+    <div class="lenRow">
+      <button data-len="1">1 輪<br><span style="font-size:11px;color:var(--dim)">快</span></button>
+      <button data-len="2" class="on">2 輪<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="3">3 輪<br><span style="font-size:11px;color:var(--dim)">細膩</span></button>
+    </div>
+  </div>
+
+  <button class="go" id="startBtn">🕵️ 開始</button>
+  <p class="tip">📱 一台裝置輪流傳著玩 · 至少 3 人<br>看題目時別讓別人看到！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<!-- ========== 換人 ========== -->
+<section id="pass" class="screen">
+  <div class="hero">🤫</div>
+  <div class="hudBar"><span class="chip">第 <b id="passRound">1</b> / <b id="passTotal">2</b> 輪</span></div>
+  <div class="passName" id="passName">換 🧒 George</div>
+  <p class="tip">把裝置交給他，<b>其他人先別看</b> 🙈</p>
+  <div class="dots" id="passDots"></div>
+  <button class="go" id="passBtn">好，我拿到了</button>
+</section>
+
+<!-- ========== 看題目 ========== -->
+<section id="peek" class="screen">
+  <div class="hudBar"><span class="chip" id="peekWho">🧒 George</span></div>
+  <div class="peekBtn" id="peekBox">
+    👁️ <b>按住</b>看自己的題目<br>
+    <span style="font-size:12px;font-weight:500">放開就藏起來</span>
+  </div>
+  <p class="tip">忘記可以再按一次 👆<br><b>不能寫字、不能畫箭頭</b>，只能畫東西本身！</p>
+  <button class="go" id="peekOk">記住了，開始畫 🎨</button>
+</section>
+
+<!-- ========== 畫畫 ========== -->
+<section id="draw" class="screen">
+  <div class="hudBar">
+    <span class="chip" id="drawWho"><i></i> George</span>
+    <span class="chip">⏱ <b id="drawTime">20</b> 秒</span>
+    <span class="chip">第 <b id="drawRound">1</b>/<b id="drawTotal">2</b> 輪</span>
+  </div>
+  <div class="canvasWrap"><canvas id="cv"></canvas></div>
+  <p class="tip">用<b id="drawColorTip">你的顏色</b>畫，時間到自動換人</p>
+  <button class="go" id="drawDone">✅ 我畫好了，換下一位</button>
+</section>
+
+<!-- ========== 投票說明 ========== -->
+<section id="voteIntro" class="screen">
+  <div class="hero">🗳️</div>
+  <h1>畫完了！<b>誰是臥底？</b></h1>
+  <div class="canvasWrap"><canvas id="cv2"></canvas></div>
+  <div class="who" id="voteLegend"></div>
+  <p class="tip">看看誰的筆怪怪的 🤔<br>接下來輪流傳裝置，<b>秘密投票</b></p>
+  <button class="go" id="voteStart">開始投票 →</button>
+</section>
+
+<!-- ========== 投票 ========== -->
+<section id="vote" class="screen">
+  <div class="hudBar"><span class="chip" id="voteWho">🧒 George 投票</span></div>
+  <p class="sub">你覺得<b>誰</b>拿到的題目不一樣？</p>
+  <div class="voteGrid" id="voteGrid"></div>
+</section>
+
+<!-- ========== 臥底猜詞 ========== -->
+<section id="guess" class="screen">
+  <div class="hero">😈</div>
+  <h1 id="guessTitle">被抓到了！</h1>
+  <p class="sub"><b id="guessName">臥底</b>，你是臥底！<br>
+  猜中<b>大家的題目</b>就能翻盤 👇</p>
+  <div class="voteGrid" id="guessGrid"></div>
+</section>
+
+<!-- ========== 結果 ========== -->
+<section id="over" class="screen">
+  <div class="hero" id="overEm">🏆</div>
+  <div class="bigResult" id="overTitle"></div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:13px;color:var(--dim);font-weight:500">大家的題目</div>
+    <div style="font-size:24px;color:var(--wire);margin:4px 0 10px">
+      <span id="wordC"></span></div>
+    <div style="font-size:13px;color:var(--dim);font-weight:500">臥底的題目</div>
+    <div style="font-size:24px;color:var(--spark);margin-top:4px">
+      <span id="wordS"></span></div>
+  </div>
+  <div class="canvasWrap"><canvas id="cv3"></canvas></div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:8px" id="resList"></div>
+  <button class="go" id="again">🔁 再玩一局</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G23 誰是臥底・畫畫版
+   G10（社交推理）× G14（畫畫）合體。
+   每人固定一個顏色 → 誰畫了哪一筆一目了然，推理素材更多。
+   耐玩來源：內容是「這群人這次怎麼畫、怎麼騙」。
+   ============================================================ */
+
+const CONFIG = {
+  DRAW_SECONDS: 20,     // 每人每輪畫幾秒
+  BRUSH: 5,             // 筆刷粗細
+};
+
+/* 每個玩家的專屬顏色（最多 6 人） */
+const COLORS = ['#E63946','#2A9D8F','#F4A261','#457B9D','#9B5DE5','#F15BB5'];
+
+/* ---------- 題庫：[大家的題目, 臥底的題目]（相近但不同，都畫得出來） ---------- */
+const WORD_PAIRS = [
+  ['貓','老虎'], ['蘋果','番茄'], ['飛機','火箭'], ['太陽','月亮'],
+  ['腳踏車','機車'], ['鴨子','鵝'], ['雨傘','雨衣'], ['杯子','碗'],
+  ['房子','城堡'], ['帽子','安全帽'], ['魚','鯨魚'], ['狗','狼'],
+  ['蛋糕','麵包'], ['椅子','沙發'], ['筆','筷子'], ['書','筆記本'],
+  ['鞋子','拖鞋'], ['蝴蝶','蜜蜂'], ['樹','花'], ['星星','雪花'],
+  ['湯匙','鏟子'], ['球','氣球'], ['時鐘','手錶'], ['門','窗戶'],
+  ['公車','卡車'], ['牛','馬'], ['西瓜','南瓜'], ['冰淇淋','霜淇淋'],
+  ['眼鏡','太陽眼鏡'], ['袋子','背包'], ['床','桌子'], ['雲','煙'],
+  ['香蕉','玉米'], ['雞蛋','石頭'], ['吉他','小提琴'], ['蠟燭','燈泡'],
+  ['雨','瀑布'], ['山','金字塔'], ['船','潛水艇'], ['鑰匙','叉子'],
+  ['熊','熊貓'], ['蛇','繩子'], ['披薩','派'], ['電視','電腦'],
+  ['帳篷','屋頂'], ['掃把','拖把'], ['牙刷','梳子'], ['蘑菇','傘'],
+];
+
+/* ---------- 音效 ---------- */
+let AC = null;
+function beep(fs, dur, type, vol) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    fs.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'sine'; o.frequency.value = f;
+      const t0 = AC.currentTime + i * 0.06;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(vol || 0.12, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.14));
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + (dur || 0.14) + 0.02);
+    });
+  } catch (e) {}
+}
+const SFX = {
+  tap:  () => beep([560], 0.06, 'triangle', 0.09),
+  pass: () => beep([392, 523], 0.1, 'sine', 0.1),
+  tick: () => beep([880], 0.05, 'square', 0.06),
+  vote: () => beep([660, 495], 0.1, 'sine', 0.11),
+  win:  () => beep([659, 880, 1175], 0.15, 'triangle', 0.15),
+  spy:  () => beep([330, 262, 196], 0.2, 'sawtooth', 0.13),
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+  window.scrollTo(0, 0);
+};
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const shuffle = (a) => { for (let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* ---------- 狀態 ---------- */
+const S = {
+  players: [], spy: 0, wc: '', ws: '',
+  totalRounds: 2, round: 0, turn: 0,
+  strokes: [],        // { c: 顏色, pts: [[x,y],...] }  座標為 0~1 比例
+  votes: [], voteTurn: 0,
+  outIdx: -1, spyGuessRight: false, voteCount: [],
+};
+
+/* ---------- 開場 ---------- */
+function boot() {
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map((p, i) =>
+    `<span><i style="background:${COLORS[i % COLORS.length]}"></i>${p.emoji} ${p.name}</span>`).join('');
+  if (S.players.length < 3) {
+    $('startBtn').textContent = '⚠️ 至少要 3 個人才能抓臥底';
+    $('startBtn').disabled = true;
+  }
+}
+document.querySelectorAll('[data-len]').forEach(b =>
+  b.addEventListener('click', () => {
+    SFX.tap();
+    document.querySelectorAll('[data-len]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    S.totalRounds = +b.dataset.len;
+  }));
+
+$('startBtn').addEventListener('click', () => {
+  if (S.players.length < 3) return;
+  SFX.pass();
+  startGame();
+});
+
+function startGame() {
+  const [a, b] = pick(WORD_PAIRS);
+  const flip = Math.random() < 0.5;
+  S.wc = flip ? b : a;          // 大家的題目
+  S.ws = flip ? a : b;          // 臥底的題目
+  S.spy = Math.floor(Math.random() * S.players.length);
+  S.round = 0; S.turn = 0;
+  S.strokes = [];
+  S.votes = []; S.voteTurn = 0;
+  S.outIdx = -1; S.spyGuessRight = false;
+  $('passTotal').textContent = S.totalRounds;
+  $('drawTotal').textContent = S.totalRounds;
+  showPass();
+}
+
+/* ---------- 換人 ---------- */
+function showPass() {
+  const p = S.players[S.turn];
+  $('passRound').textContent = S.round + 1;
+  $('passName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b>`;
+  $('passDots').innerHTML = S.players.map((_, i) =>
+    `<i class="${i < S.turn ? 'done' : (i === S.turn ? 'now' : '')}"></i>`).join('');
+  show('pass');
+}
+$('passBtn').addEventListener('click', () => {
+  SFX.tap();
+  showPeek();   /* 每輪都給看，小孩容易忘記自己的題目 */
+});
+
+/* ---------- 按住看題目 ---------- */
+function showPeek() {
+  const p = S.players[S.turn];
+  $('peekWho').textContent = `${p.emoji} ${p.name}`;
+  const word = (S.turn === S.spy) ? S.ws : S.wc;
+  const box = $('peekBox');
+  const hide = () => {
+    box.classList.remove('on');
+    box.innerHTML = '👁️ <b>按住</b>看自己的題目<br><span style="font-size:12px;font-weight:500">放開就藏起來</span>';
+  };
+  const showWord = () => {
+    box.classList.add('on');
+    box.innerHTML = `<div class="wordBig">${word}</div>
+                     <div class="wordSub">記住它，別說出來！</div>`;
+  };
+  hide();
+  box.onpointerdown = (e) => { e.preventDefault(); SFX.tick(); showWord(); };
+  box.onpointerup = hide;
+  box.onpointerleave = hide;
+  box.onpointercancel = hide;
+  show('peek');
+}
+$('peekOk').addEventListener('click', () => { SFX.tap(); startDraw(); });
+
+/* ---------- 畫布 ---------- */
+let cv, ctx, drawing = false, cur = null, timerId = null, leftSec = 0;
+
+function setupCanvas(id) {
+  const c = $(id);
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth || 320;
+  c.width = w * dpr; c.height = w * dpr;
+  const x = c.getContext('2d');
+  x.scale(dpr, dpr);
+  x.lineCap = 'round'; x.lineJoin = 'round';
+  x.fillStyle = '#fff'; x.fillRect(0, 0, w, w);
+  return { c, x, w };
+}
+function repaint(id) {
+  const { x, w } = setupCanvas(id);
+  S.strokes.forEach(s => {
+    if (s.pts.length < 1) return;
+    x.strokeStyle = s.c; x.lineWidth = CONFIG.BRUSH;
+    x.beginPath();
+    s.pts.forEach(([px, py], i) => {
+      const X = px * w, Y = py * w;
+      if (i === 0) x.moveTo(X, Y); else x.lineTo(X, Y);
+    });
+    x.stroke();
+  });
+}
+
+function startDraw() {
+  const p = S.players[S.turn];
+  const col = COLORS[S.turn % COLORS.length];
+  $('drawWho').innerHTML = `<i style="background:${col}"></i> ${p.emoji} ${p.name}`;
+  $('drawRound').textContent = S.round + 1;
+  $('drawColorTip').innerHTML = `<span style="color:${col}">你的顏色</span>`;
+  show('draw');
+
+  /* 畫布初始化＋重繪之前的筆 */
+  const setup = setupCanvas('cv');
+  cv = setup.c; ctx = setup.x;
+  repaint('cv');
+
+  /* 觸控繪圖 */
+  const pos = (e) => {
+    const r = cv.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  };
+  cv.onpointerdown = (e) => {
+    e.preventDefault();
+    drawing = true;
+    cur = { c: col, pts: [pos(e)] };
+    S.strokes.push(cur);
+    /* 點一下也要留下痕跡（畫一個點） */
+    const w = cv.clientWidth, p0 = cur.pts[0];
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(p0[0] * w, p0[1] * w, CONFIG.BRUSH / 2, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  cv.onpointermove = (e) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const p2 = pos(e);
+    const p1 = cur.pts[cur.pts.length - 1];
+    cur.pts.push(p2);
+    /* 只畫新增的那一小段，不整張重繪（手機才不會卡） */
+    const w = cv.clientWidth;
+    ctx.strokeStyle = cur.c; ctx.lineWidth = CONFIG.BRUSH;
+    ctx.beginPath();
+    ctx.moveTo(p1[0] * w, p1[1] * w);
+    ctx.lineTo(p2[0] * w, p2[1] * w);
+    ctx.stroke();
+  };
+  const end = () => { drawing = false; cur = null; };
+  cv.onpointerup = end; cv.onpointercancel = end; cv.onpointerleave = end;
+
+  /* 倒數 */
+  leftSec = CONFIG.DRAW_SECONDS;
+  $('drawTime').textContent = leftSec;
+  clearInterval(timerId);
+  timerId = setInterval(() => {
+    leftSec--;
+    $('drawTime').textContent = leftSec;
+    if (leftSec <= 3 && leftSec > 0) SFX.tick();
+    if (leftSec <= 0) { clearInterval(timerId); nextDrawer(); }
+  }, 1000);
+}
+
+$('drawDone').addEventListener('click', () => { SFX.tap(); clearInterval(timerId); nextDrawer(); });
+
+function nextDrawer() {
+  drawing = false;
+  S.turn++;
+  if (S.turn >= S.players.length) {
+    S.turn = 0; S.round++;
+    if (S.round >= S.totalRounds) return startVote();
+  }
+  showPass();
+}
+
+/* ---------- 投票 ---------- */
+function startVote() {
+  SFX.pass();
+  repaint('cv2');
+  $('voteLegend').innerHTML = S.players.map((p, i) =>
+    `<span><i style="background:${COLORS[i % COLORS.length]}"></i>${p.emoji} ${p.name}</span>`).join('');
+  show('voteIntro');
+}
+$('voteStart').addEventListener('click', () => {
+  SFX.tap();
+  S.votes = S.players.map(() => -1);
+  S.voteTurn = 0;
+  showVote();
+});
+
+function showVote() {
+  const p = S.players[S.voteTurn];
+  $('voteWho').textContent = `${p.emoji} ${p.name} 投票`;
+  $('voteGrid').innerHTML = S.players.map((q, i) =>
+    `<button class="voteBtn" data-v="${i}" ${i === S.voteTurn ? 'disabled' : ''}>
+       <i style="background:${COLORS[i % COLORS.length]}"></i>
+       ${q.emoji} ${q.name}${i === S.voteTurn ? '<span style="font-size:11px;color:var(--dim)">（你自己）</span>' : ''}
+     </button>`).join('');
+  document.querySelectorAll('[data-v]').forEach(b =>
+    b.addEventListener('click', () => {
+      SFX.vote();
+      S.votes[S.voteTurn] = +b.dataset.v;
+      S.voteTurn++;
+      if (S.voteTurn < S.players.length) showVote();
+      else tally();
+    }));
+  show('vote');
+}
+
+/* ---------- 開票 ---------- */
+function tally() {
+  const cnt = S.players.map(() => 0);
+  S.votes.forEach(v => { if (v >= 0) cnt[v]++; });
+  const top = Math.max(...cnt);
+  const tops = cnt.map((c, i) => c === top ? i : -1).filter(i => i >= 0);
+  /* 平票 → 沒人出局，臥底直接贏 */
+  S.outIdx = tops.length === 1 ? tops[0] : -1;
+  S.voteCount = cnt;
+
+  if (S.outIdx === S.spy) {
+    /* 抓對了 → 給臥底翻盤機會 */
+    const p = S.players[S.spy];
+    $('guessName').textContent = `${p.emoji} ${p.name}`;
+    const opts = shuffle([S.wc, ...shuffle(WORD_PAIRS.flat().filter(w => w !== S.wc && w !== S.ws)).slice(0, 5)]);
+    $('guessGrid').innerHTML = opts.map(w =>
+      `<button class="voteBtn" data-g="${w}">${w}</button>`).join('');
+    document.querySelectorAll('[data-g]').forEach(b =>
+      b.addEventListener('click', () => {
+        SFX.tap();
+        S.spyGuessRight = (b.dataset.g === S.wc);
+        finish();
+      }));
+    show('guess');
+  } else {
+    finish();
+  }
+}
+
+/* ---------- 結果 ---------- */
+function finish() {
+  const spyWin = (S.outIdx !== S.spy) || S.spyGuessRight;
+  const sp = S.players[S.spy];
+  $('overEm').textContent = spyWin ? '😈' : '🎉';
+  $('overTitle').innerHTML = spyWin
+    ? (S.spyGuessRight
+        ? `被抓到了，但 <b>${sp.name}</b> 猜中題目<br><b>臥底逆轉勝！</b>`
+        : `沒抓到！<br>臥底是 <b>${sp.emoji} ${sp.name}</b> 😈`)
+    : `抓到了！<br>臥底就是 <b>${sp.emoji} ${sp.name}</b><br><b style="color:var(--good)">大家獲勝 🎉</b>`;
+  $('wordC').textContent = S.wc;
+  $('wordS').textContent = S.ws;
+  repaint('cv3');
+  $('resList').innerHTML = S.players.map((p, i) => {
+    const isSpy = i === S.spy, isOut = i === S.outIdx;
+    return `<div class="resRow ${isSpy ? 'spy' : ''} ${isOut && !isSpy ? 'out' : ''}">
+      <i style="background:${COLORS[i % COLORS.length]}"></i>
+      <div class="nm">${p.emoji} ${p.name}${isSpy ? ' 😈 臥底' : ''}${isOut ? ' ← 被投出局' : ''}</div>
+      <div class="vt">${S.voteCount[i]} 票</div>
+    </div>`;
+  }).join('');
+  spyWin ? SFX.spy() : SFX.win();
+  show('over');
+}
+
+$('again').addEventListener('click', () => { SFX.tap(); startGame(); });
+
+/* 視窗改變時重畫（避免變形） */
+window.addEventListener('resize', () => {
+  if ($('draw').classList.contains('on')) repaint('cv');
+  if ($('voteIntro').classList.contains('on')) repaint('cv2');
+  if ($('over').classList.contains('on')) repaint('cv3');
+});
+
+boot();
+</script>
+</body>
+</html>
