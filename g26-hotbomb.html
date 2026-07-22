@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G26 燙手炸彈</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2A0E0E">
+<style>
+:root{
+  --ink:#2A0E0E; --ink-2:#3D1818; --line:#5E2626;
+  --paper:#FFEFEF; --dim:#D9A0A0; --wire:#FF9D3D; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF5C5C;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.who span.out{opacity:.35;text-decoration:line-through}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#4E2418}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#2A1000;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.theme{width:100%;background:linear-gradient(150deg,#4E2418,#3D1818);border:2px solid var(--wire);
+       border-radius:20px;padding:20px 15px;text-align:center}
+.theme .em{font-size:40px;line-height:1}
+.theme .tx{font-size:24px;color:var(--wire);margin-top:6px;line-height:1.35}
+
+/* 炸彈 */
+.bombBox{width:100%;text-align:center;padding:6px 0}
+.bomb{font-size:96px;line-height:1;display:inline-block;transition:transform .1s}
+.bomb.shake{animation:bShake .18s infinite}
+@keyframes bShake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,1px) rotate(-4deg)}
+                  50%{transform:translate(3px,-1px) rotate(4deg)}75%{transform:translate(-2px,-1px) rotate(-2deg)}}
+.holder{font-size:26px;text-align:center;line-height:1.3}
+.holder b{color:var(--spark)}
+.passBtn{width:100%;background:var(--bad);color:#2A0505;border-radius:22px;padding:30px 0;font-size:24px;line-height:1.3}
+.passBtn:active{transform:scale(.96)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#2A1000}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">💣🔥</div>
+  <h1>G26 <b>燙手炸彈</b></h1>
+  <p class="sub">
+    炸彈在你手上 → <b>大聲說一個</b>符合主題的東西 → <b>馬上按下去傳走</b>！<br>
+    <span style="color:var(--bad)">炸彈什麼時候爆沒人知道</span>——<br>
+    <b>爆的時候拿著的人淘汰</b> 💥<br>
+    <span style="color:var(--wire)">想太久就等著被炸 😈</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">炸彈長度</p>
+    <div class="lenRow">
+      <button data-mode="short">短<br><span style="font-size:11px;color:var(--dim)">10～25 秒</span></button>
+      <button data-mode="mid" class="on">中<br><span style="font-size:11px;color:var(--dim)">15～40 秒</span></button>
+      <button data-mode="long">長<br><span style="font-size:11px;color:var(--dim)">25～60 秒</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">💣 點燃引線</button>
+  <p class="tip">📱 裝置真的傳來傳去，最好玩！<br>說過的不能重複，大家互相盯 👀</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="theme" class="screen">
+  <div class="theme"><div class="em" id="themeEm">🍎</div><div class="tx" id="themeTx">水果</div></div>
+  <div class="who" id="themeWho"></div>
+  <p class="tip">說一個符合的，然後<b>立刻傳走</b>！</p>
+  <button class="go" id="themeBtn">點火，開始！</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="theme" style="padding:11px"><div class="tx" id="playTheme" style="font-size:19px">水果</div></div>
+  <div class="holder" id="holder">💣 在 <b>George</b> 手上</div>
+  <div class="bombBox"><div class="bomb" id="bombEm">💣</div></div>
+  <button class="passBtn" id="passBtn">🔥<br>說完了，傳給下一個！</button>
+  <p class="tip">已經傳了 <b id="passCount">0</b> 次 · 剩 <b id="aliveCount">3</b> 人</p>
+</section>
+
+<section id="boom" class="screen">
+  <div class="hero">💥🔥</div>
+  <div style="font-size:30px;text-align:center;line-height:1.35" id="boomName"></div>
+  <p class="sub" id="boomWhy">炸彈在他手上爆了！</p>
+  <div class="who" id="boomWho"></div>
+  <button class="go" id="boomBtn">繼續 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <p class="tip">主題：<b id="overTheme"></b> · 全場傳了 <b id="overCount">0</b> 次</p>
+  <button class="go" id="again">🔁 換個主題再來</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G26 燙手炸彈
+   核心：不知道何時爆的隨機引線 ＋ 實體傳遞。
+   耐玩來源＝「快點傳走」的慌張、故意拖延害人的壞心眼。
+   ============================================================ */
+const CONFIG = {
+  RANGE: { short:[10,25], mid:[15,40], long:[25,60] },  // 引線長度（秒）
+  TICK_FAST: 0.35,   // 剩餘比例低於此就快速滴答
+};
+
+const THEMES = [
+  ['🍎','水果'],['🥕','蔬菜'],['🐾','動物'],['🚗','交通工具'],['👕','穿的東西'],
+  ['🏫','學校裡有的'],['🍳','廚房裡有的'],['🎮','遊戲或玩具'],['🌏','國家或地名'],['👨‍🚒','職業'],
+  ['🔴','紅色的東西'],['🔵','藍色的東西'],['⭕','圓形的東西'],['🐦','會飛的'],['🐟','水裡的'],
+  ['🍜','食物'],['🥤','喝的'],['🎵','樂器'],['⚽','運動'],['🌸','花或植物'],
+  ['📱','用電的'],['✏️','文具'],['🦴','身體部位'],['🎬','卡通或電影'],['🍭','夜市有的'],
+  ['🏖️','海邊有的'],['🌦️','天氣'],['😀','心情'],['🧊','冰的東西'],['🔥','熱的東西'],
+  ['💨','很快的'],['🐌','很慢的'],['🏔️','很大的'],['🐜','很小的'],['🔊','會發出聲音的'],
+  ['🪙','金屬做的'],['🧻','紙做的'],['🎈','會飄的'],['💤','讓人想睡的'],['😱','很可怕的'],
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.055;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.012);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  tick:()=>beep([1400],0.03,'square',0.05),
+  tick2:()=>beep([1700],0.035,'square',0.08),
+  pass:()=>beep([700,900],0.07,'triangle',0.1),
+  boom:()=>beep([120,90,60],0.4,'sawtooth',0.2),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.15),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+const S={ players:[], alive:[], mode:'mid', theme:null, turn:0, passes:0,
+          endAt:0, total:0, raf:null, order:[], running:false };
+
+function boot(){
+  S.players=FP.get();
+  paintWho('whoRow');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+}
+function paintWho(id){
+  $(id).innerHTML=S.players.map((p,i)=>
+    `<span class="${S.alive.length&&!S.alive[i]?'out':''}">${p.emoji} ${p.name}</span>`).join('');
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');S.mode=b.dataset.mode;}));
+
+$('startBtn').addEventListener('click',()=>{ if(S.players.length<2)return; SFX.tap(); startGame(); });
+
+function startGame(){
+  S.alive=S.players.map(()=>true);
+  S.passes=0; S.order=[]; S.turn=0;
+  const [em,tx]=pick(THEMES); S.theme={em,tx};
+  $('themeEm').textContent=em; $('themeTx').textContent=tx;
+  paintWho('themeWho');
+  show('theme');
+}
+$('themeBtn').addEventListener('click',()=>{ SFX.tap(); lightFuse(); });
+
+function aliveCount(){ return S.alive.filter(Boolean).length; }
+
+/* 點燃新引線（每次爆炸後重新點） */
+function lightFuse(){
+  const [lo,hi]=CONFIG.RANGE[S.mode];
+  S.total=(lo+Math.random()*(hi-lo))*1000;
+  S.endAt=performance.now()+S.total;
+  S.running=true;
+  while(!S.alive[S.turn]) S.turn=(S.turn+1)%S.players.length;
+  paintPlay();
+  show('play');
+  runFuse();
+}
+function paintPlay(){
+  const p=S.players[S.turn];
+  $('playTheme').textContent=S.theme.em+' '+S.theme.tx;
+  $('holder').innerHTML=`💣 在 <b>${p.emoji} ${p.name}</b> 手上`;
+  $('passCount').textContent=S.passes;
+  $('aliveCount').textContent=aliveCount();
+}
+function runFuse(){
+  cancelAnimationFrame(S.raf);
+  let lastBeep=0;
+  const step=()=>{
+    if(!S.running) return;
+    const left=S.endAt-performance.now();
+    const ratio=Math.max(0,left/S.total);
+    const bomb=$('bombEm');
+    /* 越接近爆炸，抖越兇、滴答越快（但不顯示秒數，保持未知） */
+    const fast=ratio<CONFIG.TICK_FAST;
+    bomb.classList.toggle('shake',fast);
+    bomb.style.transform=`scale(${1+(1-ratio)*0.28})`;
+    bomb.textContent=fast?'🧨':'💣';
+    const gap=fast?260:620;
+    const now=performance.now();
+    if(now-lastBeep>gap){ (fast?SFX.tick2:SFX.tick)(); lastBeep=now; }
+    if(left<=0){ return blowUp(); }
+    S.raf=requestAnimationFrame(step);
+  };
+  S.raf=requestAnimationFrame(step);
+}
+
+$('passBtn').addEventListener('click',()=>{
+  if(!S.running) return;
+  SFX.pass();
+  S.passes++;
+  do{ S.turn=(S.turn+1)%S.players.length; }while(!S.alive[S.turn]);
+  paintPlay();
+});
+
+function blowUp(){
+  S.running=false;
+  cancelAnimationFrame(S.raf);
+  SFX.boom();
+  if(navigator.vibrate){try{navigator.vibrate([90,60,140]);}catch(_){}}
+  const p=S.players[S.turn];
+  S.alive[S.turn]=false;
+  S.order.push(S.turn);
+  $('boomName').innerHTML=`${p.emoji} <b style="color:var(--bad)">${p.name}</b> 被炸到了！`;
+  $('boomWhy').textContent=`全場已經傳了 ${S.passes} 次`;
+  paintWho('boomWho');
+  show('boom');
+}
+$('boomBtn').addEventListener('click',()=>{
+  SFX.tap();
+  if(aliveCount()<=1) finish();
+  else { do{ S.turn=(S.turn+1)%S.players.length; }while(!S.alive[S.turn]); lightFuse(); }
+});
+
+function finish(){
+  cancelAnimationFrame(S.raf);
+  SFX.win();
+  const w=S.alive.indexOf(true);
+  const rank=[]; if(w>=0) rank.push(w);
+  for(let i=S.order.length-1;i>=0;i--) rank.push(S.order[i]);
+  $('overTitle').innerHTML=w>=0
+    ? `${S.players[w].emoji} <b>${S.players[w].name}</b> 沒被炸到！`:'同歸於盡 💥';
+  $('board').innerHTML=rank.map((idx,i)=>{
+    const p=S.players[idx];
+    return `<div class="row ${i===0?'top':''}"><div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${p.emoji} ${p.name}</div>
+      <div class="sc">${i===0?'存活':'第 '+(i+1)+' 名'}</div></div>`;
+  }).join('');
+  $('overTheme').textContent=S.theme.tx;
+  $('overCount').textContent=S.passes;
+  show('over');
+}
+$('again').addEventListener('click',()=>{ SFX.tap(); startGame(); });
+
+boot();
+</script>
+</body>
+</html>

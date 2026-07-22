@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G30 動作大冒險</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2A1207">
+<style>
+:root{
+  --ink:#2A1207; --ink-2:#3D1E0D; --line:#5E3419;
+  --paper:#FFF3E8; --dim:#D8AC85; --wire:#FFB020; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF7B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#523018}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#2A1500;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 抽卡 */
+.taskCard{width:100%;background:linear-gradient(155deg,#5E3419,#3D1E0D);
+          border:3px solid var(--wire);border-radius:22px;padding:26px 16px;text-align:center;
+          min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.taskCard.rolling{animation:cardShake .12s infinite}
+@keyframes cardShake{0%{transform:rotate(-1deg)}50%{transform:rotate(1.2deg)}100%{transform:rotate(-1deg)}}
+.taskCard .em{font-size:56px;line-height:1}
+.taskCard .tx{font-size:23px;line-height:1.45}
+.taskCard .cat{font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.1em}
+
+.turnNm{font-size:27px;text-align:center;line-height:1.3}
+.turnNm b{color:var(--wire)}
+
+.timeNum{font-size:46px;color:var(--wire);text-align:center;line-height:1}
+.timeNum.hot{color:var(--bad);animation:tp .4s infinite alternate}
+@keyframes tp{to{transform:scale(1.12)}}
+.timeWrap{width:100%;height:13px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%}
+.timeWrap i.hot{background:var(--bad)}
+
+.judgeRow{display:flex;gap:10px;width:100%}
+.judgeRow button{flex:1;border-radius:18px;padding:22px 8px;font-size:18px;line-height:1.35}
+.judgeRow .ok{background:var(--good);color:#062616}
+.judgeRow .no{background:var(--bad);color:#2A0808}
+.judgeRow button:active{transform:scale(.95)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#2A1500}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+.stat{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.stat .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px}
+.stat .chip b{color:var(--spark)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🎡🤪</div>
+  <h1>G30 <b>動作大冒險</b></h1>
+  <p class="sub">
+    轉到什麼就要<b>當場做什麼</b>——<br>
+    學動物叫、單腳站、扮鬼臉、唱一段…<br>
+    <b style="color:var(--bad)">限時內完成</b>，其他人當裁判 👀<br>
+    <span style="color:var(--wire)">做得越豁出去越好笑，分數也越高 😆</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">每人輪幾次？</p>
+    <div class="lenRow">
+      <button data-r="2">2 輪<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-r="3" class="on">3 輪<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-r="5">5 輪<br><span style="font-size:11px;color:var(--dim)">玩到累</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🎡 開始轉</button>
+  <p class="tip">📱 裝置放中間，大家一起看<br>⚠️ 注意安全，別在會撞到東西的地方玩</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass" class="screen">
+  <div class="hero">🎡</div>
+  <div class="turnNm" id="passName">換 🧒 <b>George</b></div>
+  <div class="stat">
+    <span class="chip">第 <b id="passRound">1</b>/<b id="passTotal">3</b> 輪</span>
+    <span class="chip">目前 <b id="passScore">0</b> 分</span>
+  </div>
+  <button class="go" id="passBtn">🎡 轉盤！看我抽到什麼</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="turnNm" id="playName">🧒 <b>George</b></div>
+  <div class="taskCard" id="taskCard">
+    <div class="cat" id="taskCat">動作</div>
+    <div class="em" id="taskEm">🐸</div>
+    <div class="tx" id="taskTx">學青蛙跳五下</div>
+  </div>
+  <div class="timeNum" id="timeNum">15</div>
+  <div class="timeWrap"><i id="timeBar"></i></div>
+  <p class="tip">做完之後，<b>其他人</b>按下面判定 👇</p>
+  <div class="judgeRow">
+    <button class="ok" id="btnOk">✅<br>做到了！<br><span style="font-size:12px">+2 分</span></button>
+    <button class="no" id="btnNo">❌<br>不行啦<br><span style="font-size:12px">0 分</span></button>
+  </div>
+</section>
+
+<section id="res" class="screen">
+  <div class="hero" id="resEm">🎉</div>
+  <div style="font-size:28px;text-align:center;line-height:1.35" id="resTxt"></div>
+  <div class="board" id="resBoard"></div>
+  <button class="go" id="resBtn">下一位 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再玩一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G30 動作大冒險
+   核心：限時做出指定動作，裁判是現場的人。
+   耐玩來源＝每個人做出來的樣子都不同，笑點是人不是題目。
+   ============================================================ */
+const CONFIG = { OK_PT: 2, TIMEUP_PT: 0 };
+
+/* [分類, emoji, 指令, 秒數] */
+const TASKS = [
+  ['模仿','🐸','學青蛙跳五下',15],
+  ['模仿','🐔','學公雞叫三聲，越大聲越好',12],
+  ['模仿','🐒','學猴子抓癢十秒',14],
+  ['模仿','🐘','學大象走路走一圈',16],
+  ['模仿','🦁','學獅子吼一聲，要有氣勢',10],
+  ['模仿','🐧','學企鵝走路走十步',15],
+  ['模仿','🐍','學蛇在地上扭三下',14],
+  ['模仿','🐄','學牛叫，然後說「我是乳牛」',12],
+  ['模仿','🤖','用機器人的聲音說「我要吃飯」',12],
+  ['模仿','👴','學老爺爺講話：「現在的小孩喔」',14],
+  ['模仿','👶','學小嬰兒哭三秒',10],
+  ['模仿','🧟','學殭屍走路走一圈',16],
+  ['動作','🦵','單腳站十秒不能倒',14],
+  ['動作','🤸','原地跳十下',14],
+  ['動作','💪','做五下伏地挺身（或扶牆做）',20],
+  ['動作','🧘','深蹲十秒，蹲低一點',14],
+  ['動作','🙆','摸到自己的腳趾五次',14],
+  ['動作','🌀','原地轉三圈然後站直不能倒',15],
+  ['動作','🤾','假裝投籃三次，要有動作',12],
+  ['動作','🏊','站著做游泳的動作十秒',12],
+  ['動作','🕺','跳舞十秒，隨便跳',15],
+  ['動作','🦶','用腳寫出自己的名字',20],
+  ['動作','👐','拍手拍二十下，要很快',12],
+  ['動作','🤝','跟每個人握手並說「幸會」',20],
+  ['表情','😡','做出超生氣的表情五秒',10],
+  ['表情','😭','假哭三秒，要有聲音',10],
+  ['表情','😱','做出被嚇到的表情',8],
+  ['表情','🤪','扮一個最醜的鬼臉，撐五秒',10],
+  ['表情','😍','做出看到最愛食物的表情',10],
+  ['表情','😴','假裝睡著並打呼三聲',10],
+  ['表情','🥸','只用眉毛做三種表情',14],
+  ['表情','😜','眨左眼三下、右眼三下',12],
+  ['說話','🎤','唱一首歌的開頭兩句',15],
+  ['說話','🗣️','用最快的速度數 1 到 20',14],
+  ['說話','🔤','倒著念自己的名字',12],
+  ['說話','🌀','連續說三次「四十四隻石獅子」',16],
+  ['說話','📢','用最小聲的氣音說「我好厲害」',10],
+  ['說話','🎭','用生氣的語氣說「我最喜歡你了」',10],
+  ['說話','🐱','把一句話全部用「喵」講完',12],
+  ['說話','😂','講一個笑話，要有人笑',20],
+  ['說話','🎵','把「生日快樂」用嘴巴哼出來',14],
+  ['說話','🚀','三秒內說出五個水果',10],
+  ['說話','🎨','三秒內說出五個顏色',10],
+  ['說話','🐾','五秒內說出五種動物',12],
+  ['搞笑','🍜','假裝在吃超辣的東西',12],
+  ['搞笑','🥋','假裝在跟空氣打架十秒',14],
+  ['搞笑','📱','假裝在跟老闆講電話請假',18],
+  ['搞笑','🚗','假裝在開車還遇到塞車',15],
+  ['搞笑','🎣','假裝釣到一條超大的魚',15],
+  ['搞笑','💇','假裝幫旁邊的人剪頭髮',15],
+  ['搞笑','🧹','假裝在打掃，還嫌很髒',15],
+  ['搞笑','🛒','假裝在買菜殺價',18],
+  ['搞笑','🦸','擺出三個超級英雄的姿勢',14],
+  ['搞笑','📸','擺三個自拍的姿勢',14],
+  ['搞笑','🎬','演出「東西掉了很心痛」',14],
+  ['搞笑','👑','用國王的語氣命令大家鼓掌',12],
+  ['挑戰','🤐','接下來三十秒不能笑（大家可以逗你）',30],
+  ['挑戰','🙊','講十個字都不能用到「我」',18],
+  ['挑戰','👀','跟旁邊的人對看十秒不能眨眼',12],
+  ['挑戰','🫵','說出在場每個人的一個優點',25],
+  ['挑戰','🔁','重複別人剛剛說的最後一句話',12],
+  ['挑戰','🤫','用比手畫腳讓大家猜「香蕉」',20],
+  ['挑戰','🎁','說出三件今天讓你開心的事',20],
+  ['挑戰','🧠','倒數 20 到 1，中間不能停',18],
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.055;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  roll:()=>beep([700],0.03,'square',0.05),
+  land:()=>beep([523,659,880],0.12,'triangle',0.14),
+  ok:()=>beep([784,1047,1319],0.13,'triangle',0.15),
+  no:()=>beep([233,175],0.24,'sawtooth',0.14),
+  tick:()=>beep([1300],0.04,'square',0.07),
+  win:()=>beep([659,880,1175,1568],0.17,'triangle',0.16),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const S={ players:[], scores:[], rounds:3, round:0, turn:0,
+          task:null, pool:[], raf:null, endAt:0 };
+
+function boot(){
+  S.players=FP.get();
+  $('whoRow').innerHTML=S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-r]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-r]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');S.rounds=+b.dataset.r;}));
+
+$('startBtn').addEventListener('click',()=>{ if(S.players.length<2)return; SFX.tap(); startGame(); });
+
+function startGame(){
+  S.scores=S.players.map(()=>0);
+  S.round=0; S.turn=0;
+  S.pool=shuffle(TASKS.slice());
+  showPass();
+}
+function showPass(){
+  const p=S.players[S.turn];
+  $('passName').innerHTML=`換 ${p.emoji} <b>${p.name}</b>`;
+  $('passRound').textContent=S.round+1;
+  $('passTotal').textContent=S.rounds;
+  $('passScore').textContent=S.scores[S.turn];
+  show('pass');
+}
+
+$('passBtn').addEventListener('click',()=>{ SFX.tap(); rollTask(); });
+
+function rollTask(){
+  show('play');
+  const p=S.players[S.turn];
+  $('playName').innerHTML=`${p.emoji} <b>${p.name}</b>`;
+  const card=$('taskCard');
+  card.classList.add('rolling');
+  /* 抽卡動畫 */
+  let t=0;
+  const spin=setInterval(()=>{
+    const [cat,em,tx]=pick(TASKS);
+    $('taskCat').textContent=cat;
+    $('taskEm').textContent=em;
+    $('taskTx').textContent=tx;
+    SFX.roll();
+    t++;
+    if(t>13){
+      clearInterval(spin);
+      card.classList.remove('rolling');
+      if(!S.pool.length) S.pool=shuffle(TASKS.slice());
+      const task=S.pool.pop();
+      S.task={cat:task[0],em:task[1],tx:task[2],sec:task[3]};
+      $('taskCat').textContent=S.task.cat;
+      $('taskEm').textContent=S.task.em;
+      $('taskTx').textContent=S.task.tx;
+      SFX.land();
+      runTimer();
+    }
+  },70);
+}
+
+function runTimer(){
+  cancelAnimationFrame(S.raf);
+  const total=S.task.sec*1000;
+  S.endAt=performance.now()+total;
+  let last=-1;
+  const step=()=>{
+    const left=S.endAt-performance.now();
+    const r=Math.max(0,left/total);
+    const sec=Math.max(0,left/1000);
+    $('timeBar').style.width=(r*100)+'%';
+    $('timeNum').textContent=Math.ceil(sec);
+    const hot=sec<=3;
+    $('timeBar').classList.toggle('hot',hot);
+    $('timeNum').classList.toggle('hot',hot);
+    const k=Math.ceil(sec);
+    if(hot&&k!==last&&k>0){ SFX.tick(); last=k; }
+    if(left<=0){ return judge(false,true); }
+    S.raf=requestAnimationFrame(step);
+  };
+  S.raf=requestAnimationFrame(step);
+}
+
+$('btnOk').addEventListener('click',()=>judge(true,false));
+$('btnNo').addEventListener('click',()=>judge(false,false));
+
+function judge(ok,timeup){
+  cancelAnimationFrame(S.raf);
+  const p=S.players[S.turn];
+  if(ok){ S.scores[S.turn]+=CONFIG.OK_PT; SFX.ok(); }
+  else { SFX.no(); }
+  $('resEm').textContent=ok?'🎉':'😅';
+  $('resTxt').innerHTML=ok
+    ? `${p.emoji} <b style="color:var(--good)">${p.name}</b> 做到了！<br><span style="font-size:17px;color:var(--wire)">＋${CONFIG.OK_PT} 分</span>`
+    : `${p.emoji} <b>${p.name}</b> ${timeup?'時間到了…':'被判不算 😆'}<br><span style="font-size:17px;color:var(--dim)">這輪 0 分</span>`;
+  $('resBoard').innerHTML=S.players.map((q,i)=>`
+    <div class="row ${i===S.turn?'top':''}">
+      <div class="rk">${q.emoji}</div><div class="nm">${q.name}</div>
+      <div class="sc">${S.scores[i]} 分</div></div>`).join('');
+  show('res');
+}
+
+$('resBtn').addEventListener('click',()=>{
+  SFX.tap();
+  S.turn++;
+  if(S.turn>=S.players.length){ S.turn=0; S.round++; }
+  if(S.round>=S.rounds) return finish();
+  showPass();
+});
+
+function finish(){
+  cancelAnimationFrame(S.raf);
+  SFX.win();
+  const rows=S.players.map((p,i)=>({p,sc:S.scores[i]})).sort((a,b)=>b.sc-a.sc);
+  const best=rows[0].sc;
+  $('overTitle').innerHTML=`${rows[0].p.emoji} <b>${rows[0].p.name}</b> 最放得開！`;
+  $('board').innerHTML=rows.map((r,i)=>`
+    <div class="row ${r.sc===best?'top':''}"><div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div></div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{ SFX.tap(); startGame(); });
+
+boot();
+</script>
+</body>
+</html>

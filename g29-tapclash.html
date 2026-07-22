@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G29 同時搶按</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1A0A26">
+<style>
+:root{
+  --ink:#1A0A26; --ink-2:#2B1440; --line:#452363;
+  --paper:#F6EDFF; --dim:#B79BD4; --wire:#C77DFF; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF6B8A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+  overscroll-behavior:none;}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:13px;max-width:460px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#3B1D57}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#1A0526;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 目標提示 */
+.targetCard{width:100%;background:linear-gradient(150deg,#3B1D57,#2B1440);
+            border:2px solid var(--wire);border-radius:18px;padding:14px;text-align:center}
+.targetCard .k{font-size:13px;color:var(--dim);font-weight:500}
+.targetCard .v{font-size:44px;line-height:1.1;margin-top:2px}
+
+/* 競技場 */
+.arena{width:100%;position:relative;display:grid;gap:8px;
+       height:min(62vh,460px);touch-action:none;user-select:none}
+.zone{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      font-size:15px;position:relative;overflow:hidden;transition:.08s}
+.zone .sc{font-size:26px;color:var(--spark)}
+.zone.hit{background:var(--good);color:#062616;border-color:var(--good)}
+.zone.bad{background:var(--bad);color:#2A0510;border-color:var(--bad)}
+.zone.lock{opacity:.4}
+.zone.flip{transform:rotate(180deg)}
+
+/* 中央閃卡 */
+.flash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+       z-index:5;pointer-events:none;background:rgba(10,4,18,.92);
+       border:3px solid var(--line);border-radius:22px;
+       width:38%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+       font-size:min(15vw,64px)}
+.flash.target{border-color:var(--spark);box-shadow:0 0 26px rgba(255,225,77,.6)}
+
+.stat{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.stat .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px}
+.stat .chip b{color:var(--spark)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#1A0526}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">👆⚡👆</div>
+  <h1>G29 <b>同時搶按</b></h1>
+  <p class="sub">
+    <b>不用輪流——大家同時搶！</b><br>
+    畫面中央會一直閃圖案，<br>
+    閃到<b style="color:var(--spark)">目標圖案</b>時，<b>最快按自己格子</b>的人得分。<br>
+    <span style="color:var(--bad)">按錯（不是目標時按）倒扣 1 分</span><br>
+    <span style="color:var(--wire)">手指放好，眼睛盯緊 👀</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">目標幾分？</p>
+    <div class="lenRow">
+      <button data-goal="5">5 分<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-goal="8" class="on">8 分<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-goal="12">12 分<br><span style="font-size:11px;color:var(--dim)">長期戰</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">👆 開始搶</button>
+  <p class="tip">📱 裝置平放中間，每人守住自己那格<br>對面的人格子是<b>倒過來</b>的，方便看 🙃</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="play" class="screen">
+  <div class="targetCard">
+    <div class="k">看到這個就搶按 👇</div>
+    <div class="v" id="targetEm">🍎</div>
+  </div>
+  <div class="arena" id="arena">
+    <div class="flash" id="flash">❓</div>
+  </div>
+  <div class="stat">
+    <span class="chip">目標 <b id="goalTxt">8</b> 分</span>
+    <span class="chip" id="roundChip">第 <b id="roundTxt">1</b> 回合</span>
+  </div>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再搶一場</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G29 同時搶按
+   核心：全員同時、真正的即時對抗（不是輪流）。
+   耐玩來源＝手速＋自制力，別人搶走的瞬間就是刺激。
+   ============================================================ */
+const CONFIG = {
+  FLASH_MS: [520, 900],    // 每張閃卡停留時間（隨機）
+  TARGET_RATE: 0.22,       // 閃到目標的機率
+  HIT_WINDOW: 900,         // 目標出現後多久內按算數
+  MIN_GAP: 2,              // 至少隔幾張非目標才會再出目標
+};
+const POOL = ['🍎','🐶','⭐','🚗','🎈','🐟','🌙','🍕','⚽','🌵','🎩','🐸','🍩','🔔','🦋','🧊'];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+const SFX={
+  flip:()=>beep([700],0.03,'square',0.04),
+  target:()=>beep([1319],0.07,'triangle',0.13),
+  hit:()=>beep([880,1319],0.1,'triangle',0.15),
+  bad:()=>beep([200,150],0.2,'sawtooth',0.13),
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.15),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+const S={ players:[], scores:[], goal:8, target:'🍎',
+          timer:null, isTarget:false, targetAt:0, claimed:false,
+          sinceTarget:0, round:0, running:false };
+
+function boot(){
+  S.players=FP.get();
+  $('whoRow').innerHTML=S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-goal]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-goal]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');S.goal=+b.dataset.goal;}));
+
+$('startBtn').addEventListener('click',()=>{ if(S.players.length<2)return; SFX.tap(); startGame(); });
+
+function startGame(){
+  S.scores=S.players.map(()=>0);
+  S.target=pick(POOL);
+  S.round=0; S.sinceTarget=0; S.claimed=false; S.isTarget=false;
+  $('targetEm').textContent=S.target;
+  $('goalTxt').textContent=S.goal;
+  buildArena();
+  show('play');
+  S.running=true;
+  nextFlash();
+}
+
+/* 依人數決定格子排列，並把「上半部」的格子轉 180 度方便對面的人看 */
+function buildArena(){
+  const n=S.players.length;
+  const cols = n<=2 ? 1 : 2;
+  const rows = Math.ceil(n/cols);
+  const arena=$('arena');
+  arena.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  arena.style.gridTemplateRows=`repeat(${rows},1fr)`;
+  const flash=$('flash');
+  arena.innerHTML='';
+  S.players.forEach((p,i)=>{
+    const z=document.createElement('div');
+    const flip = i < Math.floor(n/2);          // 前半的人坐對面 → 文字轉正
+    z.className='zone'+(flip?' flip':'');
+    z.dataset.i=i;
+    z.innerHTML=`<div>${p.emoji} ${p.name}</div><div class="sc" id="zsc${i}">0</div>`;
+    z.addEventListener('pointerdown',e=>{ e.preventDefault(); hit(i); });
+    arena.appendChild(z);
+  });
+  arena.appendChild(flash);
+}
+
+function paintScores(){
+  S.players.forEach((p,i)=>{ const el=$('zsc'+i); if(el) el.textContent=S.scores[i]; });
+}
+
+function nextFlash(){
+  if(!S.running) return;
+  clearTimeout(S.timer);
+  /* 決定這張是不是目標 */
+  const canTarget = S.sinceTarget >= CONFIG.MIN_GAP;
+  const isT = canTarget && Math.random() < CONFIG.TARGET_RATE;
+  const em = isT ? S.target : pick(POOL.filter(x=>x!==S.target));
+  S.isTarget=isT; S.claimed=false;
+  S.sinceTarget = isT ? 0 : S.sinceTarget+1;
+  const f=$('flash');
+  f.textContent=em;
+  f.classList.toggle('target',isT);
+  if(isT){ S.targetAt=performance.now(); SFX.target(); }
+  else { SFX.flip(); }
+  const hold = isT ? CONFIG.HIT_WINDOW : rnd(CONFIG.FLASH_MS[0],CONFIG.FLASH_MS[1]);
+  S.timer=setTimeout(()=>{ if(S.running) nextFlash(); }, hold);
+}
+
+function hit(i){
+  if(!S.running) return;
+  const z=document.querySelector(`.zone[data-i="${i}"]`);
+  if(S.isTarget && !S.claimed){
+    /* 搶到了 */
+    S.claimed=true;
+    S.scores[i]++;
+    SFX.hit();
+    if(navigator.vibrate){try{navigator.vibrate(40);}catch(_){}}
+    z.classList.add('hit'); setTimeout(()=>z.classList.remove('hit'),260);
+    paintScores();
+    S.round++;
+    $('roundTxt').textContent=S.round+1;
+    if(S.scores[i]>=S.goal) return finish();
+    clearTimeout(S.timer);
+    setTimeout(()=>{ if(S.running) nextFlash(); },420);
+  } else if(!S.isTarget){
+    /* 按錯：倒扣 */
+    S.scores[i]=Math.max(0,S.scores[i]-1);
+    SFX.bad();
+    z.classList.add('bad'); setTimeout(()=>z.classList.remove('bad'),260);
+    paintScores();
+  }
+}
+
+function finish(){
+  S.running=false;
+  clearTimeout(S.timer);
+  SFX.win();
+  const rows=S.players.map((p,i)=>({p,sc:S.scores[i]})).sort((a,b)=>b.sc-a.sc);
+  $('overTitle').innerHTML=`${rows[0].p.emoji} <b>${rows[0].p.name}</b> 手最快！`;
+  $('board').innerHTML=rows.map((r,i)=>`
+    <div class="row ${i===0?'top':''}"><div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div></div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{ SFX.tap(); startGame(); });
+
+/* 離開畫面就停止 */
+window.addEventListener('pagehide',()=>{ S.running=false; clearTimeout(S.timer); });
+
+boot();
+</script>
+</body>
+</html>

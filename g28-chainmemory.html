@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G28 記憶接龍</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101B14">
+<style>
+:root{
+  --ink:#101B14; --ink-2:#1B2E22; --line:#2E4A38;
+  --paper:#EFFFF5; --dim:#8FC4A6; --wire:#4DE39B; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:13px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.who span.out{opacity:.35;text-decoration:line-through}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#24422F}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#062616;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 序列顯示 */
+.seqBox{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+        padding:12px;min-height:66px;display:flex;flex-wrap:wrap;gap:6px;
+        align-items:center;justify-content:center}
+.seqBox .s{font-size:26px;opacity:.3;transition:.15s}
+.seqBox .s.done{opacity:1}
+.seqBox .s.now{opacity:1;transform:scale(1.25);filter:drop-shadow(0 0 8px var(--wire))}
+.seqBox .hidden{font-size:13px;color:var(--dim);font-weight:500}
+
+/* 按鈕盤 */
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%}
+.pad button{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+            padding:14px 0;font-size:32px;transition:.1s}
+.pad button:active{transform:scale(.93);border-color:var(--wire)}
+.pad button.flash{background:var(--wire);border-color:var(--wire)}
+
+.turnNm{font-size:26px;text-align:center;line-height:1.3}
+.turnNm b{color:var(--wire)}
+.stat{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.stat .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px}
+.stat .chip b{color:var(--spark)}
+.stat .chip.hot b{color:var(--bad)}
+
+.timeWrap{width:100%;height:11px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%}
+.timeWrap i.hot{background:var(--bad)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#062616}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🧠🔗</div>
+  <h1>G28 <b>記憶接龍</b></h1>
+  <p class="sub">
+    第一個人按<b>一個圖案</b>；<br>
+    下一個人要<b>照順序按出前面全部</b>，再加自己的一個。<br>
+    <span style="color:var(--bad)">按錯順序、或時間到 → 淘汰</span><br>
+    <span style="color:var(--wire)">序列是大家一起長出來的，每局都不一樣。</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">每一步給幾秒？</p>
+    <div class="lenRow">
+      <button data-sec="4">4 秒<br><span style="font-size:11px;color:var(--dim)">從容</span></button>
+      <button data-sec="3" class="on">3 秒<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-sec="2">2 秒<br><span style="font-size:11px;color:var(--dim)">手忙腳亂</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🧠 開始接龍</button>
+  <p class="tip">📱 裝置放中間輪流按<br>大家都看得到序列，比誰記得住 👀</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass" class="screen">
+  <div class="hero">🔗</div>
+  <div class="turnNm" id="passName">換 🧒 <b>George</b></div>
+  <p class="sub" id="passTask">先照順序按出 <b>3</b> 個，再加你自己的一個</p>
+  <div class="seqBox" id="passSeq"></div>
+  <div class="who" id="passWho"></div>
+  <button class="go" id="passBtn">我準備好了</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="turnNm" id="playName">🧒 <b>George</b></div>
+  <div class="stat">
+    <span class="chip">序列長度 <b id="seqLen">1</b></span>
+    <span class="chip" id="stepChip">第 <b id="stepNow">1</b> 步</span>
+    <span class="chip">剩 <b id="aliveTxt">3</b> 人</span>
+  </div>
+  <div class="seqBox" id="playSeq"></div>
+  <div class="timeWrap"><i id="timeBar"></i></div>
+  <div class="pad" id="pad"></div>
+  <p class="tip" id="playTip">照順序按出前面的圖案</p>
+</section>
+
+<section id="out" class="screen">
+  <div class="hero">💥</div>
+  <div style="font-size:30px;text-align:center;line-height:1.35" id="outName"></div>
+  <p class="sub" id="outWhy"></p>
+  <div class="seqBox" id="outSeq"></div>
+  <div class="who" id="outWho"></div>
+  <button class="go" id="outBtn">繼續 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <p class="tip">序列最長接到 <b id="overLen">0</b> 個</p>
+  <button class="go" id="again">🔁 再接一次</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G28 記憶接龍
+   核心：序列由「人」一個一個加出來，不是系統隨機。
+   耐玩來源＝別人故意加難記的、自己記憶極限、時間壓力。
+   ============================================================ */
+const ICONS = ['🍎','🐶','⭐','🚗','🎈','🐟','🌙','🍕','⚽'];
+const CONFIG = { MAX_LEN: 40 };
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+/* 每個圖案有自己的音高，幫助記憶 */
+const TONES=[523,587,659,698,784,880,988,1047,1175];
+const SFX={
+  key:i=>beep([TONES[i]||600],0.1,'triangle',0.12),
+  add:()=>beep([880,1175],0.11,'sine',0.13),
+  wrong:()=>beep([200,140],0.28,'sawtooth',0.16),
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.15),
+  tick:()=>beep([1300],0.03,'square',0.06),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+
+const S={ players:[], alive:[], secs:3, seq:[], turn:0, step:0,
+          phase:'repeat', raf:null, endAt:0, maxLen:0, order:[] };
+
+function boot(){
+  S.players=FP.get();
+  paintWho('whoRow');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+  $('pad').innerHTML=ICONS.map((ic,i)=>`<button data-k="${i}">${ic}</button>`).join('');
+  document.querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>press(+b.dataset.k)));
+}
+function paintWho(id){
+  $(id).innerHTML=S.players.map((p,i)=>
+    `<span class="${S.alive.length&&!S.alive[i]?'out':''}">${p.emoji} ${p.name}</span>`).join('');
+}
+document.querySelectorAll('[data-sec]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-sec]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');S.secs=+b.dataset.sec;}));
+
+$('startBtn').addEventListener('click',()=>{ if(S.players.length<2)return; SFX.tap(); startGame(); });
+
+function startGame(){
+  S.alive=S.players.map(()=>true);
+  S.seq=[]; S.turn=0; S.maxLen=0; S.order=[];
+  showPass();
+}
+function aliveCount(){ return S.alive.filter(Boolean).length; }
+
+function seqHTML(upTo, nowIdx){
+  if(!S.seq.length) return '<span class="hidden">還沒有任何圖案 —— 你是第一個！</span>';
+  return S.seq.map((k,i)=>{
+    const cls = i<upTo?'done':(i===nowIdx?'now':'');
+    return `<span class="s ${cls}">${ICONS[k]}</span>`;
+  }).join('');
+}
+
+function showPass(){
+  const p=S.players[S.turn];
+  $('passName').innerHTML=`換 ${p.emoji} <b>${p.name}</b>`;
+  $('passTask').innerHTML=S.seq.length
+    ? `先照順序按出 <b>${S.seq.length}</b> 個，再加你自己的一個`
+    : `你是第一個！<b>隨便按一個</b>圖案開始`;
+  $('passSeq').innerHTML=seqHTML(S.seq.length,-1);
+  paintWho('passWho');
+  show('pass');
+}
+$('passBtn').addEventListener('click',()=>{ SFX.tap(); startTurn(); });
+
+function startTurn(){
+  S.step=0;
+  S.phase = S.seq.length ? 'repeat' : 'add';
+  paintPlay();
+  show('play');
+  runTimer();
+}
+function paintPlay(){
+  const p=S.players[S.turn];
+  $('playName').innerHTML=`${p.emoji} <b>${p.name}</b>`;
+  $('seqLen').textContent=S.seq.length;
+  $('aliveTxt').textContent=aliveCount();
+  if(S.phase==='repeat'){
+    $('stepChip').style.display='';
+    $('stepNow').textContent=(S.step+1)+' / '+S.seq.length;
+    $('playSeq').innerHTML=seqHTML(S.step,-1);
+    $('playTip').innerHTML='照順序按出前面的圖案';
+  } else {
+    $('stepChip').style.display='none';
+    $('playSeq').innerHTML=seqHTML(S.seq.length,-1);
+    $('playTip').innerHTML='<b style="color:var(--wire)">全對！現在加一個你自己的 👇</b>';
+  }
+}
+function runTimer(){
+  cancelAnimationFrame(S.raf);
+  const total=S.secs*1000;
+  S.endAt=performance.now()+total;
+  let last=-1;
+  const step=()=>{
+    const left=S.endAt-performance.now();
+    const r=Math.max(0,left/total);
+    $('timeBar').style.width=(r*100)+'%';
+    const hot=r<0.35;
+    $('timeBar').classList.toggle('hot',hot);
+    const k=Math.ceil(left/1000);
+    if(hot&&k!==last&&k>0){ SFX.tick(); last=k; }
+    if(left<=0){ return knockOut('時間到，來不及按…'); }
+    S.raf=requestAnimationFrame(step);
+  };
+  S.raf=requestAnimationFrame(step);
+}
+
+function press(k){
+  if(!$('play').classList.contains('on')) return;
+  const btn=document.querySelector(`[data-k="${k}"]`);
+  btn.classList.add('flash'); setTimeout(()=>btn.classList.remove('flash'),110);
+
+  if(S.phase==='repeat'){
+    if(k===S.seq[S.step]){
+      SFX.key(k);
+      S.step++;
+      if(S.step>=S.seq.length){ S.phase='add'; }
+      paintPlay();
+      runTimer();                      // 每按對一步就重置計時
+    } else {
+      knockOut(`第 ${S.step+1} 個按錯了！應該是 ${ICONS[S.seq[S.step]]}`);
+    }
+  } else {
+    /* 加自己的一個 */
+    cancelAnimationFrame(S.raf);
+    SFX.add();
+    S.seq.push(k);
+    S.maxLen=Math.max(S.maxLen,S.seq.length);
+    if(S.seq.length>=CONFIG.MAX_LEN) return finish();
+    do{ S.turn=(S.turn+1)%S.players.length; }while(!S.alive[S.turn]);
+    showPass();
+  }
+}
+
+function knockOut(why){
+  cancelAnimationFrame(S.raf);
+  SFX.wrong();
+  if(navigator.vibrate){try{navigator.vibrate(140);}catch(_){}}
+  const p=S.players[S.turn];
+  S.alive[S.turn]=false;
+  S.order.push(S.turn);
+  $('outName').innerHTML=`${p.emoji} <b style="color:var(--bad)">${p.name}</b> 出局！`;
+  $('outWhy').innerHTML=`${why}<br>當時序列有 ${S.seq.length} 個`;
+  $('outSeq').innerHTML=seqHTML(S.seq.length,-1);
+  paintWho('outWho');
+  show('out');
+}
+$('outBtn').addEventListener('click',()=>{
+  SFX.tap();
+  if(aliveCount()<=1) return finish();
+  do{ S.turn=(S.turn+1)%S.players.length; }while(!S.alive[S.turn]);
+  showPass();
+});
+
+function finish(){
+  cancelAnimationFrame(S.raf);
+  SFX.win();
+  const w=S.alive.indexOf(true);
+  const rank=[]; if(w>=0) rank.push(w);
+  for(let i=S.order.length-1;i>=0;i--) rank.push(S.order[i]);
+  $('overTitle').innerHTML=w>=0
+    ? `${S.players[w].emoji} <b>${S.players[w].name}</b> 記憶最強！`:'全員陣亡 🧠';
+  $('board').innerHTML=rank.map((idx,i)=>{
+    const p=S.players[idx];
+    return `<div class="row ${i===0?'top':''}"><div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${p.emoji} ${p.name}</div>
+      <div class="sc">${i===0?'冠軍':'第 '+(i+1)+' 名'}</div></div>`;
+  }).join('');
+  $('overLen').textContent=S.maxLen;
+  show('over');
+}
+$('again').addEventListener('click',()=>{ SFX.tap(); startGame(); });
+
+boot();
+</script>
+</body>
+</html>

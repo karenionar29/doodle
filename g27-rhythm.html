@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G27 節奏接力</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B1030">
+<style>
+:root{
+  --ink:#0B1030; --ink-2:#161E4A; --line:#28336B;
+  --paper:#EEF2FF; --dim:#96A3D8; --wire:#6BE3FF; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF6B8A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.who span.out{opacity:.35;text-decoration:line-through}
+.who span.now{border:2px solid var(--wire);color:var(--wire)}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#1E2A63}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#04121C;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 節拍圈 */
+.beatWrap{width:100%;aspect-ratio:1/1;max-width:300px;position:relative;
+          display:flex;align-items:center;justify-content:center}
+.ring{position:absolute;inset:0;border-radius:50%;border:4px dashed var(--line)}
+.pulse{position:absolute;border-radius:50%;background:var(--wire);opacity:.28}
+.center{position:relative;z-index:2;text-align:center}
+.center .nm{font-size:24px;line-height:1.3}
+.center .nm b{color:var(--wire)}
+.center .cnt{font-size:52px;color:var(--spark);line-height:1;margin-top:4px}
+.beatWrap.hit .ring{border-color:var(--good);border-style:solid}
+.beatWrap.miss .ring{border-color:var(--bad);border-style:solid}
+
+.tapBtn{width:100%;background:var(--wire);color:#04121C;border-radius:24px;
+        padding:34px 0;font-size:26px;line-height:1.25}
+.tapBtn:active{transform:scale(.96)}
+.tapBtn.bad{background:var(--bad);color:#2A0510}
+
+.stat{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.stat .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px}
+.stat .chip b{color:var(--spark)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#04121C}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🥁⚡</div>
+  <h1>G27 <b>節奏接力</b></h1>
+  <p class="sub">
+    圓圈縮到最小的<b>那一瞬間</b>，輪到的人要按下去！<br>
+    <span style="color:var(--bad)">太早、太慢、忘記按 → 淘汰</span><br>
+    <b>拍子會越來越快</b>，撐到最後的人贏 🏆<br>
+    <span style="color:var(--wire)">跟著聲音抓節奏，別被別人帶亂了！</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">難度</p>
+    <div class="lenRow">
+      <button data-lv="easy">簡單<br><span style="font-size:11px;color:var(--dim)">慢＋好按</span></button>
+      <button data-lv="mid" class="on">普通<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-lv="hard">困難<br><span style="font-size:11px;color:var(--dim)">快＋嚴格</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🥁 開始打拍子</button>
+  <p class="tip">📱 裝置放中間，輪到誰誰按<br>建議開聲音，跟著節奏更好抓 🔊</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="ready" class="screen">
+  <div class="hero">🎧</div>
+  <h1>準備好了嗎？</h1>
+  <p class="sub">先聽 <b>4 拍</b>，第 5 拍開始輪流按<br>順序：<span id="orderTxt"></span></p>
+  <div class="stat"><span class="chip">起始速度 <b id="bpmTxt">100</b> BPM</span></div>
+  <button class="go" id="readyBtn">開始！</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="who" id="playWho"></div>
+  <div class="beatWrap" id="beatWrap">
+    <div class="ring"></div>
+    <div class="pulse" id="pulse"></div>
+    <div class="center">
+      <div class="nm" id="turnNm">🧒 <b>George</b></div>
+      <div class="cnt" id="cntTxt">4</div>
+    </div>
+  </div>
+  <button class="tapBtn" id="tapBtn">👆 按！</button>
+  <div class="stat">
+    <span class="chip">連續 <b id="comboTxt">0</b> 拍</span>
+    <span class="chip"><b id="bpmNow">100</b> BPM</span>
+    <span class="chip">剩 <b id="aliveTxt">3</b> 人</span>
+  </div>
+</section>
+
+<section id="out" class="screen">
+  <div class="hero">💥</div>
+  <div style="font-size:30px;text-align:center;line-height:1.35" id="outName"></div>
+  <p class="sub" id="outWhy"></p>
+  <div class="who" id="outWho"></div>
+  <button class="go" id="outBtn">繼續 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <p class="tip">全場撐了 <b id="overBeats">0</b> 拍 · 最快到 <b id="overBpm">0</b> BPM</p>
+  <button class="go" id="again">🔁 再來一場</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G27 節奏接力
+   核心：共同的節拍 ＋ 輪流的壓力。
+   耐玩來源＝越來越快的極限、別人失誤時你也會慌。
+   ============================================================ */
+const LV = {
+  easy: { bpm: 84,  step: 1.2, tol: 260 },   // 起始速度、每拍加速、容許誤差(ms)
+  mid:  { bpm: 100, step: 1.8, tol: 190 },
+  hard: { bpm: 118, step: 2.4, tol: 140 },
+};
+const MAX_BPM = 220;
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+const SFX={
+  tick:()=>beep([1000],0.05,'square',0.09),
+  tock:()=>beep([1500],0.05,'square',0.11),
+  hit:()=>beep([880,1319],0.09,'triangle',0.13),
+  miss:()=>beep([200,140],0.26,'sawtooth',0.16),
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.15),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+
+const S={ players:[], alive:[], lv:'mid', bpm:100, tol:190,
+          turn:0, beats:0, combo:0, maxBpm:100,
+          nextAt:0, raf:null, running:false, tapped:false,
+          countIn:4, order:[] };
+
+function boot(){
+  S.players=FP.get();
+  paintWho('whoRow');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+}
+function paintWho(id){
+  $(id).innerHTML=S.players.map((p,i)=>{
+    const cls=(S.alive.length&&!S.alive[i])?'out':(id==='playWho'&&i===S.turn?'now':'');
+    return `<span class="${cls}">${p.emoji} ${p.name}</span>`;
+  }).join('');
+}
+document.querySelectorAll('[data-lv]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-lv]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');S.lv=b.dataset.lv;}));
+
+$('startBtn').addEventListener('click',()=>{ if(S.players.length<2)return; SFX.tap(); prepare(); });
+
+function prepare(){
+  const c=LV[S.lv];
+  S.alive=S.players.map(()=>true);
+  S.bpm=c.bpm; S.tol=c.tol; S.maxBpm=c.bpm;
+  S.turn=0; S.beats=0; S.combo=0; S.order=[]; S.countIn=4;
+  $('bpmTxt').textContent=c.bpm;
+  $('orderTxt').textContent=S.players.map(p=>p.name).join(' → ');
+  show('ready');
+}
+$('readyBtn').addEventListener('click',()=>{ SFX.tap(); startBeat(); });
+
+function aliveCount(){ return S.alive.filter(Boolean).length; }
+function interval(){ return 60000/S.bpm; }
+
+function startBeat(){
+  show('play');
+  paintPlay();
+  S.running=true; S.tapped=false;
+  S.nextAt=performance.now()+interval();
+  loop();
+}
+function paintPlay(){
+  const p=S.players[S.turn];
+  $('turnNm').innerHTML=`${p.emoji} <b>${p.name}</b>`;
+  $('comboTxt').textContent=S.combo;
+  $('bpmNow').textContent=Math.round(S.bpm);
+  $('aliveTxt').textContent=aliveCount();
+  paintWho('playWho');
+}
+
+function loop(){
+  cancelAnimationFrame(S.raf);
+  const step=()=>{
+    if(!S.running) return;
+    const now=performance.now();
+    const iv=interval();
+    const left=S.nextAt-now;
+    /* 圓圈：從大縮到小，最小＝節拍點 */
+    const ratio=Math.max(0,Math.min(1,left/iv));
+    const size=30+ratio*250;
+    const pl=$('pulse');
+    pl.style.width=size+'px'; pl.style.height=size+'px';
+    pl.style.opacity=(0.5-ratio*0.3).toFixed(2);
+
+    if(left<=0){
+      /* 節拍到了 */
+      if(S.countIn>0){
+        S.countIn--;
+        $('cntTxt').textContent=S.countIn>0?S.countIn:'GO';
+        SFX.tick();
+        S.nextAt=now+iv;
+      } else {
+        if(!S.tapped){ return missBeat('沒跟上拍子…'); }
+        S.tapped=false;
+        SFX.tock();
+        nextBeat();
+        S.nextAt=now+interval();
+      }
+    }
+    S.raf=requestAnimationFrame(step);
+  };
+  S.raf=requestAnimationFrame(step);
+}
+
+function nextBeat(){
+  S.beats++; S.combo++;
+  S.bpm=Math.min(MAX_BPM, S.bpm+LV[S.lv].step);
+  S.maxBpm=Math.max(S.maxBpm,S.bpm);
+  do{ S.turn=(S.turn+1)%S.players.length; }while(!S.alive[S.turn]);
+  $('cntTxt').textContent=S.combo;
+  paintPlay();
+}
+
+$('tapBtn').addEventListener('click',()=>{
+  if(!S.running) return;
+  if(S.countIn>0){ SFX.tap(); return; }        // 前奏階段不判定
+  const now=performance.now();
+  const diff=Math.abs(S.nextAt-now);
+  const wrap=$('beatWrap');
+  if(S.tapped){ return missBeat('同一拍按了兩次！'); }
+  if(diff<=S.tol){
+    S.tapped=true;
+    SFX.hit();
+    wrap.classList.add('hit');
+    setTimeout(()=>wrap.classList.remove('hit'),120);
+  } else {
+    missBeat(now<S.nextAt?'按太早了！':'按太慢了！');
+  }
+});
+
+function missBeat(why){
+  S.running=false;
+  cancelAnimationFrame(S.raf);
+  SFX.miss();
+  if(navigator.vibrate){try{navigator.vibrate(140);}catch(_){}}
+  const p=S.players[S.turn];
+  S.alive[S.turn]=false;
+  S.order.push(S.turn);
+  $('outName').innerHTML=`${p.emoji} <b style="color:var(--bad)">${p.name}</b> 出局！`;
+  $('outWhy').innerHTML=`${why}<br>撐到 ${Math.round(S.bpm)} BPM、連續 ${S.combo} 拍`;
+  paintWho('outWho');
+  show('out');
+}
+$('outBtn').addEventListener('click',()=>{
+  SFX.tap();
+  if(aliveCount()<=1) return finish();
+  /* 換下一個活著的人，速度稍微回退一點喘口氣 */
+  do{ S.turn=(S.turn+1)%S.players.length; }while(!S.alive[S.turn]);
+  S.bpm=Math.max(LV[S.lv].bpm, S.bpm-8);
+  S.combo=0; S.countIn=2; S.tapped=false;
+  startBeat();
+});
+
+function finish(){
+  cancelAnimationFrame(S.raf);
+  SFX.win();
+  const w=S.alive.indexOf(true);
+  const rank=[]; if(w>=0) rank.push(w);
+  for(let i=S.order.length-1;i>=0;i--) rank.push(S.order[i]);
+  $('overTitle').innerHTML=w>=0
+    ? `${S.players[w].emoji} <b>${S.players[w].name}</b> 節奏之王！`:'全員陣亡 🥁';
+  $('board').innerHTML=rank.map((idx,i)=>{
+    const p=S.players[idx];
+    return `<div class="row ${i===0?'top':''}"><div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${p.emoji} ${p.name}</div>
+      <div class="sc">${i===0?'冠軍':'第 '+(i+1)+' 名'}</div></div>`;
+  }).join('');
+  $('overBeats').textContent=S.beats;
+  $('overBpm').textContent=Math.round(S.maxBpm);
+  show('over');
+}
+$('again').addEventListener('click',()=>{ SFX.tap(); prepare(); });
+
+boot();
+</script>
+</body>
+</html>
