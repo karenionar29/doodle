@@ -124,7 +124,7 @@ h1 b{color:var(--wire)}
     但骰到 <b style="color:var(--bad)">💀 骷髏</b> → <b>這輪全部歸零</b>！<br>
     骰到 <b style="color:var(--spark)">💎 寶石</b> → <b>這輪分數 ×2 再加 2</b>！<br>
     <b style="color:var(--good)">隨時可以收下</b>，落袋為安。<br>
-    <span style="color:var(--bad)">越骰越危險——骷髏機率一次比一次高。</span><br>
+    <span style="color:var(--good)">第一次骰保證安全</span>，之後<span style="color:var(--bad)">越骰越危險</span>。<br>
     <span style="color:var(--wire)">先到目標分數的人贏！</span>
   </p>
 
@@ -199,10 +199,11 @@ h1 b{color:var(--wire)}
    ============================================================ */
 
 const CONFIG = {
-  BASE_BUST: 0.12,     // 第一次骰的爆炸機率
-  BUST_STEP: 0.07,     // 每多骰一次，爆炸機率增加
-  MAX_BUST: 0.62,      // 爆炸機率上限
-  GEM_RATE: 0.14,      // 沒爆的情況下，骰到寶石（本輪翻倍）的機率
+  SAFE_FIRST: true,    // 第一次骰保證不爆（每輪至少拿得到分數，不會白忙）
+  BASE_BUST: 0.09,     // 第二次骰開始的爆炸機率
+  BUST_STEP: 0.055,    // 每多骰一次，爆炸機率增加
+  MAX_BUST: 0.58,      // 爆炸機率上限
+  GEM_RATE: 0.22,      // 沒爆的情況下，骰到寶石（本輪翻倍）的機率
   FACES: [1, 2, 2, 3, 3, 5],   // 一般分數面
 };
 
@@ -249,7 +250,9 @@ const S = {
 };
 
 function bustChance() {
-  return Math.min(CONFIG.MAX_BUST, CONFIG.BASE_BUST + S.rolls * CONFIG.BUST_STEP);
+  if (CONFIG.SAFE_FIRST && S.rolls === 0) return 0;   // 第一次一定安全
+  const n = S.rolls - (CONFIG.SAFE_FIRST ? 1 : 0);
+  return Math.min(CONFIG.MAX_BUST, CONFIG.BASE_BUST + n * CONFIG.BUST_STEP);
 }
 
 /* ---------- 開場 ---------- */
@@ -307,7 +310,9 @@ function paintPlay(reset) {
   paintBoard('playBoard');
   $('potVal').textContent = S.pot;
   $('rollCnt').textContent = S.rolls;
-  $('riskVal').textContent = Math.round(bustChance() * 100) + '%';
+  const bc = bustChance();
+  $('riskVal').textContent = bc === 0 ? '安全' : Math.round(bc * 100) + '%';
+  $('riskVal').parentElement.classList.toggle('risk', bc > 0);
   $('btnKeep').disabled = S.pot <= 0;
   if (reset) {
     $('face').textContent = '🎲';
