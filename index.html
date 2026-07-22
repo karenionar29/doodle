@@ -181,11 +181,12 @@ footer b{color:var(--paper)}
 .setEntry .tx span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
 .setEntry .arrow{color:var(--dim);font-size:22px;flex:none}
 
-/* 📱💻 裝置支援圖示 */
-.devIco{display:inline-flex;gap:3px;align-items:center;margin-left:5px;font-size:11px}
-.devIco span{opacity:.22}
-.devIco span.ok{opacity:1}
-.devIco span.half{opacity:.5}
+/* 📱💻 裝置支援圖示（選擇器要比 .meat span 更具體才不會被壓成 block） */
+.meat .no .devIco{display:inline-flex;gap:2px;align-items:center;margin-left:6px;
+                  font-size:11px;vertical-align:middle;letter-spacing:0}
+.meat .no .devIco span{display:inline;opacity:.2;font-size:11px;margin:0;line-height:1;color:inherit}
+.meat .no .devIco span.ok{opacity:1}
+.meat .no .devIco span.half{opacity:.45}
 /* 裝置篩選 */
 .devHead{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.06em}
 .devPick{display:flex;gap:6px;width:100%}
@@ -605,9 +606,7 @@ const DEV_INFO = {
 function devIcons(dev) {
   const d = DEV_INFO[dev] || DEV_INFO.all;
   const pcCls = d.pc === 'ok' ? 'ok' : (d.pc === 'half' ? 'half' : '');
-  return `<span class="devIco" title="${d.label}">
-            <span class="ok">📱</span><span class="${pcCls}">💻</span>
-          </span>`;
+  return `<span class="devIco" title="${d.label}"><span class="ok">📱</span><span class="${pcCls}">💻</span></span>`;
 }
 const PAGE_SIZE = 12;
 
