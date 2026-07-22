@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G24 搶詞大戰</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0C1F16">
+<style>
+:root{
+  --ink:#0C1F16;        /* 深綠 */
+  --ink-2:#143122;      /* 卡片 */
+  --line:#245039;       /* 邊線 */
+  --paper:#EAFFF3;      /* 主文字 */
+  --dim:#82B79B;        /* 次文字 */
+  --wire:#B4FF4D;       /* 主題檸檬綠 */
+  --spark:#FFD84D;
+  --good:#6BE8A8;
+  --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{
+  min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;
+        max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.who span.out{opacity:.35;text-decoration:line-through}
+
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;
+               padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#1E4430}
+.lenRow button:active{transform:scale(.96)}
+
+.go{width:100%;background:var(--wire);color:#0A2013;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 主題卡 */
+.theme{width:100%;background:linear-gradient(150deg,#1E4430,#143122);
+       border:2px solid var(--wire);border-radius:20px;padding:22px 15px;text-align:center}
+.theme .em{font-size:44px;line-height:1}
+.theme .tx{font-size:26px;color:var(--wire);margin-top:8px;line-height:1.35}
+.theme .hint{font-size:12px;color:var(--dim);font-weight:500;margin-top:9px;line-height:1.6}
+
+/* 輪到誰 */
+.turnName{font-size:36px;text-align:center;line-height:1.25}
+.turnName b{color:var(--wire)}
+.timeWrap{width:100%;height:14px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+.timeNum{font-size:40px;color:var(--wire);text-align:center;line-height:1}
+.timeNum.hot{color:var(--bad)}
+
+.judgeRow{display:flex;gap:10px;width:100%}
+.judgeRow button{flex:1;border-radius:18px;padding:22px 8px;font-size:19px;line-height:1.35}
+.judgeRow .ok{background:var(--good);color:#062616}
+.judgeRow .no{background:var(--bad);color:#2A0808}
+.judgeRow button:active{transform:scale(.95)}
+
+/* 淘汰 */
+.outName{font-size:32px;text-align:center;line-height:1.3}
+.outName b{color:var(--bad)}
+
+/* 排行 */
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#0A2013}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<!-- ========== 開場 ========== -->
+<section id="intro" class="screen on">
+  <div class="hero">⚡🗣️⚡</div>
+  <h1>G24 <b>搶詞大戰</b></h1>
+  <p class="sub">
+    給一個主題，<b>輪流大聲講一個</b>符合的東西——<br>
+    <b>不能重複</b>別人講過的！<br>
+    講得出來 → 大家按 <b style="color:var(--good)">✅ 算</b>；<br>
+    重複、不符合、想不出來 → 按 <b style="color:var(--bad)">❌ 不算</b> 就淘汰。<br>
+    <span style="color:var(--wire)">時間越來越短，撐到最後的人贏！</span>
+  </p>
+
+  <div class="who" id="whoRow"></div>
+
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">一開始給幾秒？</p>
+    <div class="lenRow">
+      <button data-sec="10">10 秒<br><span style="font-size:11px;color:var(--dim)">輕鬆</span></button>
+      <button data-sec="7" class="on">7 秒<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-sec="5">5 秒<br><span style="font-size:11px;color:var(--dim)">刺激</span></button>
+    </div>
+  </div>
+
+  <button class="go" id="startBtn">⚡ 開始搶詞</button>
+  <p class="tip">📱 裝置放中間，大家看得到就好<br>裁判是<b>其他人</b>——吵起來也是樂趣 😆</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<!-- ========== 主題揭曉 ========== -->
+<section id="theme" class="screen">
+  <div class="theme">
+    <div class="em" id="themeEm">🔴</div>
+    <div class="tx" id="themeTx">紅色的東西</div>
+    <div class="hint">輪流講一個，不能重複<br>講不出來或重複 → 淘汰</div>
+  </div>
+  <div class="who" id="themeWho"></div>
+  <button class="go" id="themeBtn">準備好了，開始！</button>
+</section>
+
+<!-- ========== 輪到誰 ========== -->
+<section id="turn" class="screen">
+  <div class="theme" style="padding:12px">
+    <div class="tx" id="turnTheme" style="font-size:19px">紅色的東西</div>
+  </div>
+  <div class="turnName" id="turnName">🧒 <b>George</b></div>
+  <div class="timeNum" id="timeNum">7</div>
+  <div class="timeWrap"><i id="timeBar"></i></div>
+  <p class="tip">講出來之後，<b>其他人</b>按下面判定 👇</p>
+  <div class="judgeRow">
+    <button class="ok" id="btnOk">✅<br>算！</button>
+    <button class="no" id="btnNo">❌<br>不算</button>
+  </div>
+  <p class="tip">已經過 <b id="passCount">0</b> 個 · 剩 <b id="aliveCount">3</b> 人</p>
+</section>
+
+<!-- ========== 淘汰 ========== -->
+<section id="out" class="screen">
+  <div class="hero">💥</div>
+  <div class="outName" id="outName"><b>George</b> 出局！</div>
+  <p class="sub" id="outWhy">想不出來了…</p>
+  <div class="who" id="outWho"></div>
+  <button class="go" id="outBtn">繼續 →</button>
+</section>
+
+<!-- ========== 結算 ========== -->
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle">冠軍！</h1>
+  <div class="board" id="board"></div>
+  <p class="tip">主題：<b id="overTheme"></b> · 全場講出 <b id="overCount">0</b> 個</p>
+  <button class="go" id="again">🔁 換個主題再來</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G24 搶詞大戰
+   核心：裁判是「其他玩家」，爭論本身就是遊戲。
+   耐玩來源＝人的詞庫、記性、互相刁難，系統只出主題。
+   ============================================================ */
+
+const CONFIG = {
+  DECAY: 0.35,        // 每過一個人，時間減少幾秒
+  MIN_SEC: 2.5,       // 最短剩幾秒
+};
+
+/* ---------- 主題庫：[emoji, 主題] ---------- */
+const THEMES = [
+  ['🔴','紅色的東西'], ['🔵','藍色的東西'], ['🟡','黃色的東西'], ['⚪','白色的東西'],
+  ['⚫','黑色的東西'], ['🟢','綠色的東西'], ['⭕','圓形的東西'], ['⬜','方形的東西'],
+  ['🐾','動物'], ['🐦','會飛的東西'], ['🐟','住在水裡的'], ['🦵','四隻腳的'],
+  ['🍎','水果'], ['🥕','蔬菜'], ['🍜','麵類食物'], ['🍰','甜的食物'],
+  ['🌶️','辣的東西'], ['🧊','冰的東西'], ['🔥','熱的東西'], ['🥤','可以喝的'],
+  ['🏫','學校裡有的'], ['🍳','廚房裡有的'], ['🛏️','房間裡有的'], ['🚽','浴室裡有的'],
+  ['🏪','便利商店有賣的'], ['🌳','公園裡有的'], ['🏥','醫院裡有的'], ['🏖️','海邊有的'],
+  ['🚗','交通工具'], ['⚽','運動'], ['🎮','遊戲'], ['🎵','樂器'],
+  ['👕','穿在身上的'], ['👟','腳上穿的'], ['💍','戴在身上的'], ['🎒','可以背的'],
+  ['📱','用電的東西'], ['🔨','工具'], ['✏️','文具'], ['🧸','玩具'],
+  ['👨‍🚒','職業'], ['🌏','國家'], ['🏙️','台灣的地名'], ['🎂','節日'],
+  ['😀','表情或心情'], ['🌦️','天氣'], ['🌸','花'], ['🌲','樹'],
+  ['🦴','身體的部位'], ['👪','家人的稱呼'], ['🔢','有數字的東西'], ['🎨','會發光的'],
+  ['🎈','會飄的'], ['🧻','紙做的'], ['🪵','木頭做的'], ['🪙','金屬做的'],
+  ['🔊','會發出聲音的'], ['💨','很快的東西'], ['🐌','很慢的東西'], ['🏔️','很大的東西'],
+  ['🐜','很小的東西'], ['😱','很可怕的東西'], ['😂','很好笑的東西'], ['💤','讓人想睡的'],
+  ['🎬','卡通或電影'], ['📚','故事書裡有的'], ['🍭','夜市有賣的'], ['🎪','遊樂園有的'],
+];
+
+/* ---------- 音效 ---------- */
+let AC = null;
+function beep(fs, dur, type, vol) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    fs.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'sine'; o.frequency.value = f;
+      const t0 = AC.currentTime + i * 0.06;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(vol || 0.12, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.14));
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + (dur || 0.14) + 0.02);
+    });
+  } catch (e) {}
+}
+const SFX = {
+  tap:  () => beep([560], 0.06, 'triangle', 0.09),
+  ok:   () => beep([784, 1047], 0.1, 'triangle', 0.13),
+  no:   () => beep([233, 175], 0.22, 'sawtooth', 0.14),
+  tick: () => beep([1200], 0.04, 'square', 0.07),
+  go:   () => beep([523, 659, 784], 0.11, 'sine', 0.12),
+  win:  () => beep([659, 880, 1175, 1568], 0.16, 'triangle', 0.15),
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+  window.scrollTo(0, 0);
+};
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
+/* ---------- 狀態 ---------- */
+const S = {
+  players: [], alive: [],      // alive: true/false
+  baseSec: 7, curSec: 7,
+  theme: null, turn: 0,
+  passed: 0,                   // 全場成功講出幾個
+  order: [],                   // 出局順序（先出局的排後面）
+  raf: null, endAt: 0,
+};
+
+/* ---------- 開場 ---------- */
+function boot() {
+  S.players = FP.get();
+  paintWho('whoRow');
+  if (S.players.length < 2) {
+    $('startBtn').textContent = '⚠️ 至少要 2 個人';
+    $('startBtn').disabled = true;
+  }
+}
+function paintWho(id) {
+  $(id).innerHTML = S.players.map((p, i) =>
+    `<span class="${S.alive.length && !S.alive[i] ? 'out' : ''}">${p.emoji} ${p.name}</span>`).join('');
+}
+
+document.querySelectorAll('[data-sec]').forEach(b =>
+  b.addEventListener('click', () => {
+    SFX.tap();
+    document.querySelectorAll('[data-sec]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    S.baseSec = +b.dataset.sec;
+  }));
+
+$('startBtn').addEventListener('click', () => {
+  if (S.players.length < 2) return;
+  SFX.go();
+  startGame();
+});
+
+function startGame() {
+  S.alive = S.players.map(() => true);
+  S.curSec = S.baseSec;
+  S.passed = 0;
+  S.order = [];
+  S.turn = 0;
+  const [em, tx] = pick(THEMES);
+  S.theme = { em, tx };
+  $('themeEm').textContent = em;
+  $('themeTx').textContent = tx;
+  paintWho('themeWho');
+  show('theme');
+}
+$('themeBtn').addEventListener('click', () => { SFX.go(); nextTurn(true); });
+
+/* ---------- 輪到誰 ---------- */
+function aliveCount() { return S.alive.filter(Boolean).length; }
+
+function nextTurn(first) {
+  if (!first) {
+    /* 找下一個還活著的人 */
+    let n = 0;
+    do { S.turn = (S.turn + 1) % S.players.length; n++; }
+    while (!S.alive[S.turn] && n <= S.players.length);
+  } else {
+    S.turn = 0;
+    while (!S.alive[S.turn]) S.turn++;
+  }
+  if (aliveCount() <= 1) return finish();
+
+  const p = S.players[S.turn];
+  $('turnTheme').textContent = S.theme.em + ' ' + S.theme.tx;
+  $('turnName').innerHTML = `${p.emoji} <b>${p.name}</b>`;
+  $('passCount').textContent = S.passed;
+  $('aliveCount').textContent = aliveCount();
+  show('turn');
+  runTimer();
+}
+
+function runTimer() {
+  cancelAnimationFrame(S.raf);
+  const total = S.curSec * 1000;
+  S.endAt = performance.now() + total;
+  let lastTick = -1;
+  const step = () => {
+    const left = S.endAt - performance.now();
+    const ratio = Math.max(0, left / total);
+    const sec = Math.max(0, left / 1000);
+    $('timeBar').style.width = (ratio * 100) + '%';
+    $('timeNum').textContent = sec.toFixed(1);
+    const hot = sec <= 2;
+    $('timeBar').classList.toggle('hot', hot);
+    $('timeNum').classList.toggle('hot', hot);
+    const s = Math.ceil(sec);
+    if (hot && s !== lastTick && s > 0) { SFX.tick(); lastTick = s; }
+    if (left <= 0) return knockOut('時間到，想不出來了…');
+    S.raf = requestAnimationFrame(step);
+  };
+  S.raf = requestAnimationFrame(step);
+}
+
+/* ---------- 判定 ---------- */
+$('btnOk').addEventListener('click', () => {
+  cancelAnimationFrame(S.raf);
+  SFX.ok();
+  S.passed++;
+  /* 每過一個人，時間縮短一點（越來越緊張） */
+  S.curSec = Math.max(CONFIG.MIN_SEC, S.curSec - CONFIG.DECAY);
+  nextTurn(false);
+});
+$('btnNo').addEventListener('click', () => {
+  cancelAnimationFrame(S.raf);
+  knockOut('大家判定：不算！');
+});
+
+function knockOut(why) {
+  cancelAnimationFrame(S.raf);
+  SFX.no();
+  const p = S.players[S.turn];
+  S.alive[S.turn] = false;
+  S.order.push(S.turn);          // 記錄出局順序
+  $('outName').innerHTML = `${p.emoji} <b>${p.name}</b> 出局！`;
+  $('outWhy').textContent = why;
+  paintWho('outWho');
+  show('out');
+}
+$('outBtn').addEventListener('click', () => {
+  SFX.tap();
+  if (aliveCount() <= 1) finish();
+  else nextTurn(false);
+});
+
+/* ---------- 結算 ---------- */
+function finish() {
+  cancelAnimationFrame(S.raf);
+  SFX.win();
+  const winnerIdx = S.alive.indexOf(true);
+  /* 名次：冠軍第一，其餘照「越晚出局越前面」 */
+  const rank = [];
+  if (winnerIdx >= 0) rank.push(winnerIdx);
+  for (let i = S.order.length - 1; i >= 0; i--) rank.push(S.order[i]);
+
+  $('overTitle').innerHTML = winnerIdx >= 0
+    ? `${S.players[winnerIdx].emoji} <b>${S.players[winnerIdx].name}</b> 撐到最後！`
+    : '平手收場';
+  $('board').innerHTML = rank.map((idx, i) => {
+    const p = S.players[idx];
+    return `<div class="row ${i === 0 ? 'top' : ''}">
+      <div class="rk">${['🥇','🥈','🥉'][i] || (i + 1)}</div>
+      <div class="nm">${p.emoji} ${p.name}</div>
+      <div class="sc">${i === 0 ? '冠軍' : '第 ' + (i + 1) + ' 名'}</div>
+    </div>`;
+  }).join('');
+  $('overTheme').textContent = S.theme.tx;
+  $('overCount').textContent = S.passed;
+  show('over');
+}
+
+$('again').addEventListener('click', () => { SFX.tap(); startGame(); });
+
+boot();
+</script>
+</body>
+</html>
