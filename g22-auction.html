@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G22 出價競標</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1A1408">
+<style>
+:root{
+  --ink:#1A1408;        /* 底色：深琥珀 */
+  --ink-2:#2A2110;      /* 卡片 */
+  --line:#463619;       /* 邊線 */
+  --paper:#FFF6E3;      /* 主文字 */
+  --dim:#BFA46B;        /* 次文字 */
+  --wire:#FFC53D;       /* 主題金 */
+  --spark:#7DE8FF;      /* 亮青（點數） */
+  --good:#6BE8A8;       /* 綠 */
+  --bad:#FF7B7B;        /* 紅 */
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{
+  min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;
+        max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;
+               padding:14px 0;font-size:15px;color:var(--dim);transition:.12s}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#3D2F14}
+.lenRow button:active{transform:scale(.96)}
+
+.go{width:100%;background:var(--wire);color:#2A1A00;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+
+/* 頂部狀態列 */
+.hud{width:100%;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hud .chip{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.hud .chip b{color:var(--wire)}
+
+/* 寶物卡 */
+.item{width:100%;background:linear-gradient(150deg,#3D2F14,#2A2110);
+      border:2px solid var(--wire);border-radius:20px;padding:20px 15px;text-align:center}
+.item.curse{border-color:var(--bad);background:linear-gradient(150deg,#3D1616,#2A1010)}
+.item .em{font-size:52px;line-height:1}
+.item .nm{font-size:21px;margin-top:6px}
+.item .val{font-size:15px;color:var(--wire);margin-top:6px}
+.item.curse .val{color:var(--bad)}
+.item .hint{font-size:12px;color:var(--dim);font-weight:500;margin-top:8px;line-height:1.6}
+
+/* 換人 */
+.passName{font-size:30px;text-align:center;line-height:1.3}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+/* 出價盤 */
+.bidNum{font-size:64px;color:var(--wire);line-height:1;text-align:center}
+.bidOf{font-size:13px;color:var(--dim);font-weight:500;text-align:center}
+.padRow{display:flex;gap:8px;width:100%}
+.padRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;
+               padding:15px 0;font-size:17px;color:var(--paper);transition:.1s}
+.padRow button:active{transform:scale(.94);border-color:var(--wire)}
+.padRow button.wide{font-size:14px;color:var(--dim)}
+
+/* 揭曉 */
+.bidRow{width:100%;background:var(--ink-2);border:2px solid var(--line);
+        border-radius:15px;padding:12px 14px;display:flex;align-items:center;gap:11px}
+.bidRow.win{border-color:var(--good);background:#16301F}
+.bidRow.hurt{border-color:var(--bad);background:#301616}
+.bidRow .nm{flex:1;font-size:15px;line-height:1.4}
+.bidRow .nm i{font-style:normal;display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:2px}
+.bidRow .bd{font-size:19px;color:var(--spark);flex:none}
+.bidRow .dl{font-size:15px;flex:none;min-width:52px;text-align:right}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#2A1A00}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+.row .pt{font-size:12px;opacity:.75;margin-left:6px}
+
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<!-- ========== 開場 ========== -->
+<section id="intro" class="screen on">
+  <div class="hero">💰🔨💎</div>
+  <h1>G22 <b>出價競標</b></h1>
+  <p class="sub">
+    每人有 <b style="color:var(--spark)">20 點</b>，輪流秘密出價搶寶物。<br>
+    <b>出最高的人得標</b>，拿走分數、付掉點數。<br>
+    出一樣多 → <b>流標</b>，誰都拿不到！<br>
+    <span style="color:var(--bad)">💀 有時會出現詛咒品——搶到反而扣分！<br>大家都出一樣 → 抽籤決定誰倒楣 😈</span><br>
+    <span style="color:var(--wire)">點數花完就沒本錢了，看誰會算。</span>
+  </p>
+
+  <div class="who" id="whoRow"></div>
+
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">要標幾樣？</p>
+    <div class="lenRow">
+      <button data-len="6">6 樣<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-len="9" class="on">9 樣<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="12">12 樣<br><span style="font-size:11px;color:var(--dim)">長期戰</span></button>
+    </div>
+  </div>
+
+  <button class="go" id="startBtn">🔨 開始競標</button>
+  <p class="tip">📱 一台裝置輪流傳著出價<br>出價時別讓別人偷看喔！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<!-- ========== 這輪的寶物 ========== -->
+<section id="show" class="screen">
+  <div class="hud">
+    <span class="chip">第 <b id="showRound">1</b> / <b id="showTotal">9</b> 樣</span>
+  </div>
+  <div class="item" id="itemCard">
+    <div class="em" id="itemEm">💎</div>
+    <div class="nm" id="itemNm">鑽石</div>
+    <div class="val" id="itemVal">值 6 分</div>
+    <div class="hint" id="itemHint">出價最高的人得標</div>
+  </div>
+  <div class="board" id="ptBoard"></div>
+  <button class="go" id="showBtn">開始出價 →</button>
+</section>
+
+<!-- ========== 換人 ========== -->
+<section id="pass" class="screen">
+  <div class="hero">🤫</div>
+  <div class="passName" id="passName">換 🧒 George 出價</div>
+  <p class="tip">把裝置交給他，<b>其他人先別看</b> 🙈</p>
+  <div class="dots" id="passDots"></div>
+  <button class="go" id="passBtn">好，我拿到了</button>
+</section>
+
+<!-- ========== 出價 ========== -->
+<section id="bid" class="screen">
+  <div class="item" id="bidItem" style="padding:13px">
+    <div class="em" id="bidEm" style="font-size:34px">💎</div>
+    <div class="nm" id="bidNm" style="font-size:16px">鑽石</div>
+    <div class="val" id="bidVal" style="font-size:13px">值 6 分</div>
+  </div>
+  <div class="bidNum" id="bidNum">0</div>
+  <div class="bidOf" id="bidOf">你有 20 點</div>
+  <div class="padRow">
+    <button data-add="-5">−5</button>
+    <button data-add="-1">−1</button>
+    <button data-add="1">＋1</button>
+    <button data-add="5">＋5</button>
+  </div>
+  <div class="padRow">
+    <button class="wide" data-set="0">不出價（0）</button>
+    <button class="wide" data-set="max">全下 💥</button>
+  </div>
+  <button class="go" id="bidOk">🔒 出價，交下一位</button>
+</section>
+
+<!-- ========== 揭曉 ========== -->
+<section id="reveal" class="screen">
+  <div class="hero" id="revEm">💎</div>
+  <h1 id="revTitle">得標！</h1>
+  <div class="board" id="revBoard"></div>
+  <button class="go" id="nextBtn">下一樣 →</button>
+</section>
+
+<!-- ========== 結算 ========== -->
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1>競標大亨排行</h1>
+  <div class="board" id="board"></div>
+  <p class="tip">剩下的點數每 <b>5 點</b> 換 1 分喔！</p>
+  <button class="go" id="again">🔁 再標一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G22 出價競標
+   核心：有限點數 + 秘密出價 + 對手會學習。
+   耐玩來源＝「這次別人會出多少」，而且對手每局都在進化。
+   ============================================================ */
+
+const CONFIG = {
+  START_PT: 20,          // 每人起始點數
+  CURSE_RATE: 0.25,      // 詛咒品出現機率
+  LEFTOVER_PER: 5,       // 剩餘點數每 N 點換 1 分
+};
+
+/* ---------- 寶物庫：[emoji, 名字, 最低分, 最高分] ---------- */
+const TREASURES = [
+  ['💎','鑽石',5,8], ['👑','皇冠',6,9], ['🏆','金盃',5,8], ['💰','錢袋',4,7],
+  ['🍰','超大蛋糕',3,6], ['🎮','電動主機',5,8], ['🚲','腳踏車',4,7], ['🧸','限量玩偶',3,6],
+  ['🍕','整箱披薩',3,5], ['🐕','小狗',5,8], ['🎂','生日蛋糕',3,6], ['🎁','神秘禮盒',2,9],
+  ['🍫','巧克力山',2,5], ['⚽','簽名足球',3,6], ['🎸','電吉他',4,7], ['📱','新手機',5,8],
+  ['🛹','滑板',3,6], ['🧁','杯子蛋糕',2,4], ['🦄','獨角獸',6,9], ['🚀','小火箭',5,9],
+  ['🎨','畫具組',3,5], ['🔭','望遠鏡',4,7], ['🏰','城堡模型',5,8], ['🍦','冰淇淋車',4,7],
+];
+
+/* ---------- 詛咒品：搶到反而扣分 ---------- */
+const CURSES = [
+  ['🗑️','一桶垃圾',3,6], ['🦨','臭鼬',4,7], ['🪳','蟑螂窩',4,8], ['🧦','一週沒洗的襪子',3,6],
+  ['💣','未爆彈',5,8], ['🥦','三大盤青菜',2,5], ['📚','一堆暑假作業',4,7], ['🦷','蛀牙',3,6],
+  ['🌧️','烏雲',3,5], ['🤧','感冒病毒',4,7],
+];
+
+/* ---------- 音效 ---------- */
+let AC = null;
+function beep(freqs, dur, type, vol) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    freqs.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'sine'; o.frequency.value = f;
+      const t0 = AC.currentTime + i * 0.06;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(vol || 0.12, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.14));
+      o.connect(g); g.connect(AC.destination);
+      o.start(t0); o.stop(t0 + (dur || 0.14) + 0.02);
+    });
+  } catch (e) {}
+}
+const SFX = {
+  tap:  () => beep([560], 0.06, 'triangle', 0.09),
+  add:  () => beep([760], 0.05, 'square', 0.07),
+  lock: () => beep([440, 330], 0.1, 'sine', 0.11),
+  win:  () => beep([659, 880, 1175], 0.14, 'triangle', 0.15),
+  fail: () => beep([196, 147], 0.2, 'sawtooth', 0.1),
+  pass: () => beep([392, 523], 0.1, 'sine', 0.1),
+  done: () => beep([523, 659, 784, 1047], 0.16, 'triangle', 0.15),
+};
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+  window.scrollTo(0, 0);
+};
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+/* ---------- 狀態 ---------- */
+const S = {
+  players: [], points: [], scores: [],
+  total: 9, round: 0,
+  item: null,      // { em, nm, val, curse }
+  bids: [], turn: 0,
+};
+
+/* ---------- 開場 ---------- */
+function boot() {
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p => `<span>${p.emoji} ${p.name}</span>`).join('');
+  if (S.players.length < 2) {
+    $('startBtn').textContent = '⚠️ 至少要 2 個人才能競標';
+    $('startBtn').disabled = true;
+  }
+}
+
+document.querySelectorAll('[data-len]').forEach(b =>
+  b.addEventListener('click', () => {
+    SFX.tap();
+    document.querySelectorAll('[data-len]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    S.total = +b.dataset.len;
+  }));
+
+$('startBtn').addEventListener('click', () => {
+  if (S.players.length < 2) return;
+  SFX.pass();
+  startGame();
+});
+
+function startGame() {
+  S.points = S.players.map(() => CONFIG.START_PT);
+  S.scores = S.players.map(() => 0);
+  S.round = 0;
+  newItem();
+}
+
+/* ---------- 出新寶物 ---------- */
+function newItem() {
+  const curse = Math.random() < CONFIG.CURSE_RATE;
+  const [em, nm, lo, hi] = pick(curse ? CURSES : TREASURES);
+  S.item = { em, nm, val: rnd(lo, hi), curse };
+  S.bids = S.players.map(() => 0);
+  S.turn = 0;
+
+  $('showRound').textContent = S.round + 1;
+  $('showTotal').textContent = S.total;
+  $('itemCard').className = 'item' + (curse ? ' curse' : '');
+  $('itemEm').textContent = em;
+  $('itemNm').textContent = nm;
+  $('itemVal').textContent = curse ? `搶到扣 ${S.item.val} 分！` : `值 ${S.item.val} 分`;
+  $('itemHint').innerHTML = curse
+    ? '💀 <b style="color:var(--bad)">詛咒品</b>：出價最高的人要收下並扣分<br>大家出一樣多 → <b>抽籤</b>決定誰倒楣，躲不掉的！'
+    : '出價最高的人得標，付掉出的點數<br>出一樣多 → 流標，誰都拿不到';
+
+  /* 目前點數榜 */
+  $('ptBoard').innerHTML = S.players.map((p, i) => `
+    <div class="bidRow">
+      <div class="nm">${p.emoji} ${p.name}</div>
+      <div class="bd">${S.points[i]} 點</div>
+      <div class="dl">${S.scores[i]} 分</div>
+    </div>`).join('');
+
+  show('show');
+}
+
+$('showBtn').addEventListener('click', () => { SFX.tap(); showPass(); });
+
+/* ---------- 換人出價 ---------- */
+function showPass() {
+  const p = S.players[S.turn];
+  $('passName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b> 出價`;
+  $('passDots').innerHTML = S.players.map((_, i) =>
+    `<i class="${i < S.turn ? 'done' : (i === S.turn ? 'now' : '')}"></i>`).join('');
+  show('pass');
+}
+$('passBtn').addEventListener('click', () => { SFX.tap(); openBid(); });
+
+/* ---------- 出價盤 ---------- */
+let curBid = 0, curMax = 0;
+function openBid() {
+  const it = S.item;
+  curMax = S.points[S.turn];
+  curBid = 0;
+  $('bidItem').className = 'item' + (it.curse ? ' curse' : '');
+  $('bidEm').textContent = it.em;
+  $('bidNm').textContent = it.nm;
+  $('bidVal').textContent = it.curse ? `搶到扣 ${it.val} 分！` : `值 ${it.val} 分`;
+  paintBid();
+  show('bid');
+}
+function paintBid() {
+  $('bidNum').textContent = curBid;
+  $('bidOf').textContent = `你有 ${curMax} 點 · 出價後剩 ${curMax - curBid} 點`;
+}
+document.querySelectorAll('[data-add]').forEach(b =>
+  b.addEventListener('click', () => {
+    const d = +b.dataset.add;
+    const next = Math.max(0, Math.min(curMax, curBid + d));
+    if (next !== curBid) { curBid = next; SFX.add(); paintBid(); }
+  }));
+document.querySelectorAll('[data-set]').forEach(b =>
+  b.addEventListener('click', () => {
+    curBid = b.dataset.set === 'max' ? curMax : 0;
+    SFX.add(); paintBid();
+  }));
+
+$('bidOk').addEventListener('click', () => {
+  SFX.lock();
+  S.bids[S.turn] = curBid;
+  S.turn++;
+  if (S.turn < S.players.length) showPass();
+  else doReveal();
+});
+
+/* ---------- 揭曉 ---------- */
+function it0() { return S.item; }
+function doReveal() {
+  const it = S.item;
+  const top = Math.max(...S.bids);
+  const winners = S.bids.map((b, i) => b === top ? i : -1).filter(i => i >= 0);
+  /* 一般寶物平手 → 流標；詛咒品平手 → 抽籤決定倒楣鬼（不能集體出 0 躲掉） */
+  let tie = winners.length > 1, drawn = false, winner = -1;
+  if (!tie) winner = winners[0];
+  else if (it0().curse) {
+    winner = winners[Math.floor(Math.random() * winners.length)];
+    tie = false; drawn = true;
+  }
+
+  /* 結算：得標者付點數；寶物加分、詛咒品扣分 */
+  if (winner >= 0) {
+    S.points[winner] -= S.bids[winner];
+    S.scores[winner] += it.curse ? -it.val : it.val;
+  }
+
+  $('revEm').textContent = tie ? '🤝' : it.em;
+  if (tie) {
+    $('revTitle').innerHTML = `<b style="color:var(--dim)">流標！</b>`;
+    SFX.fail();
+  } else if (it.curse) {
+    $('revTitle').innerHTML = drawn
+      ? `大家都想閃…<b style="color:var(--bad)">抽到 ${S.players[winner].name}</b> 😈`
+      : `${S.players[winner].name} <b style="color:var(--bad)">被塞了 ${it.nm}</b>`;
+    SFX.fail();
+  } else {
+    $('revTitle').innerHTML = `${S.players[winner].name} <b>標到 ${it.nm}</b>！`;
+    SFX.win();
+  }
+
+  $('revBoard').innerHTML = S.players.map((p, i) => {
+    const isWin = i === winner;
+    let cls = '', note = '', dl = '';
+    if (isWin && it.curse) { cls = 'hurt'; note = drawn ? `抽籤中獎，付 ${S.bids[i]} 點還被扣分 😱` : `付了 ${S.bids[i]} 點，還被扣分 😱`; dl = `−${it.val} 分`; }
+    else if (isWin)        { cls = 'win';  note = `付了 ${S.bids[i]} 點`;            dl = `+${it.val} 分`; }
+    else if (tie && S.bids[i] === top) { note = '出一樣多 → 流標'; dl = '—'; }
+    else if (it.curse)     { note = '成功閃過 😌'; dl = '—'; }
+    else                   { note = '沒標到'; dl = '—'; }
+    return `
+      <div class="bidRow ${cls}">
+        <div class="nm">${p.emoji} ${p.name}<i>${note}</i></div>
+        <div class="bd">${S.bids[i]}</div>
+        <div class="dl">${dl}</div>
+      </div>`;
+  }).join('');
+
+  $('nextBtn').textContent = (S.round + 1 >= S.total)
+    ? '看最後成績 🏆'
+    : `下一樣 →（${S.round + 2} / ${S.total}）`;
+  show('reveal');
+}
+
+$('nextBtn').addEventListener('click', () => {
+  SFX.tap();
+  S.round++;
+  if (S.round >= S.total) finish();
+  else newItem();
+});
+
+/* ---------- 結算：分數 + 剩餘點數換分 ---------- */
+function finish() {
+  SFX.done();
+  const rows = S.players.map((p, i) => {
+    const bonus = Math.floor(S.points[i] / CONFIG.LEFTOVER_PER);
+    return { p, sc: S.scores[i] + bonus, base: S.scores[i], pt: S.points[i], bonus };
+  }).sort((a, b) => b.sc - a.sc);
+  const best = rows[0].sc;
+  $('board').innerHTML = rows.map((r, i) => `
+    <div class="row ${r.sc === best ? 'top' : ''}">
+      <div class="rk">${['🥇','🥈','🥉'][i] || (i + 1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分<span class="pt">（標到 ${r.base}＋剩 ${r.pt} 點換 ${r.bonus}）</span></div>
+    </div>`).join('');
+  show('over');
+}
+
+$('again').addEventListener('click', () => { SFX.tap(); startGame(); });
+
+boot();
+</script>
+</body>
+</html>
