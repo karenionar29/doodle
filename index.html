@@ -157,7 +157,7 @@ footer b{color:var(--paper)}
 .a2hsWhy{font-size:12px;color:var(--dim);font-weight:500;line-height:1.7;text-align:center;
          background:#0A1826;border-radius:12px;padding:11px}
 
-#gate{position:fixed;inset:0;background:var(--ink);z-index:5;
+#gate{position:fixed;inset:0;background:var(--ink);z-index:5;overflow-y:auto;-webkit-overflow-scrolling:touch;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:16px;padding:26px;text-align:center}
 #gate.off{display:none}
@@ -180,6 +180,19 @@ footer b{color:var(--paper)}
 .setEntry .tx b{display:block;font-size:15px;color:var(--wire);line-height:1.3}
 .setEntry .tx span{display:block;font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;line-height:1.5}
 .setEntry .arrow{color:var(--dim);font-size:22px;flex:none}
+
+/* 📱💻 裝置支援圖示 */
+.devIco{display:inline-flex;gap:3px;align-items:center;margin-left:5px;font-size:11px}
+.devIco span{opacity:.22}
+.devIco span.ok{opacity:1}
+.devIco span.half{opacity:.5}
+/* 裝置篩選 */
+.devHead{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.06em}
+.devPick{display:flex;gap:6px;width:100%}
+.devPick button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:12px;
+                padding:9px 4px;font-size:12px;color:var(--dim);line-height:1.4}
+.devPick button.on{border-color:var(--wire);color:var(--wire);background:#153347}
+.devPick button:active{transform:scale(.96)}
 
 /* 🏷️ 版本資訊列（小小的，不擋路） */
 .verBar{width:100%;max-width:390px;display:flex;align-items:center;justify-content:center;
@@ -293,6 +306,12 @@ body.locked{overflow:hidden;position:fixed;width:100%}
   <button id="gateEdit">✏️ 改人數 / 名字 / 難度 / 性別</button>
   <button id="gateGo">✅ 就這些人，進遊戲間</button>
   <p class="note">這裡設定一次，<b>每一款遊戲</b>都會自動套用。</p>
+  <div class="verBar">
+    <span class="tag" id="verNow">v—</span>
+    <span id="verState">檢查中…</span>
+    <button id="verToggle">更新紀錄 ▾</button>
+  </div>
+  <div id="verLog"></div>
 </div>
 
 <header>
@@ -329,6 +348,12 @@ body.locked{overflow:hidden;position:fixed;width:100%}
 <div class="block toolbox">
   <input id="search" type="search" placeholder="🔍 搜尋遊戲…" autocomplete="off">
   <div class="filters" id="filters"></div>
+  <div class="devHead">💻 在哪裡玩？（篩掉玩不到的）</div>
+  <div class="devPick" id="devPick">
+    <button data-dev="any" class="on">全部</button>
+    <button data-dev="mobile">📱 手機平板</button>
+    <button data-dev="pc">💻 電腦</button>
+  </div>
   <div class="banHead">🚫 不要哪種？（可多選，隨機挑也會避開）</div>
   <div class="filters" id="banFilters"></div>
   <div class="toolRow">
@@ -357,12 +382,7 @@ body.locked{overflow:hidden;position:fixed;width:100%}
   卡住的話，網址後面加 <b>?v=99</b> 逼它重抓。
 </footer>
 
-<div class="verBar">
-  <span class="tag" id="verNow">v—</span>
-  <span id="verState">檢查中…</span>
-  <button id="verToggle">更新紀錄 ▾</button>
-</div>
-<div id="verLog"></div>
+
 
 <div class="veil" id="pVeil">
   <div class="panel">
@@ -465,47 +485,47 @@ body.locked{overflow:hidden;position:fixed;width:100%}
    ============================================================== */
 const GAMES = [
   { id:'g01', file:'g01-doodle.html',    icon:'✏️', name:'全家 vs 機器人',
-    desc:'一個人畫、其他人猜，機器人也在猜——看誰先。', tag:'1 台', cats:['AI','畫畫'] },
+    desc:'一個人畫、其他人猜，機器人也在猜——看誰先。', tag:'1 台', cats:['AI','畫畫'], dev:'all' },
   { id:'g02', file:'g02-hunt.html',      icon:'📸', name:'尋寶大作戰',
-    desc:'機器人喊一樣東西，跑去找出來、鏡頭對準它。', tag:'要相機', cats:['AI','鏡頭'] },
+    desc:'機器人喊一樣東西，跑去找出來、鏡頭對準它。', tag:'要相機', cats:['AI','鏡頭'], dev:'cam' },
   { id:'g03', file:'g03-face.html',      icon:'😡', name:'表情大挑戰',
-    desc:'用臉做出指定表情，機器人告訴你像幾 %。', tag:'要相機', cats:['AI','鏡頭'] },
+    desc:'用臉做出指定表情，機器人告訴你像幾 %。', tag:'要相機', cats:['AI','鏡頭'], dev:'cam' },
   { id:'g04', file:'g04-speak.html',     icon:'🎤', name:'唸給機器人聽',
-    desc:'看中文說英文，機器人聽你發音準不準。', tag:'要麥克風', cats:['AI','聲音'] },
+    desc:'看中文說英文，機器人聽你發音準不準。', tag:'要麥克風', cats:['AI','聲音'], dev:'mic' },
   { id:'g05', file:'g05-telephone.html', icon:'📞', name:'傳話大亂畫',
-    desc:'畫→猜→再畫，最後機器人判斷傳回原題了嗎。', tag:'1 台', cats:['AI','畫畫','派對'] },
+    desc:'畫→猜→再畫，最後機器人判斷傳回原題了嗎。', tag:'1 台', cats:['AI','畫畫','派對'], dev:'all' },
   { id:'g06', file:'g06-headsup.html',   icon:'🙆', name:'頭上猜猜樂',
-    desc:'平板舉到額頭上，全家用演的提示你。', tag:'秒開', cats:['動作','派對'] },
+    desc:'平板舉到額頭上，全家用演的提示你。', tag:'秒開', cats:['動作','派對'], dev:'tilt' },
   { id:'g07', file:'g07-tapduel.html',   icon:'⚡', name:'快手大對決',
-    desc:'平板平放，2~4 人守地盤。綠燈搶按、紅燈忍住。', tag:'秒開', cats:['對戰','派對'] },
+    desc:'平板平放，2~4 人守地盤。綠燈搶按、紅燈忍住。', tag:'秒開', cats:['對戰','派對'], dev:'all' },
   { id:'g08', file:'g08-memory.html',    icon:'🎹', name:'機器人記憶王',
-    desc:'越來越長的旋律，照順序按回去。', tag:'秒開', cats:['動腦'] },
+    desc:'越來越長的旋律，照順序按回去。', tag:'秒開', cats:['動腦'], dev:'all' },
   { id:'g09', file:'g09-bomb.html',      icon:'💣', name:'數字炸彈',
-    desc:'輪流猜數字，爆到的人接受機器人懲罰。', tag:'秒開', cats:['派對'] },
+    desc:'輪流猜數字，爆到的人接受機器人懲罰。', tag:'秒開', cats:['派對'], dev:'all' },
   { id:'g10', file:'g10-spy.html',       icon:'🕵️', name:'誰是臥底',
-    desc:'一個人的詞跟大家不一樣。形容、投票、抓臥底。', tag:'3人+', cats:['派對','動腦'] },
+    desc:'一個人的詞跟大家不一樣。形容、投票、抓臥底。', tag:'3人+', cats:['派對','動腦'], dev:'all' },
   { id:'g11', file:'g11-charade.html',   icon:'🎭', name:'你演我猜',
-    desc:'偷看題目用演的——不能出聲！其他人搶答。', tag:'秒開', cats:['動作','派對'] },
+    desc:'偷看題目用演的——不能出聲！其他人搶答。', tag:'秒開', cats:['動作','派對'], dev:'all' },
   { id:'g12', file:'g12-shout.html',     icon:'📢', name:'大聲公挑戰',
-    desc:'對麥克風大叫或吹氣，把氣球灌爆，看誰最快。', tag:'要麥克風', cats:['聲音','派對'] },
+    desc:'對麥克風大叫或吹氣，把氣球灌爆，看誰最快。', tag:'要麥克風', cats:['聲音','派對'], dev:'mic' },
   { id:'g13', file:'g13-freeze.html',    icon:'🗿', name:'一二三木頭人',
-    desc:'鏡頭當鬼：「動！」跳舞、「木頭人！」定格，抓到拍照公審。', tag:'要相機', cats:['鏡頭','動作','派對'] },
+    desc:'鏡頭當鬼：「動！」跳舞、「木頭人！」定格，抓到拍照公審。', tag:'要相機', cats:['鏡頭','動作','派對'], dev:'cam' },
   { id:'g14', file:'g14-drawduel.html',  icon:'⚔️', name:'畫畫對決',
-    desc:'兩人同題同時畫，AI 裁判誰的畫先被認出來。', tag:'2人', cats:['AI','畫畫','對戰'] },
+    desc:'兩人同題同時畫，AI 裁判誰的畫先被認出來。', tag:'2人', cats:['AI','畫畫','對戰'], dev:'all' },
   { id:'g15', file:'g15-mostlikely.html',icon:'👉', name:'就是你！',
-    desc:'「誰最會賴床？」偷偷投票，揭曉大笑。', tag:'秒開', cats:['派對'] },
+    desc:'「誰最會賴床？」偷偷投票，揭曉大笑。', tag:'秒開', cats:['派對'], dev:'all' },
   { id:'g16', file:'g16-memorymatch.html',icon:'🃏', name:'翻牌記憶對決',
-    desc:'輪流翻兩張，配對就是你的、還能再翻一次。', tag:'秒開', cats:['動腦','對戰'] },
+    desc:'輪流翻兩張，配對就是你的、還能再翻一次。', tag:'秒開', cats:['動腦','對戰'], dev:'all' },
   { id:'g17', file:'g17-quizbuzz.html',  icon:'🔔', name:'搶答大作戰',
-    desc:'先按自己的按鈴才能作答！48 題兒童益智。', tag:'秒開', cats:['對戰','動腦','派對'] },
+    desc:'先按自己的按鈴才能作答！48 題兒童益智。', tag:'秒開', cats:['對戰','動腦','派對'], dev:'all' },
   { id:'g18', file:'g18-mindread.html',  icon:'🔮', name:'機器人讀心術',
-    desc:'心裡想一種動物，機器人問幾個問題就猜中。', tag:'秒開', cats:['AI','動腦'] },
+    desc:'心裡想一種動物，機器人問幾個問題就猜中。', tag:'秒開', cats:['AI','動腦'], dev:'all' },
   { id:'g19', file:'g19-colorhunt.html', icon:'🌈', name:'顏色獵人',
-    desc:'機器人喊顏色，用那個顏色的東西塞滿鏡頭！', tag:'要相機', cats:['鏡頭','動作'] },
+    desc:'機器人喊顏色，用那個顏色的東西塞滿鏡頭！', tag:'要相機', cats:['鏡頭','動作'], dev:'cam' },
   { id:'g20', file:'g20-balance.html',   icon:'🥚', name:'平衡大師',
-    desc:'平板平拿控制蛋蛋別滾出圈圈，圈圈越縮越小。', tag:'秒開', cats:['動作','對戰'] },
+    desc:'平板平拿控制蛋蛋別滾出圈圈，圈圈越縮越小。', tag:'秒開', cats:['動作','對戰'], dev:'tilt' },
   { id:'g21', file:'g21-telepathy.html', icon:'🧠', name:'心電感應',
-    desc:'偷偷選一個答案——同心題要跟大家一樣，反骨題要跟大家不一樣。', tag:'秒開', cats:['派對','動腦','對戰'] },
+    desc:'偷偷選一個答案——同心題要跟大家一樣，反骨題要跟大家不一樣。', tag:'秒開', cats:['派對','動腦','對戰'], dev:'all' },
 ];
 const NEXT_NO = 'G22';
 const CATS = ['全部','AI','畫畫','鏡頭','聲音','動作','對戰','派對','動腦'];
@@ -533,9 +553,14 @@ const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
    自動比對：背景抓伺服器上的 index.html，比對版本號，
             不同就代表這台裝置吃到舊快取 → 提示一鍵更新。
    ============================================================ */
-const APP_VERSION = 37;
+const APP_VERSION = 38;
 const CHANGELOG = [
-  { v:37, d:'最新', items:[
+  { v:38, d:'最新', items:[
+    '📱💻 每款遊戲標示支援裝置（手機平板／電腦），一眼看出玩不玩得到',
+    '💻 篩選加「在哪裡玩」，可只看電腦也能玩的款',
+    '🏷️ 版本資訊移到開場頁，一打開就看得到',
+  ]},
+  { v:37, d:'', items:[
     '🧠 新遊戲 G21 心電感應上線（同心題／反骨題，60 題）',
     '🏷️ 加入版本號與更新紀錄（就是你正在看的這個）',
   ]},
@@ -568,7 +593,22 @@ const CHANGELOG = [
   ]},
 ];
 
-const V = { cat:'全部', q:'', sort:'no', ban: new Set(), page: 0 };
+const V = { cat:'全部', q:'', sort:'no', ban: new Set(), page: 0, dev:'any' };
+
+/* 裝置支援對照：all=三裝置全通 cam/mic=電腦勉強 tilt=電腦不能 */
+const DEV_INFO = {
+  all:  { pc:'ok',   label:'手機平板電腦都能玩' },
+  cam:  { pc:'half', label:'需要鏡頭（電腦要有視訊鏡頭）' },
+  mic:  { pc:'half', label:'需要麥克風（電腦要有麥克風）' },
+  tilt: { pc:'no',   label:'需要傾斜感應（電腦玩不了）' },
+};
+function devIcons(dev) {
+  const d = DEV_INFO[dev] || DEV_INFO.all;
+  const pcCls = d.pc === 'ok' ? 'ok' : (d.pc === 'half' ? 'half' : '');
+  return `<span class="devIco" title="${d.label}">
+            <span class="ok">📱</span><span class="${pcCls}">💻</span>
+          </span>`;
+}
 const PAGE_SIZE = 12;
 
 /* ⭐ 最愛（存本機，之後 1000 款也靠它置頂） */
@@ -605,6 +645,16 @@ function renderFilters() {
       renderShelf();
     }));
 
+  /* 💻 裝置篩選 */
+  document.querySelectorAll('#devPick button').forEach(b =>
+    b.addEventListener('click', () => {
+      V.dev = b.dataset.dev;
+      V.page = 0;
+      document.querySelectorAll('#devPick button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      renderShelf();
+    }));
+
   /* 🚫 不要（可多選） */
   $('banFilters').innerHTML = CATS.slice(1).map(c =>
     `<button data-b="${c}" class="${V.ban.has(c) ? 'ban' : ''}">${c}</button>`).join('');
@@ -629,6 +679,7 @@ function filtered() {
   const data = loadR();
   let list = GAMES.filter(g =>
     (V.cat === '全部' || g.cats.includes(V.cat)) &&
+    (V.dev !== 'pc' || (DEV_INFO[g.dev] || DEV_INFO.all).pc === 'ok') &&
     ![...V.ban].some(b => g.cats.includes(b)) &&
     (!V.q || g.name.includes(V.q) || g.desc.includes(V.q) || g.id.includes(V.q.toLowerCase())));
   if (V.sort === 'star')
@@ -649,7 +700,7 @@ function cardHTML(g, data) {
         <a class="play" href="${g.file}" data-game="${g.file}">
           <div class="icon">${g.icon}</div>
           <div class="meat">
-            <div class="no">${g.id.toUpperCase()} · ${g.tag} · ${g.cats.join('·')}</div>
+            <div class="no">${g.id.toUpperCase()} · ${g.tag} · ${g.cats.join('·')}${devIcons(g.dev)}</div>
             <b>${g.name}</b><span>${g.desc}</span>
           </div>
         </a>
@@ -672,7 +723,7 @@ function renderShelf() {
   // 首次以外的重繪不跳動；分頁「看更多」自己處理捲動
 
   /* ⭐ 最愛置頂（只在「全部 + 沒搜尋」時顯示置頂區，避免跟篩選打架） */
-  const plainView = V.cat === '全部' && !V.q && V.ban.size === 0;
+  const plainView = V.cat === '全部' && !V.q && V.ban.size === 0 && V.dev === 'any';
   const favList = plainView ? list.filter(g => FAV.has(g.id)) : [];
   const restAll = plainView ? list.filter(g => !FAV.has(g.id)) : list;
 
@@ -724,8 +775,9 @@ function renderShelf() {
 
 /* ---------- 🎲 隨機挑 ---------- */
 $('luckyBtn').addEventListener('click', () => {
-  const banTxt = V.ban.size ? `，避開：${[...V.ban].join('、')}` : '';
-  $('luckyScope').textContent = (V.cat === '全部' && !V.q && !V.ban.size)
+  const banTxt = (V.ban.size ? `，避開：${[...V.ban].join('、')}` : '')
+    + (V.dev === 'pc' ? '，只挑電腦能玩的' : '');
+  $('luckyScope').textContent = (V.cat === '全部' && !V.q && !V.ban.size && V.dev === 'any')
     ? '從全部遊戲裡挑'
     : `從目前篩選（${V.cat}${V.q ? '·「' + V.q + '」' : ''}${banTxt}）裡挑`;
   $('luckyOut').innerHTML = '';
