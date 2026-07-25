@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G34 揮拳連擊</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2A0E0E">
+<style>
+:root{
+  --ink:#2A0E0E; --ink-2:#3D1818; --line:#5E2626;
+  --paper:#FFEFEF; --dim:#D9A0A0; --wire:#FF6B4D; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF5C5C;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:13px;max-width:520px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:27px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#4E2418}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#2A0800;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+.warn{background:#3D1A0D;border:2px solid #6B3418;border-radius:14px;padding:11px 13px;
+      font-size:12px;color:#FFB88A;font-weight:500;line-height:1.7;width:100%;text-align:center}
+
+.stage{width:100%;position:relative;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:4/3}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:.5}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.hud{width:100%;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hud .chip{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:14px}
+.hud .chip b{color:var(--spark)}
+.hud .chip.time b{color:var(--wire)}
+.hud .chip.life b{color:var(--bad)}
+
+.turnName{font-size:22px;text-align:center;line-height:1.3}
+.turnName b{color:var(--wire)}
+.count{font-size:80px;color:var(--spark);text-align:center;line-height:1}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#2A0800}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🥊💥</div>
+  <h1>G34 <b>揮拳連擊</b></h1>
+  <p class="sub">
+    畫面分成<b>左、中、右</b>三區，跟著節奏亮起來，<br>
+    亮到哪一區，就往<b>那邊揮拳</b>打過去！<br>
+    <span style="color:var(--bad)">3 次沒打中、打錯邊 → 這輪結束</span><br>
+    <span style="color:var(--wire)">拍子越來越快，看你能撐多久 🥊</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="warn">
+    📺 <b>投電視玩法</b>：手機用 AirPlay／Chromecast 投到電視，<br>
+    手機架在電視旁邊拍到你，看電視揮拳！<br>
+    運動量最大的一款，適合當熱身操 💪
+  </div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">難度</p>
+    <div class="lenRow">
+      <button data-lv="easy">簡單<br><span style="font-size:11px;color:var(--dim)">慢</span></button>
+      <button data-lv="mid" class="on">普通<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-lv="hard">困難<br><span style="font-size:11px;color:var(--dim)">快</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🥊 開始（會開鏡頭）</button>
+  <p class="tip">🔒 鏡頭只在你裝置上運算，不會傳出去</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass" class="screen">
+  <div class="hero">🥊</div>
+  <div class="turnName" id="passName">換 🧒 <b>George</b></div>
+  <p class="sub">站到鏡頭前，擺好架式！</p>
+  <div class="board" id="passBoard"></div>
+  <button class="go" id="passBtn">我準備好了，開始！</button>
+</section>
+
+<section id="ready" class="screen">
+  <div class="turnName" id="readyName">🧒 <b>George</b> 準備…</div>
+  <div class="stage" id="readyStage">
+    <video id="readyVideo" playsinline muted></video>
+    <div class="count" id="readyCount" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3">3</div>
+  </div>
+  <p class="tip">揮揮拳看看，畫面有沒有跟著亮？</p>
+</section>
+
+<section id="play" class="screen">
+  <div class="hud">
+    <span class="chip" id="playName">🧒 George</span>
+    <span class="chip">連擊 <b id="comboNow">0</b></span>
+    <span class="chip life">❤️ <b id="lifeNow">3</b></span>
+    <span class="chip time"><b id="bpmNow">100</b> BPM</span>
+  </div>
+  <div class="stage" id="stage">
+    <video id="video" playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+  <p class="tip" id="playTip">亮起來的那一區，揮拳打過去！</p>
+</section>
+
+<section id="res" class="screen">
+  <div class="hero">🥊</div>
+  <div class="turnName" id="resName"></div>
+  <div class="board" id="resBoard"></div>
+  <button class="go" id="resBtn">下一位 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再玩一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G34 揮拳連擊（體感）
+   核心：畫面分左中右三區，跟著節奏在對的區揮拳。
+   偵測方式：把偵測網格切三欄，比對每欄的動作量找出「揮拳打在哪」，
+   在節拍判定窗內看是否命中目標區。跟 G27 同一套節奏遞增引擎，
+   但判定來源是真人動作而不是按鈕。
+   ============================================================ */
+const LV = {
+  easy: { bpm:78,  step:1.0, tol:0.62 },
+  mid:  { bpm:92,  step:1.5, tol:0.5  },
+  hard: { bpm:108, step:2.0, tol:0.4  },
+};
+const MAX_BPM=180;
+const CONFIG = { GRID_W:15, GRID_H:12, MOVE_TH:26, START_LIFE:3, JUDGE_RATIO:0.55 };
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  beat:()=>beep([1000],0.05,'square',0.09),
+  hit:()=>beep([880,1319],0.1,'triangle',0.15),
+  miss:()=>beep([220,150],0.24,'sawtooth',0.14),
+  tick:()=>beep([1400],0.04,'square',0.07),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.15),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+const S={ players:[], scores:[], lv:'mid', turn:0,
+          stream:null, raf:null, prev:null,
+          bpm:100, target:1, judged:false, judgeAt:0, beatAt:0,
+          running:false, combo:0, life:3, score:0 };
+
+function boot(){
+  S.players=FP.get();
+  $('whoRow').innerHTML=S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<1){ $('startBtn').textContent='⚠️ 至少要 1 個人'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-lv]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-lv]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');S.lv=b.dataset.lv;}));
+
+$('startBtn').addEventListener('click',async()=>{
+  SFX.tap();
+  const ok=await initCamera(); if(!ok) return;
+  S.scores=S.players.map(()=>0); S.turn=0; showPass();
+});
+
+async function initCamera(){
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'user', width:{ideal:640}, height:{ideal:480} }, audio:false });
+    [$('video'),$('readyVideo')].forEach(v=>{ v.srcObject=S.stream; v.play().catch(()=>{}); });
+    return true;
+  }catch(e){ alert('需要鏡頭權限才能玩喔！請允許使用相機。'); return false; }
+}
+
+function paintBoard(id){
+  $(id).innerHTML=S.players.map((p,i)=>`
+    <div class="row ${i===S.turn?'top':''}">
+      <div class="rk">${p.emoji}</div><div class="nm">${p.name}</div>
+      <div class="sc">${S.scores[i]} 分</div></div>`).join('');
+}
+function showPass(){
+  const p=S.players[S.turn];
+  $('passName').innerHTML=`換 ${p.emoji} <b>${p.name}</b>`;
+  paintBoard('passBoard');
+  show('pass');
+}
+$('passBtn').addEventListener('click',()=>{ SFX.tap(); readyGo(); });
+
+function readyGo(){
+  const p=S.players[S.turn];
+  $('readyName').innerHTML=`${p.emoji} <b>${p.name}</b> 準備…`;
+  show('ready');
+  let n=3; $('readyCount').textContent=n; SFX.tick();
+  const t=setInterval(()=>{ n--;
+    if(n>0){ $('readyCount').textContent=n; SFX.tick(); }
+    else { clearInterval(t); startPlay(); }
+  },800);
+}
+
+let cv,ctx;
+const off=document.createElement('canvas');
+const octx=off.getContext('2d',{willReadFrequently:true});
+
+function startPlay(){
+  const p=S.players[S.turn];
+  $('playName').textContent=`${p.emoji} ${p.name}`;
+  S.bpm=LV[S.lv].bpm; S.life=CONFIG.START_LIFE; S.combo=0; S.score=0; S.prev=null;
+  $('comboNow').textContent=0; $('lifeNow').textContent=S.life; $('bpmNow').textContent=Math.round(S.bpm);
+  show('play');
+  cv=$('canvas'); const stage=$('stage');
+  cv.width=stage.clientWidth; cv.height=stage.clientHeight;
+  ctx=cv.getContext('2d');
+  S.running=true;
+  nextBeatCycle(true);
+  detectLoop();
+}
+
+function interval(){ return 60000/S.bpm; }
+
+function nextBeatCycle(first){
+  S.target=Math.floor(Math.random()*3);          // 0左 1中 2右
+  S.judged=false;
+  S.beatAt=performance.now()+(first?900:interval());
+  S.judgeAt=S.beatAt;                              // 判定視窗中心＝節拍點
+  SFX.beat();
+  scheduleBeatTick();
+}
+function scheduleBeatTick(){
+  const delay=Math.max(0,S.beatAt-performance.now());
+  clearTimeout(S._bt);
+  S._bt=setTimeout(()=>{
+    if(!S.running) return;
+    if(!S.judged) missBeat();
+    else { S.combo++; S.score++; nextBeatCycle(false); S.bpm=Math.min(MAX_BPM,S.bpm+LV[S.lv].step); }
+  }, delay + interval()*CONFIG.JUDGE_RATIO);
+}
+
+function detectLoop(){
+  cancelAnimationFrame(S.raf);
+  const step=()=>{
+    if(!S.running) return;
+    const v=$('video');
+    if(v.videoWidth){
+      const W=CONFIG.GRID_W,H=CONFIG.GRID_H;
+      off.width=W; off.height=H;
+      octx.save(); octx.scale(-1,1); octx.drawImage(v,-W,0,W,H); octx.restore();
+      const cur=octx.getImageData(0,0,W,H).data;
+      const zoneScore=[0,0,0];
+      if(S.prev){
+        for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+          const j=(y*W+x)*4;
+          const d=Math.abs(cur[j]-S.prev[j])+Math.abs(cur[j+1]-S.prev[j+1])+Math.abs(cur[j+2]-S.prev[j+2]);
+          if(d>CONFIG.MOVE_TH){ const zone=Math.min(2,Math.floor(x/(W/3))); zoneScore[zone]++; }
+        }
+        /* 節拍附近才判定，避免亂揮誤判 */
+        const now=performance.now();
+        const inWindow=Math.abs(now-S.judgeAt) < interval()*0.5;
+        if(inWindow && !S.judged){
+          const total=zoneScore[0]+zoneScore[1]+zoneScore[2];
+          const dom=zoneScore.indexOf(Math.max(...zoneScore));
+          if(total>3 && dom===S.target && zoneScore[dom]/Math.max(1,total)>0.42){
+            S.judged=true; hitBeat();
+          }
+        }
+      }
+      S.prev=cur.slice();
+      drawStage(zoneScore);
+    }
+    S.raf=requestAnimationFrame(step);
+  };
+  S.raf=requestAnimationFrame(step);
+}
+
+function hitBeat(){
+  SFX.hit();
+  if(navigator.vibrate){try{navigator.vibrate(30);}catch(_){}}
+  $('comboNow').textContent=S.combo+1;
+  flashZone(S.target,true);
+}
+function missBeat(){
+  if(!S.running) return;
+  S.judged=true;
+  SFX.miss();
+  S.life--; S.combo=0;
+  $('lifeNow').textContent=Math.max(0,S.life);
+  $('comboNow').textContent=0;
+  flashZone(S.target,false);
+  if(navigator.vibrate){try{navigator.vibrate(120);}catch(_){}}
+  if(S.life<=0) return endTurn();
+  nextBeatCycle(false);
+}
+
+let flashInfo=null;
+function flashZone(zone,ok){ flashInfo={zone,ok,at:performance.now()}; }
+
+function drawStage(zoneScore){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const zw=cv.width/3;
+  const labels=['⬅️','⬆️','➡️'];
+  for(let i=0;i<3;i++){
+    const active = i===S.target;
+    const now=performance.now();
+    const inWindow=Math.abs(now-S.judgeAt)<interval()*0.5;
+    ctx.fillStyle = (active&&inWindow) ? 'rgba(255,107,77,0.35)' : 'rgba(255,255,255,0.04)';
+    if(flashInfo && flashInfo.zone===i && now-flashInfo.at<260){
+      ctx.fillStyle = flashInfo.ok ? 'rgba(107,232,168,0.45)' : 'rgba(255,92,92,0.45)';
+    }
+    ctx.fillRect(i*zw,0,zw,cv.height);
+    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.strokeRect(i*zw,0,zw,cv.height);
+    if(active&&inWindow){
+      ctx.font=`${zw*0.4}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#fff';
+      ctx.fillText('🥊', i*zw+zw/2, cv.height*0.35);
+    }
+  }
+}
+
+function gameTimer(){}
+
+function endTurn(){
+  if(!S.running) return;
+  S.running=false;
+  cancelAnimationFrame(S.raf); clearTimeout(S._bt);
+  S.scores[S.turn]=S.score;
+  const p=S.players[S.turn];
+  $('resName').innerHTML=`${p.emoji} <b>${p.name}</b> 連擊 ${S.score} 拍！最快 ${Math.round(S.bpm)} BPM`;
+  paintBoard('resBoard');
+  show('res');
+}
+$('resBtn').addEventListener('click',()=>{
+  SFX.tap(); S.turn++;
+  if(S.turn>=S.players.length) return finish();
+  showPass();
+});
+
+function finish(){
+  SFX.win(); stopCamera();
+  const rows=S.players.map((p,i)=>({p,sc:S.scores[i]})).sort((a,b)=>b.sc-a.sc);
+  const best=rows[0].sc;
+  $('overTitle').innerHTML=`${rows[0].p.emoji} <b>${rows[0].p.name}</b> 拳法之王！`;
+  $('board').innerHTML=rows.map((r,i)=>`
+    <div class="row ${r.sc===best?'top':''}"><div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div><div class="sc">${r.sc} 拍</div></div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',async()=>{
+  SFX.tap();
+  if(!S.stream){ const ok=await initCamera(); if(!ok) return; }
+  S.scores=S.players.map(()=>0); S.turn=0; showPass();
+});
+
+function stopCamera(){ if(S.stream){ S.stream.getTracks().forEach(t=>t.stop()); S.stream=null; } }
+window.addEventListener('pagehide',()=>{ S.running=false; stopCamera(); });
+
+boot();
+</script>
+</body>
+</html>
