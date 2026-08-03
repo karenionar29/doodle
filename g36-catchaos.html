@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G36 貓咪搗蛋合作賽</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1A0A26">
+<style>
+:root{
+  --ink:#1A0A26; --ink-2:#2B1440; --line:#452363;
+  --paper:#F6EDFF; --dim:#B79BD4; --wire:#C77DFF; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF6B8A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+  overscroll-behavior:none;}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:12px;max-width:460px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:25px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:44px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.go{width:100%;background:var(--wire);color:#1A0526;border-radius:18px;padding:16px 0;font-size:17px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.go2{width:100%;background:var(--ink-2);border:2px solid var(--wire);color:var(--wire);border-radius:18px;padding:14px 0;font-size:15px}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 角色選擇 */
+.roleBlock{width:100%;text-align:left}
+.roleBlock .rk{font-size:13px;color:var(--dim);margin-bottom:7px}
+.chipRow{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--ink-2);border:2px solid var(--line);border-radius:99px;padding:9px 14px;font-size:14px;color:var(--dim)}
+.chip.on{border-color:var(--wire);color:var(--wire);background:#3B1D57}
+
+/* 對戰畫面 */
+.stage{width:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;width:100%}
+.hud .chip2{background:var(--ink-2);border-radius:99px;padding:5px 10px;font-size:12px}
+.hud .chip2 b{color:var(--spark)}
+.pawRow{display:flex;gap:3px}
+.pawRow span{opacity:.22;font-size:15px}
+.pawRow span.on{opacity:1}
+.timerBar{width:100%;height:8px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timerFill{height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+
+.zoneGuard{width:100%;background:var(--ink-2);border:2px solid var(--wire);border-radius:16px;
+  min-height:120px;position:relative;overflow:hidden;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;touch-action:none;user-select:none}
+.zoneCat{width:100%;background:var(--ink-2);border:2px solid var(--good);border-radius:16px;
+  min-height:190px;position:relative;overflow:hidden;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;touch-action:none;user-select:none}
+.roleTag{position:absolute;top:8px;left:12px;font-size:12px;color:var(--dim);font-weight:700}
+.roleTag b{color:var(--paper)}
+
+.zoneGuard.lockTouch{pointer-events:none;opacity:.6}
+.warnCard{width:78px;height:78px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+  font-size:36px;background:#3B1D57;border:3px solid var(--bad)}
+.warnCard.decoy{border-color:var(--spark)}
+.warnHint{font-size:12px;color:var(--dim)}
+.guardIdle{font-size:13px;color:var(--dim)}
+
+.challengeEm{font-size:52px}
+.challengeLabel{font-size:15px;color:var(--paper);text-align:center}
+.progWrap{width:78%;height:10px;background:var(--ink);border-radius:99px;overflow:hidden}
+.progFill{height:100%;background:var(--good);width:0%}
+.progFill.sweetZone{background:var(--spark)}
+.seqRow{display:flex;gap:16px}
+.seqIcon{width:56px;height:56px;border-radius:14px;background:var(--ink);border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:28px}
+.seqIcon.glow{border-color:var(--spark);box-shadow:0 0 14px rgba(255,225,77,.7)}
+.seqIcon.done{border-color:var(--good)}
+.catIdle{font-size:44px}
+
+.flashMsg{position:absolute;inset:0;background:rgba(10,4,18,.86);display:flex;align-items:center;justify-content:center;
+  font-size:20px;text-align:center;padding:10px;border-radius:16px;opacity:0;pointer-events:none;transition:opacity .12s}
+.flashMsg.on{opacity:1}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row .rk{font-size:19px;width:26px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:14px}
+.row .sc{font-size:15px}
+.badgeRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.badgeRow span{background:var(--ink-2);border-radius:99px;padding:8px 12px;font-size:13px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🐈🏺💥</div>
+  <h1>G36 <b>貓咪搗蛋合作賽</b></h1>
+  <p class="sub">
+    <b>一人扮貓，一人扮主人——分數綁在一起！</b><br>
+    貓咪負責到處搗蛋衝分，<br>
+    主人要在<b style="color:var(--spark)">貓咪出手前</b>搶先點警報搶救物品。<br>
+    <span style="color:var(--bad)">主人生氣值滿了會提前結束</span><br>
+    <span style="color:var(--wire)">兩人一起撐過早、中、晚三回合！</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <button class="go" id="toRole">👉 選角色</button>
+  <p class="tip">📱 兩人一起看同一支手機，各自負責畫面上下兩區</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="roleSelect" class="screen">
+  <h1>誰扮演什麼？</h1>
+  <div class="card">
+    <div class="roleBlock">
+      <div class="rk">🐈 誰當貓咪（負責搗蛋）</div>
+      <div class="chipRow" id="catPick"></div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="roleBlock">
+      <div class="rk">🛡️ 誰當主人（負責搶救）</div>
+      <div class="chipRow" id="guardPick"></div>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🎬 開始搗蛋！</button>
+  <a class="back" href="#" id="backToIntro">← 回上一步</a>
+</section>
+
+<section id="play" class="screen">
+  <div class="stage">
+    <div class="hud">
+      <span class="chip2">📅 <b id="roundTxt">早</b></span>
+      <div class="pawRow" id="pawRow"></div>
+      <span class="chip2">😾 生氣值</span>
+    </div>
+    <div class="timerBar"><div class="timerFill" id="timerFill"></div></div>
+
+    <div class="zoneGuard" id="guardZone">
+      <span class="roleTag">🛡️ <b id="guardNameTag">主人</b></span>
+      <div id="guardInner"><div class="guardIdle">👀 盯緊警報...</div></div>
+    </div>
+
+    <div class="zoneCat" id="catZone">
+      <span class="roleTag">🐈 <b id="catNameTag">貓咪</b></span>
+      <div id="catInner"><div class="catIdle">🐈</div></div>
+      <div class="flashMsg" id="flashMsg"></div>
+    </div>
+
+    <div class="hud">
+      <span class="chip2">😼 搗蛋 <b id="chaosTxt">0</b></span>
+      <span class="chip2">🛡️ 守護 <b id="guardTxt">0</b></span>
+    </div>
+  </div>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero" id="overHero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <p class="sub" id="overSub"></p>
+  <div class="board" id="board"></div>
+  <div class="badgeRow" id="badgeRow"></div>
+  <button class="go" id="swapBtn">🔄 交換角色再玩一次</button>
+  <button class="go2" id="againBtn">🔁 同角色再玩一次</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G36 貓咪搗蛋合作賽
+   核心：合作制，不是對抗制——兩個活人即時分工的緊張感取代打敗對方。
+   耐玩來源＝貓咪玩家的手感隨機切換（連點/長按/滑動/時機/序列）
+            ＋主人玩家要分辨真假警報，不能無腦亂點。
+   ============================================================ */
+
+const QTE_BASE = {
+  tap:    { need:4,    dur:2400 },
+  hold:   { need:1300, dur:2400 },
+  swipe:  { dist:36,   dur:1800 },
+  timing: { sweet:380, dur:1900 },
+  seq:    { steps:2,   dur:2800 },
+};
+const ROUNDS = [
+  { name:'早', room:'客廳・書房',
+    pool:[
+      {emoji:'🖊️',label:'撥筆下桌',qte:'tap'},
+      {emoji:'💧',label:'推倒水杯',qte:'swipe'},
+      {emoji:'👓',label:'撥掉眼鏡',qte:'tap'},
+      {emoji:'🖱️',label:'打翻滑鼠',qte:'tap'},
+      {emoji:'🛋️',label:'抓沙發磨爪',qte:'hold'},
+      {emoji:'🪟',label:'爬窗簾',qte:'swipe'},
+      {emoji:'🧸',label:'打散積木',qte:'tap'},
+      {emoji:'🖼️',label:'推歪相框',qte:'swipe'},
+    ],
+    spawnGap:[1900,2700], decoyGap:[5200,8200], durMul:1.15 },
+  { name:'中', room:'廚房・3C',
+    pool:[
+      {emoji:'🥛',label:'打翻牛奶',qte:'swipe'},
+      {emoji:'🍇',label:'撥弄水果',qte:'tap'},
+      {emoji:'🍪',label:'撥落餅乾',qte:'tap'},
+      {emoji:'🐟',label:'偷叼魚',qte:'hold'},
+      {emoji:'🔌',label:'咬電線',qte:'hold'},
+      {emoji:'⌨️',label:'踩鍵盤亂碼',qte:'tap'},
+      {emoji:'💻',label:'坐上筆電',qte:'hold'},
+      {emoji:'🎧',label:'扯耳機線',qte:'swipe'},
+    ],
+    spawnGap:[1450,2150], decoyGap:[3900,6100], durMul:1.0 },
+  { name:'晚', room:'臥室・浴室・夜間',
+    pool:[
+      {emoji:'🛏️',label:'棉被挖洞',qte:'hold'},
+      {emoji:'🧦',label:'叼走襪子',qte:'swipe'},
+      {emoji:'🚽',label:'跳馬桶玩水',qte:'timing'},
+      {emoji:'🚰',label:'撲抓水花',qte:'timing'},
+      {emoji:'🧻',label:'拆衛生紙',qte:'tap'},
+      {emoji:'🐈',label:'半夜狂奔',qte:'swipe'},
+      {emoji:'🐭',label:'叼禮物到枕邊',qte:'hold'},
+      {emoji:'🚪',label:'扒門要出去',qte:'tap'},
+    ],
+    spawnGap:[1150,1750], decoyGap:[2900,4600], durMul:0.85 },
+];
+const RARE = [
+  {emoji:'📦',label:'擠進紙箱卡住',qte:'seq'},
+  {emoji:'🔑',label:'鑰匙撥進秘密基地',qte:'seq'},
+  {emoji:'🪴',label:'盆栽當貓砂盆',qte:'seq'},
+  {emoji:'🗝️',label:'偷開抽屜翻找',qte:'seq'},
+];
+const CONFIG = { ROUND_MS:90000, ANGER_MAX:5, RARE_CHANCE:0.12,
+  PT_CHAOS:10, PT_GUARD:8, PT_CHAOS_RARE:20, PT_GUARD_RARE:16 };
+const ENDINGS = [
+  '碰！花瓶碎了！爸媽衝出房間 😱',
+  '冰箱被洗劫一空，主人當場人贓俱獲 🐟',
+  '電線被咬到冒火花，警報大響 🔌',
+  '半夜狂奔踩到主人的臉，全家驚醒 🌙',
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext || window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.05,'triangle',0.09),
+  meow:()=>beep([740,988],0.09,'triangle',0.12),
+  chaos:()=>beep([220,180],0.18,'sawtooth',0.13),
+  guard:()=>beep([880,1319],0.1,'triangle',0.15),
+  decoy:()=>beep([300],0.06,'square',0.06),
+  anger:()=>beep([200,150,110],0.22,'sawtooth',0.14),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.15),
+  round:()=>beep([523,659,784],0.14,'triangle',0.12),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+const S = {
+  players:[], catIdx:0, guardIdx:1,
+  session:1, results:[null,null],
+  round:0, roundEndAt:0, running:false,
+  event:null, decoy:null,
+  spawnTimer:null, decoyTimer:null, tickTimer:null,
+  chaos:0, guard:0, anger:0,
+  guardHit:0, guardTotal:0, streak:0, streakMax:0,
+  earlyEnd:false, endingText:'',
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){
+    $('toRole').textContent='⚠️ 至少要 2 個人';
+    $('toRole').disabled=true;
+  }
+}
+$('toRole').addEventListener('click',()=>{ if(S.players.length<2)return; SFX.tap(); buildRolePickers(); show('roleSelect'); });
+$('backToIntro').addEventListener('click',(e)=>{ e.preventDefault(); show('intro'); });
+
+function buildRolePickers(){
+  const mk=(wrapId, activeIdx, onPick)=>{
+    const wrap=$(wrapId);
+    wrap.innerHTML = S.players.map((p,i)=>`<div class="chip${i===activeIdx?' on':''}" data-i="${i}">${p.emoji} ${p.name}</div>`).join('');
+    wrap.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ SFX.tap(); onPick(+c.dataset.i); }));
+  };
+  mk('catPick', S.catIdx, (i)=>{ S.catIdx=i; if(S.guardIdx===i) S.guardIdx=(i+1)%S.players.length; buildRolePickers(); });
+  mk('guardPick', S.guardIdx, (i)=>{ S.guardIdx=i; if(S.catIdx===i) S.catIdx=(i+1)%S.players.length; buildRolePickers(); });
+}
+$('startBtn').addEventListener('click',()=>{ SFX.tap(); startSession(); });
+
+function startSession(){
+  S.round=0; S.chaos=0; S.guard=0; S.anger=0;
+  S.guardHit=0; S.guardTotal=0; S.streak=0; S.streakMax=0;
+  S.earlyEnd=false; S.endingText='';
+  $('catNameTag').textContent = S.players[S.catIdx].emoji+' '+S.players[S.catIdx].name;
+  $('guardNameTag').textContent = S.players[S.guardIdx].emoji+' '+S.players[S.guardIdx].name;
+  show('play');
+  S.running=true;
+  nextRound();
+}
+
+function nextRound(){
+  S.round++;
+  if(S.round>ROUNDS.length){ return endSession(); }
+  SFX.round();
+  clearAllTimers();
+  S.event=null; S.decoy=null;
+  paintZonesIdle();
+  const r=ROUNDS[S.round-1];
+  $('roundTxt').textContent=r.name+'（'+r.room+'）';
+  S.roundEndAt = performance.now() + CONFIG.ROUND_MS;
+  paintPaws();
+  scheduleSpawn(true);
+  scheduleDecoy();
+  S.tickTimer=setInterval(tick,100);
+}
+
+function clearAllTimers(){
+  clearTimeout(S.spawnTimer); clearTimeout(S.decoyTimer); clearInterval(S.tickTimer);
+}
+
+function tick(){
+  if(!S.running) return;
+  const left = S.roundEndAt - performance.now();
+  const pct = Math.max(0, Math.min(100, left/CONFIG.ROUND_MS*100));
+  $('timerFill').style.width = pct+'%';
+  if(left<=0){
+    clearAllTimers();
+    S.event=null; S.decoy=null; paintZonesIdle();
+    setTimeout(nextRound, 500);
+  }
+}
+
+function scheduleSpawn(first){
+  const r=ROUNDS[S.round-1];
+  const gap = first ? rnd(600,1200) : rnd(r.spawnGap[0], r.spawnGap[1]);
+  S.spawnTimer=setTimeout(spawnMain, gap);
+}
+function spawnMain(){
+  if(!S.running) return;
+  if(S.event){ scheduleSpawn(false); return; }
+  const r=ROUNDS[S.round-1];
+  const isRare = Math.random() < CONFIG.RARE_CHANCE;
+  const item = isRare ? pick(RARE) : pick(r.pool);
+  const base = QTE_BASE[item.qte];
+  const dur = Math.round(base.dur * r.durMul);
+  S.event = { item, isRare, qte:item.qte, dur, startAt:performance.now(),
+              progress:0, taps:0, held:0, holding:false, holdStamp:0,
+              seqStep:0, timeoutHandle:null };
+  renderCatChallenge();
+  renderGuardWarning();
+  S.event.timeoutHandle = setTimeout(()=>resolveEvent('timeout'), dur);
+}
+function scheduleDecoy(){
+  const r=ROUNDS[S.round-1];
+  S.decoyTimer=setTimeout(()=>{
+    if(S.running && !S.decoy) spawnDecoy();
+    scheduleDecoy();
+  }, rnd(r.decoyGap[0], r.decoyGap[1]));
+}
+function spawnDecoy(){
+  S.decoy = true;
+  const dcard = document.createElement('div');
+  dcard.className='warnCard decoy';
+  dcard.style.position='absolute'; dcard.style.right='10px'; dcard.style.bottom='8px';
+  dcard.textContent='❓';
+  dcard.addEventListener('pointerdown', e=>{
+    e.preventDefault(); e.stopPropagation();
+    SFX.decoy();
+    dcard.remove(); S.decoy=null;
+    flashCat('😼 只是聞一聞而已～', 500);
+    $('guardZone').classList.add('lockTouch');
+    setTimeout(()=>$('guardZone').classList.remove('lockTouch'),350);
+  });
+  $('guardZone').appendChild(dcard);
+  setTimeout(()=>{ if(dcard.parentNode){ dcard.remove(); S.decoy=null; } }, 1300);
+}
+
+function paintZonesIdle(){
+  $('catInner').innerHTML = '<div class="catIdle">🐈</div>';
+  $('guardInner').innerHTML = '<div class="guardIdle">👀 盯緊警報...</div>';
+}
+function paintPaws(){
+  let html='';
+  for(let i=0;i<CONFIG.ANGER_MAX;i++) html+=`<span class="${i<S.anger?'on':''}">🐾</span>`;
+  $('pawRow').innerHTML=html;
+}
+function flashCat(msg,ms){
+  const f=$('flashMsg'); f.textContent=msg; f.classList.add('on');
+  setTimeout(()=>f.classList.remove('on'), ms||450);
+}
+
+function renderGuardWarning(){
+  const gi=$('guardInner');
+  gi.innerHTML = `<div class="warnCard" id="mainWarn">⚠️</div><div class="warnHint">快搶救！</div>`;
+  $('mainWarn').addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    if($('guardZone').classList.contains('lockTouch')) return;
+    resolveEvent('guard');
+  });
+}
+
+function renderCatChallenge(){
+  const ev=S.event, ci=$('catInner');
+  if(ev.qte==='tap'){
+    ci.innerHTML = `<div class="challengeEm">${ev.item.emoji}</div>
+      <div class="challengeLabel">${ev.item.label}（連點！）</div>
+      <div class="progWrap"><div class="progFill" id="pf"></div></div>`;
+  } else if(ev.qte==='hold'){
+    ci.innerHTML = `<div class="challengeEm">${ev.item.emoji}</div>
+      <div class="challengeLabel">${ev.item.label}（按住不放！）</div>
+      <div class="progWrap"><div class="progFill" id="pf"></div></div>`;
+  } else if(ev.qte==='swipe'){
+    ci.innerHTML = `<div class="challengeEm">${ev.item.emoji}</div>
+      <div class="challengeLabel">${ev.item.label}（滑一下！）</div>`;
+  } else if(ev.qte==='timing'){
+    ci.innerHTML = `<div class="challengeEm">${ev.item.emoji}</div>
+      <div class="challengeLabel">${ev.item.label}（等亮起再點！）</div>
+      <div class="progWrap"><div class="progFill" id="pf"></div></div>`;
+    requestAnimationFrame(tickTiming);
+  } else if(ev.qte==='seq'){
+    ci.innerHTML = `<div class="challengeEm">${ev.item.emoji}</div>
+      <div class="challengeLabel">${ev.item.label}（記順序再點！）</div>
+      <div class="seqRow">
+        <div class="seqIcon" id="seqA" data-n="1">1️⃣</div>
+        <div class="seqIcon" id="seqB" data-n="2">2️⃣</div>
+      </div>`;
+    setTimeout(()=>{ if($('seqA')) $('seqA').classList.add('glow'); },50);
+    setTimeout(()=>{ if($('seqA')) $('seqA').classList.remove('glow'); if($('seqB')) $('seqB').classList.add('glow'); },550);
+    setTimeout(()=>{ if($('seqB')) $('seqB').classList.remove('glow'); },1050);
+  }
+}
+
+function bindCatZone(){
+  const zone=$('catZone');
+  zone.addEventListener('pointerdown', e=>{
+    const ev=S.event; if(!ev) return;
+    if(ev.qte==='tap') catTapHandler(e);
+    else if(ev.qte==='hold') catHoldStart(e);
+    else if(ev.qte==='swipe') catSwipeStart(e);
+    else if(ev.qte==='timing') catTimingTap(e);
+    else if(ev.qte==='seq'){
+      if(e.target.closest('#seqA')) seqPick(1);
+      else if(e.target.closest('#seqB')) seqPick(2);
+    }
+  });
+  zone.addEventListener('pointerup', e=>{
+    const ev=S.event; if(!ev) return;
+    if(ev.qte==='hold') catHoldEnd(e);
+    else if(ev.qte==='swipe') catSwipeEnd(e);
+  });
+  zone.addEventListener('pointercancel', e=>{ const ev=S.event; if(ev && ev.qte==='hold') catHoldEnd(e); });
+  zone.addEventListener('pointerleave', e=>{ const ev=S.event; if(ev && ev.qte==='hold') catHoldEnd(e); });
+}
+function tickTiming(){
+  const ev=S.event; if(!ev || ev.qte!=='timing') return;
+  const elapsed=performance.now()-ev.startAt;
+  const pf=$('pf'); if(!pf) return;
+  pf.style.width = Math.min(100, elapsed/ev.dur*100)+'%';
+  pf.classList.toggle('sweetZone', elapsed >= ev.dur-QTE_BASE.timing.sweet);
+  if(elapsed<ev.dur) requestAnimationFrame(tickTiming);
+}
+
+function catTapHandler(e){
+  e.preventDefault();
+  const ev=S.event; if(!ev || ev.qte!=='tap') return;
+  ev.taps++;
+  SFX.meow();
+  const pf=$('pf'); if(pf) pf.style.width = Math.min(100, ev.taps/QTE_BASE.tap.need*100)+'%';
+  if(ev.taps>=QTE_BASE.tap.need) resolveEvent('cat');
+}
+function catHoldStart(e){
+  e.preventDefault();
+  const ev=S.event; if(!ev || ev.qte!=='hold') return;
+  ev.holding=true; ev.holdStamp=performance.now();
+  tickHold();
+}
+function catHoldEnd(e){
+  const ev=S.event; if(!ev || ev.qte!=='hold' || !ev.holding) return;
+  ev.holding=false;
+  ev.held += performance.now()-ev.holdStamp;
+}
+function tickHold(){
+  const ev=S.event; if(!ev || ev.qte!=='hold' || !ev.holding) return;
+  const cur = ev.held + (performance.now()-ev.holdStamp);
+  const pf=$('pf'); if(pf) pf.style.width = Math.min(100, cur/QTE_BASE.hold.need*100)+'%';
+  if(cur>=QTE_BASE.hold.need){ resolveEvent('cat'); return; }
+  requestAnimationFrame(tickHold);
+}
+function catSwipeStart(e){
+  e.preventDefault();
+  const ev=S.event; if(!ev || ev.qte!=='swipe') return;
+  ev._sx=e.clientX; ev._sy=e.clientY;
+}
+function catSwipeEnd(e){
+  const ev=S.event; if(!ev || ev.qte!=='swipe' || ev._sx===undefined) return;
+  const dx=e.clientX-ev._sx, dy=e.clientY-ev._sy;
+  const dist=Math.hypot(dx,dy);
+  ev._sx=undefined;
+  if(dist>=QTE_BASE.swipe.dist){ SFX.meow(); resolveEvent('cat'); }
+}
+function catTimingTap(e){
+  e.preventDefault();
+  const ev=S.event; if(!ev || ev.qte!=='timing') return;
+  const elapsed=performance.now()-ev.startAt;
+  if(elapsed >= ev.dur-QTE_BASE.timing.sweet){ resolveEvent('cat'); }
+  else { flashCat('太早了，再等一下！',350); }
+}
+function seqPick(n){
+  const ev=S.event; if(!ev || ev.qte!=='seq') return;
+  if(n===ev.seqStep+1){
+    ev.seqStep++;
+    const el=$(n===1?'seqA':'seqB'); if(el) el.classList.add('done');
+    if(ev.seqStep>=QTE_BASE.seq.steps) resolveEvent('cat');
+  } else {
+    ev.seqStep=0;
+    ['seqA','seqB'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('done'); });
+    flashCat('順序錯了，重來！',350);
+  }
+}
+
+/* ---------- 事件結算 ----------
+   ⚠️ 修過的地方：guardTotal 現在「三種結果都會累加」（cat 贏／guard 贏／逾時）。
+   原版只在 guard 贏或逾時才累加，導致貓咪贏太多次時，
+   guardRate（守護命中率）分母被低估，「🏆完美主人」徽章會發得太隨便。
+   現在 guardRate = guardHit / guardTotal 才是真正的「主人接到率」。 */
+function resolveEvent(winner){
+  const ev=S.event; if(!ev) return;
+  clearTimeout(ev.timeoutHandle);
+  S.event=null;
+  const guardEl=$('mainWarn'); if(guardEl) guardEl.remove();
+
+  if(winner==='cat'){
+    const pts = ev.isRare?CONFIG.PT_CHAOS_RARE:CONFIG.PT_CHAOS;
+    S.chaos+=pts; S.anger=Math.min(CONFIG.ANGER_MAX,S.anger+1); S.streak=0;
+    S.guardTotal++;                         /* ← 修：貓咪贏＝主人這次沒接到，也要計入總數 */
+    SFX.chaos();
+    if(navigator.vibrate){try{navigator.vibrate(30);}catch(_){}}
+    flashCat('😼 搗蛋成功！+'+pts,600);
+    paintPaws();
+    if(S.anger>=CONFIG.ANGER_MAX){ return triggerAngerMax(); }
+  } else if(winner==='guard'){
+    const pts = ev.isRare?CONFIG.PT_GUARD_RARE:CONFIG.PT_GUARD;
+    S.guard+=pts; S.guardHit++; S.guardTotal++; S.streak++; S.streakMax=Math.max(S.streakMax,S.streak);
+    SFX.guard();
+    flashCat('🛡️ 搶救成功！+'+pts,600);
+  } else {
+    S.guardTotal++;
+    flashCat('🐈 貓咪自己放棄了～',450);
+  }
+  $('chaosTxt').textContent=S.chaos;
+  $('guardTxt').textContent=S.guard;
+  paintZonesIdle();
+  setTimeout(()=>{ if(S.running && !S.event) scheduleSpawn(false); }, 250);
+}
+
+function triggerAngerMax(){
+  S.running=false; S.earlyEnd=true;
+  S.endingText = pick(ENDINGS);
+  clearAllTimers();
+  SFX.anger();
+  if(navigator.vibrate){try{navigator.vibrate([60,40,60]);}catch(_){}}
+  setTimeout(endSession, 700);
+}
+
+function endSession(){
+  S.running=false;
+  clearAllTimers();
+  SFX.win();
+  const total = S.chaos + S.guard + (S.earlyEnd?0:50);
+  const guardRate = S.guardTotal>0 ? S.guardHit/S.guardTotal : 0;
+  const badges=[];
+  if(S.guardTotal>0 && guardRate>=0.999) badges.push('🏆 完美主人');
+  if(S.chaos>=150) badges.push('😼 破壞之王');
+  if(S.streakMax>=5) badges.push('🕊️ 神救援');
+  if(!S.earlyEnd) badges.push('🌙 撐過一整天');
+
+  S.results[S.session-1] = {
+    catName:S.players[S.catIdx].name, guardName:S.players[S.guardIdx].name,
+    chaos:S.chaos, guard:S.guard, total, badges, earlyEnd:S.earlyEnd, endingText:S.endingText,
+  };
+
+  renderOver();
+}
+
+function renderOver(){
+  const r1=S.results[0], r2=S.results[1];
+  const cur = r2 || r1;
+  $('overHero').textContent = cur.earlyEnd ? '😱' : '🏆';
+  if(cur.earlyEnd){
+    $('overTitle').innerHTML = '爸媽衝出來了！';
+    $('overSub').textContent = cur.endingText;
+  } else {
+    $('overTitle').innerHTML = '兩人合力撐完一整天！';
+    $('overSub').textContent = '搗蛋 '+cur.chaos+' 分 ＋ 守護 '+cur.guard+' 分 ＋ 完賽獎勵 50 分';
+  }
+
+  if(r1 && r2){
+    $('board').innerHTML = [1,2].map(n=>{
+      const r=S.results[n-1];
+      const win = r.total >= (n===1?r2:r1).total;
+      return `<div class="row ${win?'top':''}">
+        <div class="rk">${n===1?'①':'②'}</div>
+        <div class="nm">🐈${r.catName} × 🛡️${r.guardName}</div>
+        <div class="sc">${r.total} 分</div>
+      </div>`;
+    }).join('');
+    $('badgeRow').innerHTML = Array.from(new Set([...r1.badges, ...r2.badges])).map(b=>`<span>${b}</span>`).join('') || '<span>再接再厲！</span>';
+    $('swapBtn').style.display='none';
+    $('againBtn').textContent='🔁 再玩一輪新的搭配';
+  } else {
+    $('board').innerHTML = `<div class="row top">
+      <div class="rk">🐈</div><div class="nm">${cur.catName} 當貓咪</div><div class="sc"></div></div>
+      <div class="row"><div class="rk">🛡️</div><div class="nm">${cur.guardName} 當主人</div><div class="sc">${cur.total} 分</div></div>`;
+    $('badgeRow').innerHTML = cur.badges.length ? cur.badges.map(b=>`<span>${b}</span>`).join('') : '<span>再接再厲！</span>';
+    $('swapBtn').style.display='block';
+  }
+  show('over');
+}
+
+$('swapBtn').addEventListener('click', ()=>{
+  SFX.tap();
+  const tmp=S.catIdx; S.catIdx=S.guardIdx; S.guardIdx=tmp;
+  S.session=2;
+  startSession();
+});
+$('againBtn').addEventListener('click', ()=>{
+  SFX.tap();
+  S.session=1; S.results=[null,null];
+  startSession();
+});
+
+window.addEventListener('pagehide', ()=>{ S.running=false; clearAllTimers(); });
+
+boot();
+bindCatZone();
+</script>
+</body>
+</html>
