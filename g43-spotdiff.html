@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G43 大家來找碴</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0C1B14">
+<style>
+:root{
+  --ink:#0C1B14; --ink-2:#173325; --line:#2A543D;
+  --paper:#EFFFF3; --dim:#88C29E; --wire:#4DE38B; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:12px;max-width:460px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#1E4A32}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#04180F;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.passName{font-size:28px;text-align:center;line-height:1.3}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+.hud{width:100%;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hud .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px}
+.hud .chip b{color:var(--spark)}
+
+.panelLabel{font-size:12px;color:var(--dim);text-align:center;width:100%}
+.grid{display:grid;width:100%;gap:4px;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;padding:8px}
+.cell{aspect-ratio:1/1;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;
+      font-size:min(6vw,26px);transition:.12s}
+.cell.found{background:var(--good);opacity:.85}
+.cell.wrong{background:var(--bad)}
+.grid.top{pointer-events:none}
+
+.timeWrap{width:100%;height:11px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#04180F}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+
+.bigMsg{font-size:24px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🔍🐸</div>
+  <h1>G43 <b>大家來找碴</b></h1>
+  <p class="sub">
+    上下兩排圖案<b>長得幾乎一樣</b>，<br>
+    但下面藏了<b style="color:var(--wire)">幾個不一樣的地方</b>！<br>
+    輪流限時找，<b>找到加分、點錯扣分</b>。<br>
+    <span style="color:var(--spark)">誰的眼睛最利？</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">每人限時幾秒？</p>
+    <div class="lenRow">
+      <button data-sec="15">15 秒<br><span style="font-size:11px;color:var(--dim)">刺激</span></button>
+      <button data-sec="20" class="on">20 秒<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-sec="30">30 秒<br><span style="font-size:11px;color:var(--dim)">從容</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🔍 開始找碴</button>
+  <p class="tip">📱 一台裝置輪流傳著玩<br>每輪圖案都不一樣，比比看誰找得快</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass" class="screen">
+  <div class="hero">🔍</div>
+  <div class="passName" id="passName">換 🧒 George</div>
+  <div class="dots" id="passDots"></div>
+  <button class="go" id="passBtn">輪到我了，開始！</button>
+</section>
+
+<section id="play" class="screen">
+  <div class="hud">
+    <span class="chip" id="playWho">🧒 George</span>
+    <span class="chip">找到 <b id="foundNum">0</b> / <b id="totalDiff">4</b></span>
+  </div>
+  <div class="timeWrap"><i id="timeBar"></i></div>
+  <div class="panelLabel">原本的樣子</div>
+  <div class="grid top" id="gridTop"></div>
+  <div class="panelLabel">哪裡不一樣？點下面 👇</div>
+  <div class="grid" id="gridBottom"></div>
+</section>
+
+<section id="res" class="screen">
+  <div class="hero" id="resEm">👀</div>
+  <div class="bigMsg" id="resMsg"></div>
+  <button class="go" id="resBtn">下一位 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再玩一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G43 大家來找碴
+   核心：程式即時產生兩張幾乎相同的 emoji 格子圖（零外部圖片），
+   隨機挑幾格做出差異（換圖案），玩家找出下排跟上排不同的格子。
+   耐玩來源＝每輪版面全部重新產生，難度可控但不會有標準答案背起來。
+   ============================================================ */
+
+const CONFIG = { COLS:5, ROWS:6, DIFF_MIN:3, DIFF_MAX:5, WRONG_PENALTY_MS:1500 };
+const POOL = ['🍎','🐶','⭐','🚗','🎈','🐟','🌙','🍕','⚽','🌵','🎩','🐸','🍩','🔔','🦋','🧊','🍇','🐼','🎵','🧸'];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  hit:()=>beep([880,1319],0.1,'triangle',0.14),
+  wrong:()=>beep([220,150],0.2,'sawtooth',0.13),
+  win:()=>beep([784,988,1319,1568],0.15,'triangle',0.15),
+  tick:()=>beep([1200],0.04,'square',0.07),
+  champ:()=>beep([659,880,1175,1568],0.16,'triangle',0.16),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+const S = {
+  players:[], secs:20, turn:0, scores:[],
+  gridA:[], gridB:[], diffIdx:[], foundSet:new Set(), endAt:0, raf:null, running:false,
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-sec]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-sec]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); S.secs=+b.dataset.sec;
+}));
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<2) return;
+  SFX.tap();
+  S.turn=0; S.scores=S.players.map(()=>0);
+  showPass();
+});
+
+function showPass(){
+  const p=S.players[S.turn];
+  $('passName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b>`;
+  $('passDots').innerHTML = S.players.map((_,i)=>
+    `<i class="${i<S.turn?'done':(i===S.turn?'now':'')}"></i>`).join('');
+  show('pass');
+}
+$('passBtn').addEventListener('click',()=>{ SFX.tap(); startTurn(); });
+
+function genBoard(){
+  const n = CONFIG.COLS*CONFIG.ROWS;
+  const base = Array.from({length:n}, ()=>pick(POOL));
+  const diffCount = CONFIG.DIFF_MIN + Math.floor(Math.random()*(CONFIG.DIFF_MAX-CONFIG.DIFF_MIN+1));
+  const idxAll = Array.from({length:n},(_,i)=>i);
+  for(let i=idxAll.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [idxAll[i],idxAll[j]]=[idxAll[j],idxAll[i]]; }
+  const diffIdx = idxAll.slice(0, diffCount);
+  const gridB = base.slice();
+  diffIdx.forEach(i=>{
+    let newE;
+    do { newE = pick(POOL); } while(newE===base[i]);
+    gridB[i]=newE;
+  });
+  return { gridA: base, gridB, diffIdx: new Set(diffIdx) };
+}
+
+function startTurn(){
+  const p=S.players[S.turn];
+  $('playWho').textContent = `${p.emoji} ${p.name}`;
+  const b = genBoard();
+  S.gridA=b.gridA; S.gridB=b.gridB; S.diffIdx=b.diffIdx; S.foundSet=new Set();
+  $('totalDiff').textContent = S.diffIdx.size;
+  $('foundNum').textContent = 0;
+  paintGrids();
+  show('play');
+  S.running=true;
+  S.endAt = performance.now()+S.secs*1000;
+  runTimer();
+}
+function paintGrids(){
+  const cols=CONFIG.COLS;
+  const top=$('gridTop'), bottom=$('gridBottom');
+  top.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+  bottom.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+  top.innerHTML = S.gridA.map(e=>`<div class="cell">${e}</div>`).join('');
+  bottom.innerHTML = S.gridB.map((e,i)=>`<div class="cell" data-i="${i}">${e}</div>`).join('');
+  document.querySelectorAll('#gridBottom [data-i]').forEach(c=>
+    c.addEventListener('pointerdown', ()=>cellTap(+c.dataset.i, c)));
+}
+function cellTap(i, el){
+  if(!S.running) return;
+  if(S.foundSet.has(i)) return;
+  if(S.diffIdx.has(i)){
+    S.foundSet.add(i);
+    el.classList.add('found');
+    SFX.hit();
+    if(navigator.vibrate){try{navigator.vibrate(25);}catch(_){}}
+    $('foundNum').textContent = S.foundSet.size;
+    if(S.foundSet.size>=S.diffIdx.size) return finishTurn(true);
+  } else {
+    el.classList.add('wrong');
+    SFX.wrong();
+    if(navigator.vibrate){try{navigator.vibrate(80);}catch(_){}}
+    S.endAt -= CONFIG.WRONG_PENALTY_MS;
+    setTimeout(()=>el.classList.remove('wrong'),260);
+  }
+}
+function runTimer(){
+  cancelAnimationFrame(S.raf);
+  const step=()=>{
+    if(!S.running) return;
+    const left = S.endAt-performance.now();
+    const total = S.secs*1000;
+    $('timeBar').style.width = Math.max(0,left/total*100)+'%';
+    const hot = left<=3000;
+    $('timeBar').classList.toggle('hot',hot);
+    if(left<=0) return finishTurn(false);
+    S.raf=requestAnimationFrame(step);
+  };
+  S.raf=requestAnimationFrame(step);
+}
+function finishTurn(allFound){
+  S.running=false;
+  cancelAnimationFrame(S.raf);
+  const found = S.foundSet.size, total = S.diffIdx.size;
+  S.scores[S.turn] += found * 2 + (allFound ? 5 : 0);
+  $('resEm').textContent = allFound ? '🎯' : '⏰';
+  $('resMsg').innerHTML = allFound
+    ? `全部找到了！<b style="color:var(--good)">+${found*2+5} 分</b>`
+    : `時間到，找到 ${found} / ${total} 個<br><b style="color:var(--wire)">+${found*2} 分</b>`;
+  allFound ? SFX.win() : SFX.tick();
+  show('res');
+}
+$('resBtn').addEventListener('click',()=>{
+  SFX.tap();
+  S.turn++;
+  if(S.turn>=S.players.length) return finish();
+  showPass();
+});
+
+function finish(){
+  SFX.champ();
+  const rows = S.players.map((p,i)=>({p, sc:S.scores[i]})).sort((a,b)=>b.sc-a.sc);
+  const best = rows[0].sc;
+  $('overTitle').innerHTML = `${rows[0].p.emoji} <b>${rows[0].p.name}</b> 鷹眼認證！`;
+  $('board').innerHTML = rows.map((r,i)=>`
+    <div class="row ${r.sc===best?'top':''}">
+      <div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div>
+    </div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.turn=0; S.scores=S.players.map(()=>0);
+  showPass();
+});
+
+window.addEventListener('pagehide',()=>{ S.running=false; cancelAnimationFrame(S.raf); });
+
+boot();
+</script>
+</body>
+</html>

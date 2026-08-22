@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G44 剪刀石頭布錦標賽</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#241206">
+<style>
+:root{
+  --ink:#241206; --ink-2:#361C0A; --line:#5C3313;
+  --paper:#FFF4E6; --dim:#D8AA80; --wire:#FFA23D; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:420px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.go{width:100%;background:var(--wire);color:#241000;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.championBar{width:100%;background:var(--ink-2);border:2px solid var(--spark);border-radius:16px;
+             padding:12px 14px;text-align:center}
+.championBar .k{font-size:12px;color:var(--dim)}
+.championBar .v{font-size:19px;color:var(--spark);margin-top:2px}
+.championBar .streak{font-size:12px;color:var(--dim);margin-top:2px}
+
+.twistCard{width:100%;background:linear-gradient(150deg,#5C3313,#361C0A);border:2px solid var(--bad);
+           border-radius:16px;padding:12px;text-align:center;font-size:14px;color:#FFB3B3}
+
+.passName{font-size:28px;text-align:center;line-height:1.3}
+.passName b{color:var(--wire)}
+
+.rpsRow{display:flex;gap:12px;width:100%}
+.rpsRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;
+               padding:22px 6px;font-size:40px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.rpsRow button span{font-size:13px;color:var(--dim)}
+.rpsRow button:active{transform:scale(.94);border-color:var(--wire)}
+
+.vsBox{width:100%;display:flex;align-items:center;justify-content:center;gap:20px}
+.vsSide{flex:1;text-align:center}
+.vsSide .em{font-size:64px;line-height:1}
+.vsSide .nm{font-size:14px;color:var(--dim);margin-top:6px}
+.vsMid{font-size:22px;color:var(--dim)}
+
+.bigMsg{font-size:26px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#241000}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">✊✋✌️</div>
+  <h1>G44 <b>剪刀石頭布錦標賽</b></h1>
+  <p class="sub">
+    <b>擂台賽制！</b>贏的人留下當擂主，下一位來挑戰。<br>
+    連贏越多場，<b style="color:var(--spark)">擂主分數越高</b>！<br>
+    <span style="color:var(--bad)">偶爾出現「逆轉回合」——輸的人反而贏！</span><br>
+    <span style="color:var(--wire)">全部人都上場過一輪，看誰擂主次數最多</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <button class="go" id="startBtn">✊ 開始比賽</button>
+  <p class="tip">📱 一台裝置輪流傳著玩，至少 2 人<br>喊「剪刀石頭布」的同時出手勢！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass1" class="screen">
+  <div class="championBar">
+    <div class="k">目前擂主</div>
+    <div class="v" id="champName">—</div>
+    <div class="streak" id="champStreak"></div>
+  </div>
+  <div class="hero">⚔️</div>
+  <div class="passName" id="passName1">換 🧒 <b>George</b> 出招</div>
+  <p class="tip">把裝置交給他，<b>其他人先別看</b> 🙈</p>
+  <button class="go" id="passBtn1">好，我拿到了</button>
+</section>
+
+<section id="pick1" class="screen">
+  <div id="twistBox"></div>
+  <h1><b id="pickerName1">George</b> 出招！</h1>
+  <div class="rpsRow">
+    <button data-w="rock">✊<span>石頭</span></button>
+    <button data-w="paper">✋<span>布</span></button>
+    <button data-w="scissors">✌️<span>剪刀</span></button>
+  </div>
+</section>
+
+<section id="pass2" class="screen">
+  <div class="hero">🤫</div>
+  <div class="passName" id="passName2">換 🧒 <b>Kris</b> 出招</div>
+  <p class="tip">輪到挑戰者了，把裝置交給他</p>
+  <button class="go" id="passBtn2">好，我拿到了</button>
+</section>
+
+<section id="pick2" class="screen">
+  <div id="twistBox2"></div>
+  <h1><b id="pickerName2">Kris</b> 出招！</h1>
+  <div class="rpsRow">
+    <button data-w="rock">✊<span>石頭</span></button>
+    <button data-w="paper">✋<span>布</span></button>
+    <button data-w="scissors">✌️<span>剪刀</span></button>
+  </div>
+</section>
+
+<section id="reveal" class="screen">
+  <div id="twistResultTag"></div>
+  <div class="vsBox">
+    <div class="vsSide"><div class="em" id="revEm1">✊</div><div class="nm" id="revNm1">George</div></div>
+    <div class="vsMid">VS</div>
+    <div class="vsSide"><div class="em" id="revEm2">✋</div><div class="nm" id="revNm2">Kris</div></div>
+  </div>
+  <div class="bigMsg" id="revMsg"></div>
+  <button class="go" id="revNext">繼續 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再打一場</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G44 剪刀石頭布錦標賽
+   核心：不是傳統一次性猜拳，是「擂台連勝制」——
+   贏家留下當擂主面對下一位挑戰者，逼你每一局都要重新讀對手。
+   耐玩來源＝隨機「逆轉回合」（贏的人反而輸）讓死記硬背的招式失效。
+   ============================================================ */
+
+const CONFIG = { TWIST_RATE: 0.16 };
+const WEAPONS = { rock:{em:'✊',beats:'scissors'}, paper:{em:'✋',beats:'rock'}, scissors:{em:'✌️',beats:'paper'} };
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.06;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  pass:()=>beep([440,660],0.1,'sine',0.11),
+  win:()=>beep([784,988,1319],0.13,'triangle',0.14),
+  twist:()=>beep([300,500,300],0.2,'sawtooth',0.13),
+  champ:()=>beep([659,880,1175,1568],0.16,'triangle',0.16),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+
+const S = {
+  players:[], champIdx:0, champStreak:0, queue:[], queuePos:0,
+  wins:[], duelsPlayed:0, pick1:null, pick2:null, isTwist:false, lastTie:false,
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人'; $('startBtn').disabled=true; }
+}
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<2) return;
+  SFX.tap();
+  S.wins = S.players.map(()=>0);
+  S.champIdx = 0; S.champStreak = 0;
+  S.queue = S.players.map((_,i)=>i).slice(1);   // 第0位先當擂主，其他人排隊挑戰
+  S.queuePos = 0; S.duelsPlayed = 0;
+  nextDuel();
+});
+
+function paintChamp(){
+  const c = S.players[S.champIdx];
+  $('champName').innerHTML = `${c.emoji} ${c.name}`;
+  $('champStreak').textContent = S.champStreak>0 ? `已連勝 ${S.champStreak} 場` : '尚未開打';
+}
+
+function nextDuel(){
+  if(S.queuePos>=S.queue.length){ return finish(); }
+  S.challengerIdx = S.queue[S.queuePos];
+  S.isTwist = Math.random() < CONFIG.TWIST_RATE;
+  paintChamp();
+  const p=S.players[S.champIdx];
+  $('passName1').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b> 出招`;
+  show('pass1');
+}
+$('passBtn1').addEventListener('click',()=>{ SFX.pass(); showPick1(); });
+
+function showPick1(){
+  const p=S.players[S.champIdx];
+  $('pickerName1').innerHTML = `${p.emoji} ${p.name}`;
+  $('twistBox').innerHTML = S.isTwist
+    ? `<div class="twistCard">🌀 <b>逆轉回合！</b>這局輸的人反而算贏！</div>` : '';
+  document.querySelectorAll('#pick1 [data-w]').forEach(b=>{
+    b.onclick = () => { SFX.tap(); S.pick1=b.dataset.w; showPass2(); };
+  });
+  show('pick1');
+}
+function showPass2(){
+  const p=S.players[S.challengerIdx];
+  $('passName2').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b> 出招`;
+  show('pass2');
+}
+$('passBtn2').addEventListener('click',()=>{ SFX.pass(); showPick2(); });
+function showPick2(){
+  const p=S.players[S.challengerIdx];
+  $('pickerName2').innerHTML = `${p.emoji} ${p.name}`;
+  $('twistBox2').innerHTML = S.isTwist
+    ? `<div class="twistCard">🌀 <b>逆轉回合！</b>這局輸的人反而算贏！</div>` : '';
+  document.querySelectorAll('#pick2 [data-w]').forEach(b=>{
+    b.onclick = () => { SFX.tap(); S.pick2=b.dataset.w; doReveal(); };
+  });
+  show('pick2');
+}
+
+function judge(w1,w2){
+  if(w1===w2) return 0;               // 平手
+  return WEAPONS[w1].beats===w2 ? 1 : -1;  // 1=w1贏, -1=w2贏
+}
+
+function doReveal(){
+  S.duelsPlayed++;
+  const champ = S.players[S.champIdx], chal = S.players[S.challengerIdx];
+  $('revEm1').textContent = WEAPONS[S.pick1].em;
+  $('revEm2').textContent = WEAPONS[S.pick2].em;
+  $('revNm1').textContent = `${champ.emoji} ${champ.name}（擂主）`;
+  $('revNm2').textContent = `${chal.emoji} ${chal.name}（挑戰者）`;
+  $('twistResultTag').innerHTML = S.isTwist
+    ? `<div class="twistCard">🌀 逆轉回合生效中！</div>` : '';
+
+  let result = judge(S.pick1, S.pick2);   // 1=champ贏, -1=chal贏, 0=平手
+  if(S.isTwist && result!==0) result = -result;  // 逆轉
+
+  S.lastTie = (result===0);
+  if(result===0){
+    $('revMsg').innerHTML = `平手！<b style="color:var(--dim)">重新這一局</b>`;
+    SFX.tap();
+  } else if(result===1){
+    S.champStreak++;
+    S.wins[S.champIdx] += 1 + Math.floor(S.champStreak/2);
+    $('revMsg').innerHTML = `${champ.emoji} <b>${champ.name}</b> 守擂成功！連勝 ${S.champStreak} 場`;
+    SFX.win();
+  } else {
+    S.wins[S.challengerIdx] += 2;
+    $('revMsg').innerHTML = `${chal.emoji} <b>${chal.name}</b> 打贏擂主！換人當擂主`;
+    S.champIdx = S.challengerIdx;
+    S.champStreak = 0;
+    SFX.twist();
+  }
+  if(S.isTwist) SFX.twist();
+  show('reveal');
+}
+
+$('revNext').addEventListener('click',()=>{
+  SFX.tap();
+  if(!S.lastTie) S.queuePos++;   // 平手重打這一局，不消耗排隊位置
+  nextDuel();
+});
+
+function finish(){
+  SFX.champ();
+  const rows = S.players.map((p,i)=>({p, sc:S.wins[i]})).sort((a,b)=>b.sc-a.sc);
+  const best = rows[0].sc;
+  $('overTitle').innerHTML = `${rows[0].p.emoji} <b>${rows[0].p.name}</b> 猜拳霸主！`;
+  $('board').innerHTML = rows.map((r,i)=>`
+    <div class="row ${r.sc===best?'top':''}">
+      <div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div>
+    </div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.wins = S.players.map(()=>0);
+  S.champIdx = 0; S.champStreak = 0;
+  S.queue = S.players.map((_,i)=>i).slice(1);
+  S.queuePos = 0; S.duelsPlayed = 0;
+  nextDuel();
+});
+
+boot();
+</script>
+</body>
+</html>

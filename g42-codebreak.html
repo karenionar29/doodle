@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G42 密碼猜猜猜</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#150C24">
+<style>
+:root{
+  --ink:#150C24; --ink-2:#241636; --line:#3C275C;
+  --paper:#F5EEFF; --dim:#A491C9; --wire:#B383FF; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:13px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#33205A}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#100526;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.passName{font-size:28px;text-align:center;line-height:1.3}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+.peekBox{width:100%;background:var(--ink-2);border:2px dashed var(--line);border-radius:18px;
+         padding:22px 14px;text-align:center;font-size:16px;color:var(--dim)}
+.peekBox.on{border-style:solid;border-color:var(--wire);background:#33205A;color:var(--paper)}
+.codeBig{font-size:38px;color:var(--wire);letter-spacing:.18em}
+
+.hud{width:100%;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hud .chip{background:var(--ink-2);border-radius:99px;padding:6px 12px;font-size:13px}
+.hud .chip b{color:var(--spark)}
+
+.slotRow{display:flex;gap:10px;width:100%;justify-content:center}
+.slot{width:56px;height:64px;border-radius:14px;background:var(--ink-2);border:2px solid var(--line);
+      display:flex;align-items:center;justify-content:center;font-size:28px}
+.slot.filled{border-color:var(--wire)}
+.pad{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;width:100%}
+.pad button{background:var(--ink-2);border:2px solid var(--line);border-radius:12px;padding:13px 0;font-size:18px}
+.pad button:active{transform:scale(.93);border-color:var(--wire)}
+.pad button:disabled{opacity:.25}
+.padActRow{display:flex;gap:8px;width:100%}
+.padActRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:14px;padding:13px 0;font-size:14px;color:var(--dim)}
+
+.histBox{width:100%;display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto}
+.histRow{display:flex;align-items:center;gap:9px;background:var(--ink-2);border-radius:12px;padding:8px 12px;font-size:13px}
+.histRow .cd{letter-spacing:.12em;color:var(--wire);flex:1}
+.histRow .fb{color:var(--dim);font-size:12px}
+
+.timeWrap{width:100%;height:11px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+
+.bigMsg{font-size:24px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#100526}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:15px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🔐🕵️</div>
+  <h1>G42 <b>密碼猜猜猜</b></h1>
+  <p class="sub">
+    一人偷偷設一組<b>4 位數密碼</b>（數字不重複），<br>
+    其他人輪流猜，每猜一次會有線索：<br>
+    <b style="color:var(--wire)">🎯 位置對</b>幾個、<b style="color:var(--spark)">🔄 數字對但位置錯</b>幾個。<br>
+    <span style="color:var(--wire)">先破解的人得分，輪流當出題者！</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">玩幾輪（每人輪流出題）？</p>
+    <div class="lenRow">
+      <button data-len="2">2 輪<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-len="3" class="on">3 輪<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="4">4 輪<br><span style="font-size:11px;color:var(--dim)">長期戰</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🔐 開始出題</button>
+  <p class="tip">📱 一台裝置輪流傳著玩，至少 3 人<br>設密碼時別讓別人看到！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="setCode" class="screen">
+  <h1>出題者：<b id="setterName" style="color:var(--wire)">Win</b></h1>
+  <p class="sub">設一組<b>4 位數密碼</b>，數字不能重複</p>
+  <div class="slotRow" id="setSlots"></div>
+  <div class="pad" id="setPad"></div>
+  <button class="go" id="setOk" disabled>🔒 設定完成，交給下一位</button>
+</section>
+
+<section id="passGuess" class="screen">
+  <div class="hero">🕵️</div>
+  <div class="passName" id="passGuessName">換 🧒 George</div>
+  <p class="tip">輪到你猜密碼了！</p>
+  <div class="dots" id="passGuessDots"></div>
+  <button class="go" id="passGuessBtn">開始猜</button>
+</section>
+
+<section id="guessing" class="screen">
+  <div class="hud">
+    <span class="chip">猜第 <b id="attemptNum">1</b> 次</span>
+    <span class="chip"><b id="guessTime">15</b> 秒</span>
+  </div>
+  <div class="slotRow" id="guessSlots"></div>
+  <div class="pad" id="guessPad"></div>
+  <button class="go" id="guessOk" disabled>🔍 確認這個組合</button>
+  <div class="timeWrap"><i id="guessBar"></i></div>
+  <div class="histBox" id="histBox"></div>
+</section>
+
+<section id="cracked" class="screen">
+  <div class="hero" id="crackEm">🎉</div>
+  <div class="bigMsg" id="crackMsg"></div>
+  <p class="sub" id="crackSub"></p>
+  <button class="go" id="crackNext">繼續 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再玩一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G42 密碼猜猜猜（Bulls and Cows 邏輯推理）
+   核心：出題者藏密碼，猜題者靠線索一步步縮小範圍。
+   耐玩來源＝每個人設密碼的習慣不同（有人愛用生日、有人愛用連續數字），
+            猜久了會摸出彼此的邏輯，這是系統給不出的內容。
+   ============================================================ */
+
+const CONFIG = { CODE_LEN: 4, GUESS_SEC: 15, MAX_ATTEMPTS: 8 };
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.06;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  key:()=>beep([700],0.04,'square',0.06),
+  clue:()=>beep([880],0.08,'triangle',0.1),
+  crack:()=>beep([659,880,1175,1568],0.16,'triangle',0.16),
+  fail:()=>beep([220,165],0.24,'sawtooth',0.13),
+  champ:()=>beep([659,880,1175,1568],0.17,'triangle',0.16),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+
+const S = {
+  players:[], totalRounds:3, round:0, setterIdx:0, guesserOrder:[], guesserPos:0,
+  code:'', curInput:'', history:[], scores:[], attempts:0,
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<3){ $('startBtn').textContent='⚠️ 至少要 3 個人才能玩'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-len]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-len]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); S.totalRounds=+b.dataset.len;
+}));
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<3) return;
+  SFX.tap();
+  S.round=0; S.setterIdx=0; S.scores=S.players.map(()=>0);
+  newRound();
+});
+
+function newRound(){
+  S.curInput=''; S.history=[]; S.attempts=0;
+  S.guesserOrder = S.players.map((_,i)=>i).filter(i=>i!==S.setterIdx);
+  S.guesserPos = 0;
+  $('setterName').innerHTML = `${S.players[S.setterIdx].emoji} ${S.players[S.setterIdx].name}`;
+  $('setSlots').innerHTML = renderSlots(S.curInput);
+  buildSetPad();
+  $('setOk').disabled = true;
+  show('setCode');
+}
+function renderSlots(input){
+  let h='';
+  for(let i=0;i<CONFIG.CODE_LEN;i++){
+    h += `<div class="slot ${input[i]!==undefined?'filled':''}">${input[i]!==undefined?input[i]:''}</div>`;
+  }
+  return h;
+}
+function buildSetPad(){
+  $('setPad').innerHTML = ['0','1','2','3','4','5','6','7','8','9'].map(d=>`<button data-d="${d}">${d}</button>`).join('');
+  document.querySelectorAll('#setPad [data-d]').forEach(b=>{
+    b.onclick = () => {
+      if(S.curInput.length>=CONFIG.CODE_LEN) return;
+      if(S.curInput.includes(b.dataset.d)) return; // 不重複
+      SFX.key();
+      S.curInput += b.dataset.d;
+      $('setSlots').innerHTML = renderSlots(S.curInput);
+      refreshSetPadDisabled();
+      $('setOk').disabled = S.curInput.length < CONFIG.CODE_LEN;
+    };
+  });
+}
+function refreshSetPadDisabled(){
+  document.querySelectorAll('#setPad [data-d]').forEach(b=>{
+    b.disabled = S.curInput.includes(b.dataset.d);
+  });
+}
+$('setSlots').addEventListener('click', ()=>{
+  // 點密碼框可清除重設（簡單保護誤按）
+  if(S.curInput.length){ S.curInput=''; $('setSlots').innerHTML=renderSlots(S.curInput); refreshSetPadDisabled(); $('setOk').disabled=true; SFX.tap(); }
+});
+$('setOk').addEventListener('click',()=>{
+  if(S.curInput.length<CONFIG.CODE_LEN) return;
+  SFX.tap();
+  S.code = S.curInput;
+  nextGuesser();
+});
+
+function nextGuesser(){
+  if(S.guesserPos>=S.guesserOrder.length){ return roundEnd(false); }
+  const idx = S.guesserOrder[S.guesserPos];
+  const p = S.players[idx];
+  $('passGuessName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b>`;
+  $('passGuessDots').innerHTML = S.guesserOrder.map((_,i)=>
+    `<i class="${i<S.guesserPos?'done':(i===S.guesserPos?'now':'')}"></i>`).join('');
+  show('passGuess');
+}
+$('passGuessBtn').addEventListener('click',()=>{ SFX.tap(); startGuessing(); });
+
+let guessRaf=null;
+function stopGuessTimer(){ cancelAnimationFrame(guessRaf); guessRaf=null; }
+function startGuessing(){
+  S.curInput=''; S.attempts=0; S.history=[];
+  $('guessSlots').innerHTML = renderSlots(S.curInput);
+  $('histBox').innerHTML='';
+  buildGuessPad();
+  $('guessOk').disabled=true;
+  $('attemptNum').textContent = S.attempts+1;
+  show('guessing');
+  runGuessTimer();
+}
+function buildGuessPad(){
+  $('guessPad').innerHTML = ['0','1','2','3','4','5','6','7','8','9'].map(d=>`<button data-d="${d}">${d}</button>`).join('');
+  document.querySelectorAll('#guessPad [data-d]').forEach(b=>{
+    b.onclick = () => {
+      if(S.curInput.length>=CONFIG.CODE_LEN) return;
+      if(S.curInput.includes(b.dataset.d)) return;
+      SFX.key();
+      S.curInput += b.dataset.d;
+      $('guessSlots').innerHTML = renderSlots(S.curInput);
+      document.querySelectorAll('#guessPad [data-d]').forEach(x=>{ x.disabled = S.curInput.includes(x.dataset.d); });
+      $('guessOk').disabled = S.curInput.length < CONFIG.CODE_LEN;
+    };
+  });
+}
+$('guessSlots').addEventListener('click', ()=>{
+  if(S.curInput.length){ S.curInput=''; $('guessSlots').innerHTML=renderSlots(S.curInput);
+    document.querySelectorAll('#guessPad [data-d]').forEach(x=>x.disabled=false);
+    $('guessOk').disabled=true; SFX.tap(); }
+});
+function runGuessTimer(){
+  stopGuessTimer();
+  const total=CONFIG.GUESS_SEC*1000;
+  const endAt=performance.now()+total;
+  let last=-1;
+  const step=()=>{
+    const left=endAt-performance.now();
+    const sec=Math.max(0,left/1000);
+    $('guessBar').style.width = Math.max(0,left/total*100)+'%';
+    $('guessTime').textContent = Math.ceil(sec);
+    const hot=sec<=4;
+    $('guessBar').classList.toggle('hot',hot);
+    const s=Math.ceil(sec);
+    if(hot && s!==last && s>0){ last=s; }
+    if(left<=0){ stopGuessTimer(); submitGuess(true); return; }
+    guessRaf=requestAnimationFrame(step);
+  };
+  guessRaf=requestAnimationFrame(step);
+}
+$('guessOk').addEventListener('click',()=>{ if(S.curInput.length===CONFIG.CODE_LEN) submitGuess(false); });
+
+function submitGuess(timeout){
+  stopGuessTimer();
+  const guess = timeout ? (S.curInput.padEnd(CONFIG.CODE_LEN,'?')) : S.curInput;
+  S.attempts++;
+  if(timeout || guess.includes('?')){
+    S.history.unshift({ code:'（沒填完，視為猜錯）', hit:0, near:0 });
+    SFX.fail();
+    afterAttempt(false);
+    return;
+  }
+  let hit=0, near=0;
+  const codeArr = S.code.split(''), guessArr = guess.split('');
+  guessArr.forEach((d,i)=>{ if(codeArr[i]===d) hit++; else if(codeArr.includes(d)) near++; });
+  S.history.unshift({ code:guess, hit, near });
+  SFX.clue();
+  const cracked = hit===CONFIG.CODE_LEN;
+  afterAttempt(cracked);
+}
+function afterAttempt(cracked){
+  $('histBox').innerHTML = S.history.map(h=>
+    `<div class="histRow"><div class="cd">${h.code}</div><div class="fb">🎯${h.hit} 🔄${h.near}</div></div>`).join('');
+  if(cracked){
+    const idx = S.guesserOrder[S.guesserPos];
+    S.scores[idx] += Math.max(1, CONFIG.MAX_ATTEMPTS - S.attempts + 1);
+    SFX.crack();
+    $('crackEm').textContent='🎉';
+    $('crackMsg').innerHTML = `${S.players[idx].emoji} <b>${S.players[idx].name}</b> 破解成功！`;
+    $('crackSub').textContent = `用了 ${S.attempts} 次猜中，密碼是 ${S.code}`;
+    show('cracked');
+    return;
+  }
+  if(S.attempts>=CONFIG.MAX_ATTEMPTS){
+    $('crackEm').textContent='😅';
+    $('crackMsg').innerHTML = `次數用完，沒猜出來…`;
+    $('crackSub').textContent = `密碼其實是 ${S.code}`;
+    show('cracked');
+    return;
+  }
+  S.curInput='';
+  $('guessSlots').innerHTML = renderSlots(S.curInput);
+  document.querySelectorAll('#guessPad [data-d]').forEach(x=>x.disabled=false);
+  $('guessOk').disabled=true;
+  $('attemptNum').textContent = S.attempts+1;
+  runGuessTimer();
+}
+$('crackNext').addEventListener('click',()=>{
+  SFX.tap();
+  S.guesserPos++;
+  nextGuesser();
+});
+
+function roundEnd(){
+  S.round++;
+  S.setterIdx = (S.setterIdx+1) % S.players.length;
+  if(S.round>=S.totalRounds) return finish();
+  newRound();
+}
+
+function finish(){
+  SFX.champ();
+  const rows = S.players.map((p,i)=>({p, sc:S.scores[i]})).sort((a,b)=>b.sc-a.sc);
+  const best = rows[0].sc;
+  $('overTitle').innerHTML = `${rows[0].p.emoji} <b>${rows[0].p.name}</b> 破解高手！`;
+  $('board').innerHTML = rows.map((r,i)=>`
+    <div class="row ${r.sc===best?'top':''}">
+      <div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div>
+    </div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.round=0; S.setterIdx=0; S.scores=S.players.map(()=>0);
+  newRound();
+});
+
+boot();
+</script>
+</body>
+</html>

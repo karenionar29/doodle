@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G45 神估價</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1E1408">
+<style>
+:root{
+  --ink:#1E1408; --ink-2:#2E210E; --line:#4E3818;
+  --paper:#FFF6E3; --dim:#C7A66B; --wire:#FFC53D; --spark:#7DE8FF;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:420px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#4A3714}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#241800;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.passName{font-size:30px;text-align:center;line-height:1.3}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+.qBox{width:100%;background:linear-gradient(135deg,#4A3714,#2E210E);
+      border:2px solid var(--line);border-radius:20px;padding:22px 15px;text-align:center}
+.qBox .em{font-size:40px;line-height:1}
+.qBox .qTxt{font-size:18px;line-height:1.5;margin-top:8px}
+.qBox .rangeHint{font-size:12px;color:var(--dim);margin-top:8px}
+
+.answerShow{width:100%;background:var(--ink-2);border:2px solid var(--wire);border-radius:16px;
+            padding:14px;text-align:center;font-size:32px;color:var(--wire);min-height:52px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.pad button{background:var(--ink-2);border:2px solid var(--line);border-radius:14px;padding:14px 0;font-size:22px}
+.pad button:active{transform:scale(.94);border-color:var(--wire)}
+.pad button.wide{font-size:15px;color:var(--dim)}
+.pad button.ok{background:var(--wire);color:#241800;font-size:17px}
+
+.revRow{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;
+        padding:12px 14px;display:flex;align-items:center;gap:11px}
+.revRow.win{border-color:var(--spark);background:#0F3A45}
+.revRow.bust{border-color:var(--bad);background:#3A1616;opacity:.7}
+.revRow .rk{font-size:18px;flex:none;width:26px;text-align:center}
+.revRow .nm{flex:1;font-size:14px;line-height:1.4}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:13px 15px}
+.row.top{background:var(--wire);color:#241800}
+.row .rk{font-size:19px;width:30px;text-align:center;flex:none}
+.row .nm{flex:1;font-size:16px}
+.row .sc{font-size:16px}
+
+.bigMsg{font-size:24px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">💰🔮</div>
+  <h1>G45 <b>神估價</b></h1>
+  <p class="sub">
+    系統出一個問題，答案是<b>一個數字</b>——<br>
+    大家偷偷猜一個數字，<b style="color:var(--wire)">最接近答案的人贏</b>！<br>
+    <span style="color:var(--bad)">但猜超過答案就直接淘汰這輪，不能算</span><br>
+    <span style="color:var(--spark)">猜低一點比較安全，但猜太低會輸給別人…</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">玩幾題？</p>
+    <div class="lenRow">
+      <button data-len="5">5 題<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-len="8" class="on">8 題<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="12">12 題<br><span style="font-size:11px;color:var(--dim)">長期戰</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">💰 開始估價</button>
+  <p class="tip">📱 一台裝置輪流傳著玩，至少 2 人<br>猜的時候別讓別人看到！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass" class="screen">
+  <div class="hero">🤫</div>
+  <div class="passName" id="passName">換 🧒 George</div>
+  <p class="tip">把裝置交給他，<b>其他人先別看</b> 🙈</p>
+  <div class="dots" id="passDots"></div>
+  <button class="go" id="passBtn">好，我拿到了</button>
+</section>
+
+<section id="pick" class="screen">
+  <div class="qBox">
+    <div class="em" id="qEm">🧋</div>
+    <div class="qTxt" id="qTxt">一杯超大珍奶要多少元？</div>
+    <div class="rangeHint" id="qRange"></div>
+  </div>
+  <div class="answerShow" id="answerShow">&nbsp;</div>
+  <div class="pad" id="pad"></div>
+</section>
+
+<section id="reveal" class="screen">
+  <div class="qBox" style="padding:14px"><div class="qTxt" id="revQ" style="font-size:16px"></div></div>
+  <div class="bigMsg" id="revAns"></div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:9px" id="revBoard"></div>
+  <button class="go" id="nextBtn">下一題 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再估一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G45 神估價（Price is Right 規則：最接近但不能超過）
+   跟 G22 出價競標不同：G22 是資源管理賽局（點數有限要精算分配），
+   這款是純估算能力＋一點賭性（猜低安全、猜太低會輸）。
+   耐玩來源＝每個人對數字的直覺不同，看別人猜的策略也很有趣。
+   ============================================================ */
+
+const CONFIG = { MAX_LEN: 6 };
+
+const QUESTIONS = [
+  ['🧋','一杯超大珍奶要多少元？', 60, 130],
+  ['🎢','迪士尼樂園門票大概多少元（台幣）？', 3000, 6500],
+  ['🐘','一隻成年非洲象大概多重（公斤）？', 4000, 7000],
+  ['🗼','台北101 有幾層樓？', 90, 110],
+  ['🏃','世界紀錄百米跑步大概幾秒？', 9, 11],
+  ['🌍','地球到月亮大概幾萬公里？', 30, 40],
+  ['🎂','全世界最大的蛋糕大概幾公斤？', 5000, 15000],
+  ['🐋','藍鯨的心臟大概多重（公斤）？', 90, 200],
+  ['📱','第一支 iPhone 是哪一年推出的？', 2005, 2009],
+  ['🍕','全世界最大的披薩直徑大概幾公尺？', 10, 40],
+  ['🦒','長頸鹿的脖子大概多長（公尺）？', 1, 3],
+  ['🚗','一台家用轎車大概多重（公斤）？', 1000, 2000],
+  ['🏔️','聖母峰大概多高（公尺）？', 8000, 9000],
+  ['🐢','加拉巴哥象龜可以活到幾歲？', 100, 180],
+  ['🎮','世界上第一台家用遊戲機是哪一年？', 1965, 1980],
+  ['🍫','世界上最貴的巧克力一顆大概幾元（台幣）？', 100, 5000],
+  ['🚀','火箭升空的速度大概每秒幾公里？', 5, 12],
+  ['🐝','一隻蜜蜂一生大概能採多少花蜜（公克）？', 1, 10],
+  ['📚','金氏世界紀錄最厚的書有幾頁？', 500, 3000],
+  ['🎈','一顆熱氣球可以載重大概幾公斤？', 100, 500],
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.06;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  key:()=>beep([700],0.04,'square',0.06),
+  win:()=>beep([784,988,1319,1568],0.15,'triangle',0.15),
+  bust:()=>beep([220,150],0.2,'sawtooth',0.12),
+  champ:()=>beep([659,880,1175,1568],0.16,'triangle',0.16),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+const rndInt=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+
+const S = {
+  players:[], total:8, round:0, pool:[], q:null, trueVal:0,
+  turn:0, guesses:[], curInput:'', scores:[],
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人才能對決'; $('startBtn').disabled=true; }
+  $('pad').innerHTML = ['1','2','3','4','5','6','7','8','9','⌫','0','OK'].map(k=>{
+    if(k==='OK') return `<button class="ok" id="okBtn">✅ 確定</button>`;
+    return `<button data-k="${k}" class="${k==='⌫'?'wide':''}">${k}</button>`;
+  }).join('');
+}
+document.querySelectorAll('[data-len]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-len]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); S.total=+b.dataset.len;
+}));
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<2) return;
+  SFX.tap();
+  S.round=0; S.scores=S.players.map(()=>0);
+  S.pool = shuffle(QUESTIONS.slice());
+  newRound();
+});
+
+function newRound(){
+  if(!S.pool.length) S.pool = shuffle(QUESTIONS.slice());
+  S.q = S.pool.pop();
+  S.trueVal = rndInt(S.q[2], S.q[3]);
+  S.turn = 0; S.guesses = [];
+  showPass();
+}
+function showPass(){
+  const p=S.players[S.turn];
+  $('passName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b>`;
+  $('passDots').innerHTML = S.players.map((_,i)=>
+    `<i class="${i<S.turn?'done':(i===S.turn?'now':'')}"></i>`).join('');
+  show('pass');
+}
+$('passBtn').addEventListener('click',()=>{ SFX.tap(); startPick(); });
+
+function startPick(){
+  S.curInput='';
+  $('qEm').textContent = S.q[0];
+  $('qTxt').textContent = S.q[1];
+  $('qRange').textContent = `範圍大約在 ${S.q[2]} ～ ${S.q[3]} 之間`;
+  $('answerShow').innerHTML = '&nbsp;';
+  show('pick');
+  bindPad();
+}
+function bindPad(){
+  document.querySelectorAll('#pad [data-k]').forEach(b=>{
+    b.onclick = () => {
+      SFX.key();
+      if(b.dataset.k==='⌫') S.curInput = S.curInput.slice(0,-1);
+      else if(S.curInput.length < CONFIG.MAX_LEN) S.curInput += b.dataset.k;
+      $('answerShow').textContent = S.curInput || '\u00A0';
+    };
+  });
+  $('okBtn').onclick = () => {
+    if(S.curInput==='') return;
+    SFX.tap();
+    const val = parseInt(S.curInput,10);
+    S.guesses.push({ p:S.players[S.turn], val });
+    S.turn++;
+    if(S.turn<S.players.length) showPass();
+    else doReveal();
+  };
+}
+
+function doReveal(){
+  /* Price-is-Right 規則：不超過答案的最接近者贏；
+     如果全部都猜超過，改成「超過最少的人」贏，避免這輪沒人贏。 */
+  const valid = S.guesses.filter(g=>g.val<=S.trueVal);
+  let winner;
+  if(valid.length){
+    winner = valid.reduce((a,b)=> (S.trueVal-a.val) <= (S.trueVal-b.val) ? a : b);
+  } else {
+    winner = S.guesses.reduce((a,b)=> (a.val-S.trueVal) <= (b.val-S.trueVal) ? a : b);
+  }
+  const winIdx = S.players.indexOf(winner.p);
+  S.scores[winIdx] += valid.length ? 3 : 1;
+
+  $('revQ').textContent = S.q[1];
+  $('revAns').innerHTML = `正確答案約是 <b>${S.trueVal}</b>`;
+  const sorted = S.guesses.slice().sort((a,b)=>{
+    const aBust = a.val>S.trueVal, bBust = b.val>S.trueVal;
+    if(aBust!==bBust) return aBust?1:-1;
+    return Math.abs(a.val-S.trueVal)-Math.abs(b.val-S.trueVal);
+  });
+  $('revBoard').innerHTML = sorted.map((g,i)=>{
+    const bust = g.val>S.trueVal;
+    const isWin = g===winner;
+    return `<div class="revRow ${isWin?'win':(bust?'bust':'')}">
+      <div class="rk">${isWin?'🎯':(i+1)}</div>
+      <div class="nm">${g.p.emoji} ${g.p.name} 猜了 <b>${g.val}</b>${bust?'（超過了）':''}${isWin?' ← 最準！':''}</div>
+    </div>`;
+  }).join('');
+  SFX.win();
+  $('nextBtn').textContent = (S.round+1>=S.total) ? '看最後成績 🏆' : `下一題 →`;
+  show('reveal');
+}
+
+$('nextBtn').addEventListener('click',()=>{
+  SFX.tap();
+  S.round++;
+  if(S.round>=S.total) return finish();
+  newRound();
+});
+
+function finish(){
+  SFX.champ();
+  const rows = S.players.map((p,i)=>({p, sc:S.scores[i]})).sort((a,b)=>b.sc-a.sc);
+  const best = rows[0].sc;
+  $('overTitle').innerHTML = `${rows[0].p.emoji} <b>${rows[0].p.name}</b> 神估價王！`;
+  $('board').innerHTML = rows.map((r,i)=>`
+    <div class="row ${r.sc===best?'top':''}">
+      <div class="rk">${['🥇','🥈','🥉'][i]||(i+1)}</div>
+      <div class="nm">${r.p.emoji} ${r.p.name}</div>
+      <div class="sc">${r.sc} 分</div>
+    </div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.round=0; S.scores=S.players.map(()=>0);
+  S.pool = shuffle(QUESTIONS.slice());
+  newRound();
+});
+
+boot();
+</script>
+</body>
+</html>
