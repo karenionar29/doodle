@@ -599,9 +599,13 @@ const totalOf = (r) => DIMS.reduce((s,[k]) => s + (r?.scores?.[k] || 0), 0);
    自動比對：背景抓伺服器上的 index.html，比對版本號，
             不同就代表這台裝置吃到舊快取 → 提示一鍵更新。
    ============================================================ */
-const APP_VERSION = 50;
+const APP_VERSION = 51;
 const CHANGELOG = [
-  { v:50, d:'最新', items:[
+  { v:51, d:'最新', items:[
+    '📄 修好離開遊戲會跳回第 1 頁的問題！現在會記住原本瀏覽的那一頁',
+    '📄 分頁列頂部也加一份，不用滑到最下面才能換頁',
+  ]},
+  { v:50, d:'', items:[
     '🎉 一次上線四款合作類，遊戲間正式滿 40 款！',
     '💞 G37 心跳同步：G21 的合作版，全隊共用生命值一起猜',
     '💣 G38 合力拆彈：全家共用一顆炸彈倒數，誰都能出手',
@@ -699,7 +703,13 @@ const CHANGELOG = [
   ]},
 ];
 
-const V = { cat:'全部', q:'', sort:'no', ban: new Set(), page: 0, dev:'any' };
+/* 記住分頁：離開遊戲回到 index.html#lobby 時，能回到原本瀏覽的那一頁，
+   而不是每次都跳回第 1 頁。只在「全部」純視圖時有意義，篩選視圖不分頁不用記。 */
+const PAGE_KEY = 'doodle-lobby-page';
+function loadPage() { try { return Math.max(0, parseInt(localStorage.getItem(PAGE_KEY) || '0', 10) || 0); } catch (_) { return 0; } }
+function savePage(p) { try { localStorage.setItem(PAGE_KEY, String(p)); } catch (_) {} }
+
+const V = { cat:'全部', q:'', sort:'no', ban: new Set(), page: loadPage(), dev:'any' };
 
 /* 裝置支援對照：all=三裝置全通 cam/mic=電腦勉強 tilt=電腦不能 */
 const DEV_INFO = {
@@ -821,6 +831,18 @@ function cardHTML(g, data) {
     </div>`;
 }
 
+function pageBarHTML(V, totalPages, idSuffix, totalCount) {
+  let h = `<div class="pageInfo">第 ${V.page + 1} / ${totalPages} 頁 · 共 ${totalCount} 款</div>`;
+  h += `<div class="pageBar" id="pageBar${idSuffix}">`;
+  h += `<button data-pg="prev" ${V.page === 0 ? 'disabled' : ''}>‹ 上一頁</button>`;
+  for (let i = 0; i < totalPages; i++) {
+    h += `<button data-pg="${i}" class="${i === V.page ? 'on' : ''}">${i + 1}</button>`;
+  }
+  h += `<button data-pg="next" ${V.page === totalPages - 1 ? 'disabled' : ''}>下一頁 ›</button>`;
+  h += `</div>`;
+  return h;
+}
+
 function renderShelf() {
   const data = loadR();
   let list = filtered();
@@ -840,8 +862,15 @@ function renderShelf() {
   } else {
     shown = restAll;   // 篩選視圖：全部顯示，不分頁
   }
+  savePage(V.page);   // 記住目前頁碼，離開遊戲回來時能回到原本這頁
 
   let html = '';
+
+  /* 📄 分頁列：頂部也放一份，不用滑到最下面才能換頁 */
+  if (plainView && totalPages > 1) {
+    html += pageBarHTML(V, totalPages, 'Top', restAll.length + favList.length);
+  }
+
   if (favList.length && V.page === 0) {
     html += `<div class="shelfSec">⭐ 我的最愛<div class="ln"></div></div>`;
     html += favList.map(g => cardHTML(g, data)).join('');
@@ -860,16 +889,9 @@ function renderShelf() {
     </div>`;
   }
 
-  /* 📄 分頁列（只在純視圖 + 超過一頁時顯示） */
+  /* 📄 分頁列（底部也保留一份） */
   if (plainView && totalPages > 1) {
-    html += `<div class="pageInfo">第 ${V.page + 1} / ${totalPages} 頁 · 共 ${restAll.length + favList.length} 款</div>`;
-    html += `<div class="pageBar" id="pageBar">`;
-    html += `<button data-pg="prev" ${V.page === 0 ? 'disabled' : ''}>‹ 上一頁</button>`;
-    for (let i = 0; i < totalPages; i++) {
-      html += `<button data-pg="${i}" class="${i === V.page ? 'on' : ''}">${i + 1}</button>`;
-    }
-    html += `<button data-pg="next" ${V.page === totalPages - 1 ? 'disabled' : ''}>下一頁 ›</button>`;
-    html += `</div>`;
+    html += pageBarHTML(V, totalPages, 'Bottom', restAll.length + favList.length);
   }
 
   $('shelf').innerHTML = html;
@@ -884,15 +906,18 @@ function renderShelf() {
       if (isStandalone()) { e.preventDefault(); location.href = a.dataset.game; }
     }));
 
-  /* 分頁按鈕：換頁後捲回清單頂部，不用手動滑 */
-  document.querySelectorAll('#pageBar [data-pg]').forEach(b =>
+  /* 分頁按鈕：頂部和底部各一份，都要綁定。
+     從頂部分頁列換頁：留在原位（本來就在上面，不用捲動）。
+     從底部分頁列換頁：捲回清單頂部，不用手動滑回去看新的一頁。 */
+  document.querySelectorAll('#pageBarTop [data-pg], #pageBarBottom [data-pg]').forEach(b =>
     b.addEventListener('click', () => {
       const v = b.dataset.pg;
       if (v === 'prev') V.page = Math.max(0, V.page - 1);
       else if (v === 'next') V.page = Math.min(totalPages - 1, V.page + 1);
       else V.page = +v;
+      const fromBottom = b.closest('#pageBarBottom') !== null;
       renderShelf();
-      $('shelf').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      if (fromBottom) $('shelf').scrollIntoView({ block: 'start', behavior: 'smooth' });
     }));
 }
 
