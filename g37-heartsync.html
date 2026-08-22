@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G37 心跳同步</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#081E24">
+<style>
+:root{
+  --ink:#081E24; --ink-2:#123038; --line:#1F4C58;
+  --paper:#E9FBFF; --dim:#7FB8C4; --wire:#4DE3D0; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.go{width:100%;background:var(--wire);color:#04211C;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+/* 隊伍狀態 */
+.teamBar{width:100%;display:flex;justify-content:center;align-items:center;gap:14px}
+.livesRow{display:flex;gap:5px}
+.livesRow span{font-size:22px;opacity:.25}
+.livesRow span.on{opacity:1}
+.streakChip{background:var(--ink-2);border-radius:99px;padding:7px 14px;font-size:14px}
+.streakChip b{color:var(--spark);font-size:17px}
+
+.timeWrap{width:100%;height:12px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+
+.passName{font-size:30px;text-align:center;line-height:1.3}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.dots i.done{background:var(--wire)}
+.dots i.now{background:var(--spark);transform:scale(1.35)}
+
+.qBox{width:100%;background:linear-gradient(135deg,#1F4C58,#123038);
+      border:2px solid var(--line);border-radius:18px;padding:16px 14px;text-align:center}
+.qBox .qTxt{font-size:19px;line-height:1.5}
+
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.opt{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+     padding:15px 8px;font-size:15px;display:flex;flex-direction:column;align-items:center;gap:5px;line-height:1.3}
+.opt .em{font-size:24px}
+.opt:active{transform:scale(.95);border-color:var(--wire)}
+
+.revRow{width:100%;background:var(--ink-2);border:2px solid var(--line);
+        border-radius:15px;padding:11px 14px;display:flex;align-items:center;gap:10px}
+.revRow.hit{border-color:var(--good);background:#123A2C}
+.revRow.miss{border-color:var(--bad);background:#3A1616}
+.revRow .em{font-size:22px;flex:none}
+.revRow .nm{flex:1;font-size:14px;line-height:1.4}
+
+.bigMsg{font-size:26px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">💞⏱️</div>
+  <h1>G37 <b>心跳同步</b></h1>
+  <p class="sub">
+    大家看同一題，<b>偷偷選一個答案</b>——<br>
+    <b style="color:var(--wire)">全隊多數人選一樣</b>就算同步成功！<br>
+    <span style="color:var(--bad)">選太分散 → 全隊扣一條命</span><br>
+    <span style="color:var(--spark)">連續同步，時間會越來越短——考驗默契的極限！</span><br>
+    <b>沒有輸贏個人分數，大家是同一隊。</b>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <button class="go" id="startBtn">💞 開始同步</button>
+  <p class="tip">📱 一台裝置輪流傳著玩，至少 2 人<br>選的時候別讓別人看到喔！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="pass" class="screen">
+  <div class="hero">🤫</div>
+  <div class="passName" id="passName">換 🧒 George</div>
+  <p class="tip">把裝置交給他，<b>其他人先別看</b> 🙈</p>
+  <div class="dots" id="passDots"></div>
+  <button class="go" id="passBtn">好，我拿到了</button>
+</section>
+
+<section id="pick" class="screen">
+  <div class="teamBar">
+    <div class="livesRow" id="livesRow"></div>
+    <span class="streakChip">連續同步 <b id="streakTxt">0</b></span>
+  </div>
+  <div class="qBox"><div class="qTxt" id="qTxt">說到冰的東西？</div></div>
+  <p class="tip">選一個你覺得<b>大家也會選</b>的 👇</p>
+  <div class="opts" id="optsBox"></div>
+  <div class="timeWrap"><i id="pickBar"></i></div>
+</section>
+
+<section id="reveal" class="screen">
+  <div class="qBox"><div class="qTxt" id="revQ"></div></div>
+  <div class="bigMsg" id="revMsg"></div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:9px" id="revBoard"></div>
+  <button class="go" id="nextBtn">繼續 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero" id="overEm">🏆</div>
+  <div class="bigMsg" id="overTitle"></div>
+  <p class="sub" id="overSub"></p>
+  <button class="go" id="again">🔁 再挑戰一次</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G37 心跳同步（合作版猜心思）
+   核心：G21 是比誰猜得準（對抗），這款是「全隊要一起猜中」（合作）。
+   把個人分數改成隊伍共用生命值，讓贏家不是某個人，是整支隊伍。
+   耐玩來源＝隊伍默契本身，連續同步時間會加快，逼大家更快讀懂彼此。
+   ============================================================ */
+
+const CONFIG = {
+  START_LIVES: 3,
+  TARGET_STREAK: 6,      // 連續同步幾次算隊伍獲勝
+  BASE_SEC: 7,
+  MIN_SEC: 3,
+  SEC_DECAY: 0.5,         // 每連續同步一次，時間縮短多少秒
+};
+
+const QUESTIONS = [
+  ['說到冰冰涼涼的東西？', [['🍦','冰淇淋'],['🧊','冰塊'],['❄️','雪'],['🥤','汽水'],['🍧','剉冰'],['🌊','海水']]],
+  ['最想養哪一種寵物？', [['🐶','狗'],['🐱','貓'],['🐰','兔子'],['🐹','倉鼠'],['🐠','魚'],['🦜','鸚鵡']]],
+  ['早餐最想吃什麼？', [['🥞','鬆餅'],['🍞','吐司'],['🥛','牛奶'],['🍚','稀飯'],['🥟','小籠包'],['🍳','荷包蛋']]],
+  ['最討厭的天氣？', [['🌧️','下雨'],['🥵','超熱'],['🥶','超冷'],['🌪️','颱風'],['🌫️','起霧'],['⛈️','打雷']]],
+  ['最想去哪裡玩？', [['🏖️','海邊'],['⛰️','爬山'],['🎢','遊樂園'],['🎬','電影院'],['🏊','游泳池'],['🦁','動物園']]],
+  ['最喜歡的顏色？', [['❤️','紅'],['💙','藍'],['💚','綠'],['💛','黃'],['💜','紫'],['🖤','黑']]],
+  ['考試前最想做什麼？', [['😴','睡覺'],['📱','滑手機'],['🍫','吃零食'],['🏃','出去玩'],['📖','再看一次'],['🙏','拜拜']]],
+  ['最想變成哪種動物？', [['🦅','老鷹'],['🐬','海豚'],['🦁','獅子'],['🐢','烏龜'],['🐒','猴子'],['🐧','企鵝']]],
+  ['最想收到什麼禮物？', [['🎮','電動'],['📱','手機'],['🧸','玩偶'],['🚲','腳踏車'],['💰','現金'],['🐕','寵物']]],
+  ['夜市必吃哪一攤？', [['🍗','鹹酥雞'],['🧋','珍奶'],['🌭','大熱狗'],['🍜','麵線'],['🥞','蔥油餅'],['🍦','冰淇淋']]],
+  ['放假第一件事？', [['😴','睡到飽'],['📺','看電視'],['🎮','打電動'],['🛒','出去買'],['👫','找朋友'],['🍔','吃大餐']]],
+  ['最怕的東西？', [['🪳','蟑螂'],['🕷️','蜘蛛'],['👻','鬼'],['💉','打針'],['🌑','黑暗'],['🐍','蛇']]],
+  ['最想學會什麼？', [['🎸','樂器'],['🥋','武術'],['🎨','畫畫'],['🧑‍🍳','煮菜'],['🗣️','外語'],['🪄','魔術']]],
+  ['說到學校最開心的事？', [['🍱','午餐'],['⚽','下課'],['🎨','美術課'],['🏃','體育課'],['👫','跟朋友聊天'],['🔔','放學']]],
+  ['最喜歡的季節？', [['🌸','春天'],['🏖️','夏天'],['🍁','秋天'],['⛄','冬天'],['🌧️','梅雨'],['🎋','過年']]],
+  ['最想吃的水果？', [['🍉','西瓜'],['🍓','草莓'],['🍇','葡萄'],['🥭','芒果'],['🍌','香蕉'],['🍎','蘋果']]],
+  ['最想在家裡加什麼？', [['🏊','游泳池'],['🎮','電玩間'],['🛝','溜滑梯'],['🍿','電影院'],['🐕','養狗'],['🌳','大樹']]],
+  ['最喜歡的零食？', [['🍫','巧克力'],['🍪','餅乾'],['🍬','糖果'],['🍟','薯條'],['🍿','爆米花'],['🍡','果凍']]],
+  ['最想當什麼職業？', [['🧑‍🚀','太空人'],['👮','警察'],['🧑‍⚕️','醫生'],['🎤','歌手'],['⚽','運動員'],['🧑‍🍳','廚師']]],
+  ['下雨天最想做什麼？', [['😴','睡覺'],['📺','看片'],['🎮','打電動'],['📖','看書'],['🍲','吃火鍋'],['🌧️','出去踩水']]],
+  ['最想去的國家？', [['🗾','日本'],['🇰🇷','韓國'],['🇺🇸','美國'],['🇫🇷','法國'],['🇦🇺','澳洲'],['🇹🇭','泰國']]],
+  ['生日想怎麼過？', [['🎂','吃蛋糕'],['🎁','拆禮物'],['🎢','去玩'],['🍽️','吃大餐'],['👫','找朋友'],['😴','安靜過']]],
+  ['最想要的房間佈置？', [['🌟','星空天花板'],['🎮','電競桌'],['📚','大書櫃'],['🛏️','超大床'],['🪴','很多植物'],['🎨','塗鴉牆']]],
+  ['最想跟誰交換一天？', [['👑','國王'],['🎤','明星'],['🐕','自己的狗'],['🧑‍🚀','太空人'],['👶','小嬰兒'],['🐦','小鳥']]],
+  ['吃飯最愛配什麼？', [['📺','電視'],['📱','手機'],['🗣️','聊天'],['🎵','音樂'],['📖','書'],['🤐','安靜吃']]],
+  ['最不想寫的作業？', [['🔢','數學'],['✍️','作文'],['🈶','國字'],['🔤','英文'],['🎨','美術'],['📖','背課文']]],
+  ['家裡最舒服的地方？', [['🛏️','床上'],['🛋️','沙發'],['🛁','浴缸'],['🍽️','餐桌'],['🚪','自己房間'],['🪟','窗邊']]],
+  ['遇到蟑螂會怎樣？', [['😱','尖叫'],['🏃','逃跑'],['🩴','打它'],['📢','叫大人'],['🧊','僵住'],['😐','沒事啊']]],
+  ['最想擁有的交通工具？', [['🏎️','跑車'],['🚁','直升機'],['🛥️','遊艇'],['🚲','腳踏車'],['🛹','滑板'],['🐎','馬']]],
+  ['被稱讚最開心的是？', [['🧠','很聰明'],['😄','很好笑'],['💪','很厲害'],['❤️','很善良'],['🎨','很有創意'],['⚡','動作很快']]],
+  ['露營最重要帶什麼？', [['⛺','帳篷'],['🔦','手電筒'],['🍖','食物'],['💧','水'],['🧴','防蚊液'],['🎸','吉他']]],
+  ['最想砍掉哪一件事？', [['📚','寫作業'],['🧹','做家事'],['😴','早起'],['🥦','吃青菜'],['🚿','洗澡'],['🦷','刷牙']]],
+  ['最喜歡的音樂？', [['🎸','搖滾'],['🎹','鋼琴'],['🥁','節奏強的'],['🎤','流行歌'],['🎻','古典'],['🔇','安靜就好']]],
+  ['最想收集什麼？', [['🃏','卡片'],['🪙','錢幣'],['🧸','公仔'],['📚','漫畫'],['🐚','貝殼'],['⭐','貼紙']]],
+  ['最想擁有的超能力？', [['✈️','飛行'],['👻','隱形'],['⏰','時間暫停'],['💪','超力氣'],['🧠','讀心術'],['🔮','預知未來']]],
+  ['說到「圓圓的」？', [['⚽','球'],['🌕','月亮'],['🍩','甜甜圈'],['🎡','摩天輪'],['🪙','硬幣'],['😀','笑臉']]],
+  ['最想拿到的成績？', [['💯','滿分'],['🏆','第一名'],['😌','及格就好'],['📈','進步就好'],['🎨','過程開心'],['🤷','無所謂']]],
+  ['說到「快快的」？', [['🐆','獵豹'],['🚀','火箭'],['⚡','閃電'],['🏍️','機車'],['💨','風'],['🏃','跑步']]],
+  ['最喜歡的水上活動？', [['🏄','衝浪'],['🤿','浮潛'],['🚤','快艇'],['🎣','釣魚'],['🏊','游泳'],['🛟','漂浮']]],
+  ['說到「軟軟的」？', [['☁️','雲'],['🍮','布丁'],['🧸','娃娃'],['🛏️','枕頭'],['🍡','麻糬'],['🐑','綿羊']]],
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.06;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.012);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([620],0.07,'triangle',0.1),
+  pass:()=>beep([440,660],0.1,'sine',0.11),
+  sync:()=>beep([784,988,1319,1568],0.16,'triangle',0.16),
+  miss:()=>beep([220,175],0.2,'sawtooth',0.13),
+  win:()=>beep([659,880,1175,1568],0.17,'triangle',0.16),
+  lose:()=>beep([196,165,130],0.3,'sawtooth',0.15),
+  tick:()=>beep([1200],0.04,'square',0.07),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const S = {
+  players:[], lives:3, streak:0, maxStreak:0,
+  pool:[], q:null, picks:[], late:[], turn:0, raf:null,
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人才能同步'; $('startBtn').disabled=true; }
+}
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<2) return;
+  SFX.pass();
+  S.lives=CONFIG.START_LIVES; S.streak=0; S.maxStreak=0;
+  S.pool = shuffle(QUESTIONS.slice());
+  newRound();
+});
+
+function paintLives(){
+  $('livesRow').innerHTML = Array.from({length:CONFIG.START_LIVES},(_,i)=>
+    `<span class="${i<S.lives?'on':''}">💗</span>`).join('');
+  $('streakTxt').textContent = S.streak;
+}
+
+function newRound(){
+  if(!S.pool.length) S.pool = shuffle(QUESTIONS.slice());
+  S.q = S.pool.pop();
+  S.picks = S.players.map(()=>-1);
+  S.late = S.players.map(()=>false);
+  S.turn = 0;
+  showPass();
+}
+function showPass(){
+  const p=S.players[S.turn];
+  $('passName').innerHTML = `換 ${p.emoji} <b style="color:var(--wire)">${p.name}</b>`;
+  $('passDots').innerHTML = S.players.map((_,i)=>
+    `<i class="${i<S.turn?'done':(i===S.turn?'now':'')}"></i>`).join('');
+  show('pass');
+}
+$('passBtn').addEventListener('click',()=>{ SFX.tap(); showPick(); });
+
+let pickRaf=null;
+function stopPickTimer(){ cancelAnimationFrame(pickRaf); pickRaf=null; }
+function pickSeconds(){ return Math.max(CONFIG.MIN_SEC, CONFIG.BASE_SEC - S.streak*CONFIG.SEC_DECAY); }
+
+function showPick(){
+  paintLives();
+  $('qTxt').textContent = S.q[0];
+  $('optsBox').innerHTML = S.q[1].map(([em,txt],i)=>
+    `<button class="opt" data-opt="${i}"><span class="em">${em}</span>${txt}</button>`).join('');
+  document.querySelectorAll('[data-opt]').forEach(b=>
+    b.addEventListener('click',()=>{ SFX.tap(); commitPick(+b.dataset.opt,false); }));
+  show('pick');
+  runPickTimer();
+}
+function runPickTimer(){
+  stopPickTimer();
+  const total = pickSeconds()*1000;
+  const endAt = performance.now()+total;
+  let last=-1;
+  const step=()=>{
+    const left=endAt-performance.now();
+    const sec=Math.max(0,left/1000);
+    $('pickBar').style.width = Math.max(0,left/total*100)+'%';
+    const hot = sec<=2;
+    $('pickBar').classList.toggle('hot',hot);
+    const s=Math.ceil(sec);
+    if(hot && s!==last && s>0){ SFX.tick(); last=s; }
+    if(left<=0){ stopPickTimer(); const rnd=Math.floor(Math.random()*S.q[1].length); commitPick(rnd,true); return; }
+    pickRaf=requestAnimationFrame(step);
+  };
+  pickRaf=requestAnimationFrame(step);
+}
+function commitPick(idx,timeout){
+  stopPickTimer();
+  S.picks[S.turn]=idx; S.late[S.turn]=!!timeout;
+  S.turn++;
+  if(S.turn<S.players.length) showPass();
+  else doReveal();
+}
+
+function doReveal(){
+  const count={};
+  S.picks.forEach(v=>{ count[v]=(count[v]||0)+1; });
+  const entries = Object.entries(count).sort((a,b)=>b[1]-a[1]);
+  const [topIdx, topN] = entries[0];
+  const majorityNeed = Math.floor(S.players.length/2)+1;
+  const success = topN >= majorityNeed;
+
+  $('revQ').textContent = S.q[0];
+  $('revBoard').innerHTML = S.players.map((p,i)=>{
+    const [em,txt] = S.q[1][S.picks[i]];
+    const hit = S.picks[i]==+topIdx && success;
+    const lateTag = S.late[i] ? ' ⏰<span style="color:var(--bad)">來不及</span>' : '';
+    return `<div class="revRow ${success ? (hit?'hit':'') : 'miss'}">
+      <div class="em">${em}</div>
+      <div class="nm">${p.emoji} ${p.name} 選了「${txt}」${lateTag}</div>
+    </div>`;
+  }).join('');
+
+  if(success){
+    S.streak++; S.maxStreak=Math.max(S.maxStreak,S.streak);
+    SFX.sync();
+    if(navigator.vibrate){try{navigator.vibrate(30);}catch(_){}}
+    $('revMsg').innerHTML = `💞 <b>同步成功！</b>連續 ${S.streak} 次`;
+  } else {
+    S.lives--; S.streak=0;
+    SFX.miss();
+    if(navigator.vibrate){try{navigator.vibrate(120);}catch(_){}}
+    $('revMsg').innerHTML = `💔 <b style="color:var(--bad)">沒同步到…</b>大家想的不一樣`;
+  }
+  paintLives();
+  $('nextBtn').textContent = '繼續 →';
+  show('reveal');
+}
+
+$('nextBtn').addEventListener('click',()=>{
+  SFX.tap();
+  if(S.streak>=CONFIG.TARGET_STREAK) return finish(true);
+  if(S.lives<=0) return finish(false);
+  newRound();
+});
+
+function finish(won){
+  won ? SFX.win() : SFX.lose();
+  $('overEm').textContent = won ? '🏆' : '💔';
+  $('overTitle').innerHTML = won
+    ? `全隊默契爆表！連續同步 <b>${S.maxStreak}</b> 次`
+    : `隊伍生命值用完了…`;
+  $('overSub').textContent = won
+    ? '你們的心真的連在一起 💞'
+    : `最高連續同步了 ${S.maxStreak} 次，再來挑戰看看！`;
+  show('over');
+}
+
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.lives=CONFIG.START_LIVES; S.streak=0; S.maxStreak=0;
+  S.pool = shuffle(QUESTIONS.slice());
+  newRound();
+});
+
+boot();
+</script>
+</body>
+</html>

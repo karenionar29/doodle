@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G38 合力拆彈</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1E1206">
+<style>
+:root{
+  --ink:#1E1206; --ink-2:#2E1D0C; --line:#4E3216;
+  --paper:#FFF3E2; --dim:#D3A876; --wire:#FF9D3D; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF5C5C;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:460px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.go{width:100%;background:var(--wire);color:#241300;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.bombTimer{width:100%;height:18px;background:var(--ink-2);border-radius:99px;overflow:hidden;position:relative}
+.bombTimer i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.bombTimer i.hot{background:var(--bad)}
+.bombNum{font-size:34px;text-align:center;line-height:1;color:var(--wire)}
+.bombNum.hot{color:var(--bad)}
+
+.progRow{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;width:100%}
+.progRow span{width:15px;height:15px;border-radius:4px;background:var(--ink-2);border:1.5px solid var(--line)}
+.progRow span.on{background:var(--good);border-color:var(--good)}
+
+.taskCard{width:100%;background:var(--ink-2);border:3px solid var(--wire);border-radius:20px;
+          padding:22px 15px;min-height:170px;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:10px;touch-action:none;user-select:none}
+.taskCard.flashBad{border-color:var(--bad);animation:sk .12s 2}
+.taskCard.flashGood{border-color:var(--good)}
+@keyframes sk{0%{transform:translateX(-4px)}50%{transform:translateX(4px)}100%{transform:translateX(0)}}
+.taskEm{font-size:48px;line-height:1}
+.taskLabel{font-size:17px;text-align:center}
+.taskProg{width:80%;height:10px;background:var(--ink);border-radius:99px;overflow:hidden}
+.taskProgFill{height:100%;background:var(--good);width:0%}
+.choiceRow{display:flex;gap:10px;width:100%}
+.choiceRow button{flex:1;background:var(--ink);border:2px solid var(--line);border-radius:14px;
+                  padding:16px 6px;font-size:26px}
+.choiceRow button:active{transform:scale(.94)}
+
+.idleCard{font-size:15px;color:var(--dim);text-align:center}
+
+.bigMsg{font-size:26px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">💣🧑‍🤝‍🧑</div>
+  <h1>G38 <b>合力拆彈</b></h1>
+  <p class="sub">
+    全家<b>共用一個炸彈倒數</b>，<b>誰都可以出手</b>拆！<br>
+    畫面跳出任務就<b style="color:var(--wire)">最快的人先按</b>——<br>
+    拆對 <b style="color:var(--good)">加時間</b>、拆錯或太慢 <b style="color:var(--bad)">扣時間</b>。<br>
+    <span style="color:var(--spark)">湊滿拆除進度、時間沒歸零，全家一起獲勝！</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <button class="go" id="startBtn">💣 開始拆彈</button>
+  <p class="tip">📱 裝置放中間，大家一起盯著<br>任務隨機出現，誰先反應誰上</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="play" class="screen">
+  <div class="bombNum" id="bombNum">75</div>
+  <div class="bombTimer"><i id="bombBar"></i></div>
+  <div class="progRow" id="progRow"></div>
+
+  <div class="taskCard" id="taskCard">
+    <div id="taskInner"><div class="idleCard">💣 盯緊，任務隨時會跳出來…</div></div>
+  </div>
+  <p class="tip">拆除進度 <b id="progTxt" style="color:var(--wire)">0</b> / <b id="progGoal">10</b></p>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero" id="overEm">🏆</div>
+  <div class="bigMsg" id="overTitle"></div>
+  <p class="sub" id="overSub"></p>
+  <button class="go" id="again">🔁 再拆一顆</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G38 合力拆彈
+   核心：共用一個「隊伍倒數」，裝置放中間，任何人都能出手——
+   不是輪流、不是分工，是真正的「誰先反應誰來」全員合作。
+   耐玩來源＝拆彈任務隨機出現、誰搶得到全憑手速與默契配合，
+            拆錯會倒扣時間，逼大家一起冷靜判斷不要亂按。
+   ============================================================ */
+
+const CONFIG = {
+  START_MS: 75000,
+  TARGET_SUCCESS: 10,
+  BONUS_MS: 4200,
+  PENALTY_MS: 5500,
+  SPAWN_GAP: [[900,1600],[700,1300],[550,1050]], // 依拆除進度分段變快
+  TASK_DUR: [2600,2300,2000],
+};
+
+const TASK_TYPES = ['tap','choose','hold'];
+const WIRE_EMOJIS = ['🔴','🔵','🟡','🟢'];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.05;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.008);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.12));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.12)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  spawn:()=>beep([1200],0.05,'square',0.08),
+  good:()=>beep([880,1319],0.11,'triangle',0.15),
+  bad:()=>beep([220,150],0.24,'sawtooth',0.14),
+  tick:()=>beep([1500],0.04,'square',0.07),
+  win:()=>beep([659,880,1175,1568],0.17,'triangle',0.16),
+  boom:()=>beep([120,90,60],0.4,'sawtooth',0.2),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+const S = {
+  players:[], running:false, endAt:0, success:0,
+  task:null, spawnTimer:null, tickRaf:null,
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人才能合力'; $('startBtn').disabled=true; }
+}
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<2) return;
+  SFX.tap();
+  startGame();
+});
+
+function stage(){ return S.success<4?0 : (S.success<8?1:2); }
+
+function startGame(){
+  S.endAt = performance.now()+CONFIG.START_MS;
+  S.success=0; S.running=true; S.task=null;
+  $('progGoal').textContent = CONFIG.TARGET_SUCCESS;
+  paintProg();
+  show('play');
+  scheduleSpawn(true);
+  runTick();
+}
+function paintProg(){
+  $('progTxt').textContent = S.success;
+  $('progRow').innerHTML = Array.from({length:CONFIG.TARGET_SUCCESS},(_,i)=>
+    `<span class="${i<S.success?'on':''}"></span>`).join('');
+}
+
+function runTick(){
+  cancelAnimationFrame(S.tickRaf);
+  const step=()=>{
+    if(!S.running) return;
+    const left = S.endAt-performance.now();
+    const pct = Math.max(0,Math.min(100,left/CONFIG.START_MS*100));
+    $('bombBar').style.width = pct+'%';
+    const sec = Math.max(0,left/1000);
+    $('bombNum').textContent = Math.ceil(sec);
+    const hot = sec<=10;
+    $('bombBar').classList.toggle('hot',hot);
+    $('bombNum').classList.toggle('hot',hot);
+    if(left<=0) return failGame();
+    S.tickRaf=requestAnimationFrame(step);
+  };
+  S.tickRaf=requestAnimationFrame(step);
+}
+
+function scheduleSpawn(first){
+  clearTimeout(S.spawnTimer);
+  const g = CONFIG.SPAWN_GAP[stage()];
+  const gap = first? rnd(500,1000) : rnd(g[0],g[1]);
+  S.spawnTimer=setTimeout(spawnTask, gap);
+}
+function spawnTask(){
+  if(!S.running) return;
+  if(S.task){ scheduleSpawn(false); return; }
+  const type = pick(TASK_TYPES);
+  const dur = CONFIG.TASK_DUR[stage()];
+  S.task = { type, dur, startAt:performance.now(), taps:0, held:0, holding:false, holdStamp:0, handle:null };
+  renderTask();
+  SFX.spawn();
+  S.task.handle = setTimeout(()=>resolveTask(false,'太慢了！'), dur);
+}
+
+function renderTask(){
+  const t = S.task, ti=$('taskInner'), card=$('taskCard');
+  card.classList.remove('flashBad','flashGood');
+  if(t.type==='tap'){
+    ti.innerHTML = `<div class="taskEm">✂️</div><div class="taskLabel">快剪！連按 <b>5</b> 下</div>
+      <div class="taskProg"><div class="taskProgFill" id="tf"></div></div>`;
+  } else if(t.type==='hold'){
+    ti.innerHTML = `<div class="taskEm">🔧</div><div class="taskLabel">按住別放，穩住線路！</div>
+      <div class="taskProg"><div class="taskProgFill" id="tf"></div></div>`;
+  } else if(t.type==='choose'){
+    const correct = Math.floor(Math.random()*4);
+    t.correct = correct;
+    const wires = shufflePreview(correct);
+    ti.innerHTML = `<div class="taskEm">🧵</div><div class="taskLabel">剪對<b style="color:var(--wire)">${WIRE_EMOJIS[correct]}</b>色的線！</div>
+      <div class="choiceRow" id="choiceRow"></div>`;
+    $('choiceRow').innerHTML = wires.map((w,i)=>`<button data-w="${w}">${WIRE_EMOJIS[w]}</button>`).join('');
+    document.querySelectorAll('#choiceRow [data-w]').forEach(b=>
+      b.addEventListener('click',()=>{
+        if(+b.dataset.w===t.correct) resolveTask(true,'剪對了！');
+        else resolveTask(false,'剪錯線了！');
+      }));
+  }
+}
+function shufflePreview(correctIdx){
+  const arr=[0,1,2,3];
+  for(let i=arr.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[arr[i],arr[j]]=[arr[j],arr[i]];}
+  if(!arr.includes(correctIdx)) arr[0]=correctIdx;
+  return arr;
+}
+
+/* 全域委派：任何人在任務卡上點/按都算 */
+function bindTaskCard(){
+  const card=$('taskCard');
+  card.addEventListener('pointerdown', e=>{
+    const t=S.task; if(!t) return;
+    if(t.type==='tap'){
+      t.taps++;
+      SFX.tap();
+      const tf=$('tf'); if(tf) tf.style.width = Math.min(100,t.taps/5*100)+'%';
+      if(t.taps>=5) resolveTask(true,'剪斷了！');
+    } else if(t.type==='hold'){
+      if(e.target.closest('#choiceRow')) return;
+      t.holding=true; t.holdStamp=performance.now();
+      tickHold();
+    }
+  });
+  card.addEventListener('pointerup', e=>{ const t=S.task; if(t&&t.type==='hold') holdEnd(); });
+  card.addEventListener('pointercancel', ()=>{ const t=S.task; if(t&&t.type==='hold') holdEnd(); });
+  card.addEventListener('pointerleave', ()=>{ const t=S.task; if(t&&t.type==='hold') holdEnd(); });
+}
+function holdEnd(){
+  const t=S.task; if(!t||!t.holding) return;
+  t.holding=false;
+  t.held += performance.now()-t.holdStamp;
+}
+function tickHold(){
+  const t=S.task; if(!t||t.type!=='hold'||!t.holding) return;
+  const cur = t.held + (performance.now()-t.holdStamp);
+  const need=1200;
+  const tf=$('tf'); if(tf) tf.style.width = Math.min(100,cur/need*100)+'%';
+  if(cur>=need){ resolveTask(true,'穩住了！'); return; }
+  requestAnimationFrame(tickHold);
+}
+
+function resolveTask(ok,msg){
+  const t=S.task; if(!t) return;
+  clearTimeout(t.handle);
+  S.task=null;
+  const card=$('taskCard');
+  if(ok){
+    S.success++;
+    S.endAt += CONFIG.BONUS_MS;
+    SFX.good();
+    if(navigator.vibrate){try{navigator.vibrate(30);}catch(_){}}
+    card.classList.add('flashGood');
+    $('taskInner').innerHTML = `<div class="taskEm">✅</div><div class="taskLabel" style="color:var(--good)">${msg}<br>+${(CONFIG.BONUS_MS/1000).toFixed(1)} 秒</div>`;
+  } else {
+    S.endAt -= CONFIG.PENALTY_MS;
+    SFX.bad();
+    if(navigator.vibrate){try{navigator.vibrate([70,40,70]);}catch(_){}}
+    card.classList.add('flashBad');
+    $('taskInner').innerHTML = `<div class="taskEm">❌</div><div class="taskLabel" style="color:var(--bad)">${msg}<br>−${(CONFIG.PENALTY_MS/1000).toFixed(1)} 秒</div>`;
+  }
+  paintProg();
+  if(S.success>=CONFIG.TARGET_SUCCESS) return setTimeout(()=>winGame(),350);
+  if(S.endAt<=performance.now()) return; // runTick 會抓到歸零
+  setTimeout(()=>{
+    if(!S.running) return;
+    $('taskInner').innerHTML = '<div class="idleCard">💣 盯緊，任務隨時會跳出來…</div>';
+    $('taskCard').classList.remove('flashGood','flashBad');
+    scheduleSpawn(false);
+  }, 550);
+}
+
+function winGame(){
+  S.running=false;
+  cancelAnimationFrame(S.tickRaf);
+  clearTimeout(S.spawnTimer);
+  SFX.win();
+  $('overEm').textContent='🏆';
+  $('overTitle').innerHTML = '全家合力拆彈成功！';
+  const leftSec = Math.max(0,(S.endAt-performance.now())/1000);
+  $('overSub').textContent = `拆除進度全滿，還剩 ${leftSec.toFixed(1)} 秒！`;
+  show('over');
+}
+function failGame(){
+  S.running=false;
+  cancelAnimationFrame(S.tickRaf);
+  clearTimeout(S.spawnTimer);
+  SFX.boom();
+  if(navigator.vibrate){try{navigator.vibrate([90,50,90,50,140]);}catch(_){}}
+  $('overEm').textContent='💥';
+  $('overTitle').innerHTML = '碰！時間到了…';
+  $('overSub').textContent = `拆到 ${S.success} / ${CONFIG.TARGET_SUCCESS}，再合作一次！`;
+  show('over');
+}
+
+$('again').addEventListener('click',()=>{ SFX.tap(); startGame(); });
+
+window.addEventListener('pagehide',()=>{ S.running=false; cancelAnimationFrame(S.tickRaf); clearTimeout(S.spawnTimer); });
+
+boot();
+bindTaskCard();
+</script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G39 傳話接力</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0E1A2E">
+<style>
+:root{
+  --ink:#0E1A2E; --ink-2:#182A47; --line:#28436B;
+  --paper:#EAF2FF; --dim:#8FA8D0; --wire:#5CC8FF; --spark:#FFD84D;
+  --good:#6BE8A8; --bad:#FF6B6B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:440px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#1E3A5C}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#03192A;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.chainRow{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.chainRow i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.chainRow i.done{background:var(--wire)}
+.chainRow i.now{background:var(--spark);transform:scale(1.35)}
+
+.peekBox{width:100%;background:var(--ink-2);border:2px dashed var(--line);border-radius:18px;
+         padding:26px 14px;text-align:center;font-size:17px;color:var(--dim);user-select:none}
+.peekBox.on{border-style:solid;border-color:var(--wire);background:#1E3A5C;color:var(--paper)}
+.wordBig{font-size:32px;color:var(--wire);line-height:1.3}
+
+.relayName{font-size:28px;text-align:center;line-height:1.3}
+.relayName b{color:var(--wire)}
+.timeNum{font-size:44px;color:var(--wire);text-align:center;line-height:1}
+.timeNum.hot{color:var(--bad)}
+.timeWrap{width:100%;height:12px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.opt{background:var(--ink-2);border:2px solid var(--line);border-radius:16px;
+     padding:16px 8px;font-size:16px}
+.opt:active{transform:scale(.95);border-color:var(--wire)}
+
+.bigMsg{font-size:24px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+
+.board{width:100%;display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:11px;background:var(--ink-2);border-radius:15px;padding:12px 15px}
+.row.good{border:2px solid var(--good)}
+.row.bad{border:2px solid var(--bad)}
+.row .rk{font-size:16px;flex:none;width:26px;text-align:center}
+.row .nm{flex:1;font-size:14px}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">🗣️👂</div>
+  <h1>G39 <b>傳話接力</b></h1>
+  <p class="sub">
+    第一個人偷看一個詞，<b>小聲傳給下一個人</b>，<br>
+    一個一個傳下去——<b>不能寫字、不能比手勢</b>，只能講！<br>
+    傳到最後一個人，<b style="color:var(--wire)">從選項猜出原本的詞</b>。<br>
+    <span style="color:var(--spark)">猜對算全隊贏，猜錯來看傳話中間走鐘到哪裡去了 😂</span><br>
+    <b>沒有輸贏個人分數，大家是同一隊。</b>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">玩幾輪？</p>
+    <div class="lenRow">
+      <button data-len="3">3 輪<br><span style="font-size:11px;color:var(--dim)">快速</span></button>
+      <button data-len="5" class="on">5 輪<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="8">8 輪<br><span style="font-size:11px;color:var(--dim)">長期戰</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">🗣️ 開始傳話</button>
+  <p class="tip">📱 一台裝置實體傳來傳去，至少 3 人<br>小聲一點，別讓下下一個人聽到！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="peek" class="screen">
+  <div class="chainRow" id="peekChain"></div>
+  <h1>第一棒：<b id="peekName">Win</b></h1>
+  <div class="peekBox" id="peekBox">
+    👁️ <b>按住</b>看題目<br>
+    <span style="font-size:12px;font-weight:500">放開就藏起來</span>
+  </div>
+  <p class="tip">記住之後<b>小聲傳給下一位</b>，然後把裝置也交給他</p>
+  <button class="go" id="peekOk">傳出去了，交給下一位</button>
+</section>
+
+<section id="relay" class="screen">
+  <div class="chainRow" id="relayChain"></div>
+  <div class="relayName" id="relayName">輪到 🧒 <b>George</b></div>
+  <p class="sub">聽完上一位傳的話，記住，然後<br><b>小聲傳給下一位</b></p>
+  <div class="timeNum" id="relayTime">8</div>
+  <div class="timeWrap"><i id="relayBar"></i></div>
+  <button class="go" id="relayOk">我傳完了，換下一位</button>
+</section>
+
+<section id="guess" class="screen">
+  <div class="hero">🎯</div>
+  <h1>最後一棒：<b id="guessName">Kris</b></h1>
+  <p class="sub">傳到你這裡，你覺得<b>原本的詞</b>是哪一個？</p>
+  <div class="opts" id="guessOpts"></div>
+</section>
+
+<section id="result" class="screen">
+  <div class="hero" id="resEm">🎉</div>
+  <div class="bigMsg" id="resMsg"></div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:12px;color:var(--dim)">原本的詞</div>
+    <div style="font-size:24px;color:var(--wire);margin-top:4px" id="resWord"></div>
+  </div>
+  <button class="go" id="nextBtn">下一輪 →</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🏆</div>
+  <h1 id="overTitle"></h1>
+  <div class="board" id="board"></div>
+  <button class="go" id="again">🔁 再傳一輪</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G39 傳話接力（純語言，不畫圖不打字）
+   核心：跟 G05 傳話大亂畫不同——這款完全靠嘴巴口耳相傳，
+   裝置只負責出題、計時、最後給選項猜。
+   耐玩來源＝真人傳話天生會走鐘，越多人傳越好笑，
+            猜錯反而是遊戲最好玩的部分。
+   ============================================================ */
+
+const CONFIG = { RELAY_SEC: 8 };
+
+const WORDS = [
+  '大象','鉛筆盒','消防車','西瓜','機器人','游泳圈','雨傘','蝴蝶結','太空人','冰淇淋',
+  '腳踏車','貓頭鷹','溜滑梯','三明治','恐龍','蜘蛛網','水龍頭','紅綠燈','棒棒糖','摩天輪',
+  '望遠鏡','刺蝟','蒸氣火車','跳跳床','蝸牛殼','摩托車','麵包超人','檸檬','雪人','衝浪板',
+  '獨角獸','捕蟲網','熱氣球','珍珠奶茶','足球','貓咪抓板','手電筒','聖誕樹','風箏','企鵝',
+  '洗衣機','蜂蜜','沙灘球','機關槍','手風琴','斑馬線','背包','煙火','老虎機','望遠鏡',
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.06;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  tick:()=>beep([1200],0.04,'square',0.07),
+  win:()=>beep([784,988,1319,1568],0.16,'triangle',0.16),
+  lose:()=>beep([300,220],0.24,'sawtooth',0.13),
+  round:()=>beep([523,659,784],0.13,'triangle',0.12),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const S = {
+  players:[], total:5, round:0, results:[],
+  word:'', turn:0, pool:[],
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<3){ $('startBtn').textContent='⚠️ 至少要 3 個人才能傳'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-len]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-len]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); S.total=+b.dataset.len;
+}));
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<3) return;
+  SFX.tap();
+  S.round=0; S.results=[];
+  S.pool = shuffle(WORDS.slice());
+  newRound();
+});
+
+function newRound(){
+  if(!S.pool.length) S.pool = shuffle(WORDS.slice());
+  S.word = S.pool.pop();
+  S.turn = 0;
+  showPeek();
+}
+function chainDots(id){
+  $(id).innerHTML = S.players.map((_,i)=>
+    `<i class="${i<S.turn?'done':(i===S.turn?'now':'')}"></i>`).join('');
+}
+
+function showPeek(){
+  SFX.round();
+  const p=S.players[0];
+  $('peekName').innerHTML = `${p.emoji} ${p.name}`;
+  chainDots('peekChain');
+  const box=$('peekBox');
+  const hide=()=>{ box.classList.remove('on'); box.innerHTML='👁️ <b>按住</b>看題目<br><span style="font-size:12px;font-weight:500">放開就藏起來</span>'; };
+  const showW=()=>{ box.classList.add('on'); box.innerHTML=`<div class="wordBig">${S.word}</div>`; };
+  hide();
+  box.onpointerdown=(e)=>{ e.preventDefault(); showW(); };
+  box.onpointerup=hide; box.onpointerleave=hide; box.onpointercancel=hide;
+  show('peek');
+}
+$('peekOk').addEventListener('click',()=>{
+  SFX.tap();
+  S.turn=1;
+  showRelay();
+});
+
+let relayRaf=null;
+function stopRelayTimer(){ cancelAnimationFrame(relayRaf); relayRaf=null; }
+
+/* 統一畫面：turn 指向「目前正在接收/傳話的人」。
+   是不是最後一棒只影響顯示文字；下一步統一交給 advanceRelay() 判斷，
+   避免對同一顆按鈕重複綁定事件（那會讓一次點擊觸發兩次流程）。 */
+function showRelay(){
+  const isLast = S.turn === S.players.length-1;
+  const p=S.players[S.turn];
+  $('relayName').innerHTML = isLast
+    ? `最後一棒：${p.emoji} <b>${p.name}</b>`
+    : `輪到 ${p.emoji} <b>${p.name}</b>`;
+  chainDots('relayChain');
+  show('relay');
+  runRelayTimer();
+}
+function runRelayTimer(){
+  stopRelayTimer();
+  const total=CONFIG.RELAY_SEC*1000;
+  const endAt=performance.now()+total;
+  let last=-1;
+  const step=()=>{
+    const left=endAt-performance.now();
+    const sec=Math.max(0,left/1000);
+    $('relayBar').style.width = Math.max(0,left/total*100)+'%';
+    $('relayTime').textContent = Math.ceil(sec);
+    const hot=sec<=2;
+    $('relayBar').classList.toggle('hot',hot);
+    $('relayTime').classList.toggle('hot',hot);
+    const s=Math.ceil(sec);
+    if(hot && s!==last && s>0){ SFX.tick(); last=s; }
+    if(left<=0){ stopRelayTimer(); advanceRelay(); return; }
+    relayRaf=requestAnimationFrame(step);
+  };
+  relayRaf=requestAnimationFrame(step);
+}
+$('relayOk').addEventListener('click',()=>{ SFX.tap(); advanceRelay(); });
+
+function advanceRelay(){
+  stopRelayTimer();
+  const isLast = S.turn === S.players.length-1;
+  if(isLast){ showGuess(); }
+  else { S.turn++; showRelay(); }
+}
+
+function showGuess(){
+  const p=S.players[S.players.length-1];
+  $('guessName').innerHTML = `${p.emoji} ${p.name}`;
+  const others = shuffle(WORDS.filter(w=>w!==S.word)).slice(0,5);
+  const opts = shuffle([S.word, ...others]);
+  $('guessOpts').innerHTML = opts.map(w=>`<button class="opt" data-w="${w}">${w}</button>`).join('');
+  document.querySelectorAll('#guessOpts [data-w]').forEach(b=>
+    b.addEventListener('click',()=>{ SFX.tap(); judgeGuess(b.dataset.w); }));
+  show('guess');
+}
+
+function judgeGuess(guessWord){
+  const correct = guessWord===S.word;
+  S.results.push({word:S.word, guess:guessWord, correct});
+  $('resEm').textContent = correct?'🎉':'😂';
+  $('resMsg').innerHTML = correct
+    ? `<b style="color:var(--good)">傳對了！</b>默契滿分`
+    : `<b style="color:var(--bad)">走鐘了…</b>猜成「${guessWord}」`;
+  $('resWord').textContent = S.word;
+  correct ? SFX.win() : SFX.lose();
+  $('nextBtn').textContent = (S.round+1>=S.total) ? '看總成績 🏆' : '下一輪 →';
+  show('result');
+}
+
+$('nextBtn').addEventListener('click',()=>{
+  SFX.tap();
+  S.round++;
+  if(S.round>=S.total) return finish();
+  newRound();
+});
+
+function finish(){
+  const hits = S.results.filter(r=>r.correct).length;
+  $('overTitle').innerHTML = `全隊傳對 <b style="color:var(--wire)">${hits}</b> / ${S.total} 輪`;
+  $('board').innerHTML = S.results.map((r,i)=>`
+    <div class="row ${r.correct?'good':'bad'}">
+      <div class="rk">${r.correct?'✅':'❌'}</div>
+      <div class="nm">第${i+1}輪：${r.word}${r.correct?'':' → 猜成「'+r.guess+'」'}</div>
+    </div>`).join('');
+  show('over');
+}
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.round=0; S.results=[];
+  S.pool = shuffle(WORDS.slice());
+  newRound();
+});
+
+boot();
+</script>
+</body>
+</html>

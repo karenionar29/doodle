@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>G40 故事接龍</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1C0E22">
+<style>
+:root{
+  --ink:#1C0E22; --ink-2:#2C1938; --line:#472A5C;
+  --paper:#F7ECFF; --dim:#B99AD4; --wire:#E27DFF; --spark:#FFE14D;
+  --good:#6BE8A8; --bad:#FF6B8A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;font-weight:inherit;border:none;cursor:pointer;color:inherit}
+body{min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;font-weight:700;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));}
+
+#exitGame{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  z-index:60;height:28px;padding:0 12px;border-radius:99px;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:inline-flex;align-items:center;
+  gap:4px;font-size:12px;font-weight:700;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.25)}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:14px;max-width:460px;margin:0 auto;padding-top:26px}
+.screen.on{display:flex}
+h1{font-size:26px;text-align:center;line-height:1.3}
+h1 b{color:var(--wire)}
+.hero{font-size:46px;text-align:center;line-height:1}
+.sub{font-size:14px;color:var(--dim);font-weight:500;text-align:center;line-height:1.75}
+.sub b{color:var(--paper)}
+.who{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.who span{background:var(--ink-2);border-radius:99px;padding:7px 13px;font-size:13px}
+.card{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;padding:15px}
+.lenRow{display:flex;gap:9px;width:100%}
+.lenRow button{flex:1;background:var(--ink-2);border:2px solid var(--line);border-radius:15px;padding:13px 0;font-size:15px;color:var(--dim)}
+.lenRow button.on{border-color:var(--wire);color:var(--wire);background:#3B2050}
+.lenRow button:active{transform:scale(.96)}
+.go{width:100%;background:var(--wire);color:#22072C;border-radius:18px;padding:17px 0;font-size:18px}
+.go:active{transform:scale(.97)}
+.go:disabled{opacity:.4}
+.back{color:var(--dim);font-size:13px;font-weight:500;text-decoration:underline;text-align:center}
+.tip{font-size:12px;color:var(--dim);font-weight:500;text-align:center;line-height:1.7}
+
+.chainRow{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.chainRow i{width:9px;height:9px;border-radius:50%;background:var(--line);font-style:normal}
+.chainRow i.done{background:var(--wire)}
+.chainRow i.now{background:var(--spark);transform:scale(1.35)}
+
+.turnName{font-size:28px;text-align:center;line-height:1.3}
+.turnName b{color:var(--wire)}
+
+.storyStart{width:100%;background:var(--ink-2);border:2px solid var(--line);border-radius:18px;
+            padding:16px 15px;text-align:center;font-size:16px;line-height:1.6}
+
+.twistCard{width:100%;background:linear-gradient(150deg,#3B2050,#2C1938);
+           border:3px solid var(--spark);border-radius:20px;padding:22px 15px;text-align:center}
+.twistCard .em{font-size:44px;line-height:1}
+.twistCard .tx{font-size:19px;color:var(--spark);margin-top:8px;line-height:1.4}
+.twistCard .hint{font-size:12px;color:var(--dim);font-weight:500;margin-top:8px}
+
+.timeNum{font-size:44px;color:var(--wire);text-align:center;line-height:1}
+.timeNum.hot{color:var(--bad)}
+.timeWrap{width:100%;height:12px;background:var(--ink-2);border-radius:99px;overflow:hidden}
+.timeWrap i{display:block;height:100%;background:var(--wire);width:100%;transition:width .1s linear}
+.timeWrap i.hot{background:var(--bad)}
+
+.recapList{width:100%;display:flex;flex-direction:column;gap:8px}
+.recapRow{display:flex;align-items:center;gap:10px;background:var(--ink-2);border-radius:14px;padding:11px 13px}
+.recapRow .em{font-size:22px;flex:none}
+.recapRow .nm{flex:1;font-size:13px;color:var(--dim)}
+
+.badgeRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.badgeRow span{background:var(--ink-2);border-radius:99px;padding:8px 12px;font-size:13px;border:1px solid var(--line)}
+
+.bigMsg{font-size:24px;text-align:center;line-height:1.4}
+.bigMsg b{color:var(--wire)}
+</style>
+</head>
+<body>
+
+<a href="index.html#lobby" id="exitGame" aria-label="返回遊戲間">← 離開</a>
+
+<section id="intro" class="screen on">
+  <div class="hero">📖✨</div>
+  <h1>G40 <b>故事接龍</b></h1>
+  <p class="sub">
+    輪流<b>接一句故事</b>，湊成一個全家共同創作的怪故事！<br>
+    每輪抽一張<b style="color:var(--spark)">劇情卡</b>，逼故事轉彎——<br>
+    忽然下雨、冒出一隻兔子、主角肚子餓了…<br>
+    <span style="color:var(--wire)">沒有輸贏，故事越荒謬越好笑！</span>
+  </p>
+  <div class="who" id="whoRow"></div>
+  <div class="card">
+    <p class="sub" style="margin-bottom:10px">接幾輪？</p>
+    <div class="lenRow">
+      <button data-len="6">6 輪<br><span style="font-size:11px;color:var(--dim)">短篇</span></button>
+      <button data-len="10" class="on">10 輪<br><span style="font-size:11px;color:var(--dim)">標準</span></button>
+      <button data-len="15">15 輪<br><span style="font-size:11px;color:var(--dim)">長篇</span></button>
+    </div>
+  </div>
+  <button class="go" id="startBtn">📖 開始編故事</button>
+  <p class="tip">📱 一台裝置輪流傳著玩，至少 2 人<br>大聲說出你接的那一句，讓大家聽到！</p>
+  <a class="back" href="index.html#lobby">← 回遊戲間（改玩家設定）</a>
+</section>
+
+<section id="opening" class="screen">
+  <div class="hero">📖</div>
+  <h1>故事的開頭</h1>
+  <div class="storyStart" id="storyStart"></div>
+  <p class="tip">先大聲唸一次開頭，接下來輪流接下去</p>
+  <button class="go" id="openingOk">好，開始接！</button>
+</section>
+
+<section id="turn" class="screen">
+  <div class="chainRow" id="turnChain"></div>
+  <div class="turnName" id="turnName">輪到 🧒 <b>George</b></div>
+  <div class="twistCard">
+    <div class="em" id="twistEm">🐰</div>
+    <div class="tx" id="twistTx">忽然冒出一隻兔子</div>
+    <div class="hint">把這個元素接進故事裡，大聲說一句！</div>
+  </div>
+  <div class="timeNum" id="turnTime">20</div>
+  <div class="timeWrap"><i id="turnBar"></i></div>
+  <button class="go" id="turnOk">接完了，換下一位</button>
+</section>
+
+<section id="over" class="screen">
+  <div class="hero">🎉</div>
+  <h1>故事完成了！</h1>
+  <p class="sub">全家一起接了 <b id="overRounds" style="color:var(--wire)">10</b> 輪</p>
+  <div class="recapList" id="recapList"></div>
+  <div class="badgeRow" id="badgeRow"></div>
+  <button class="go" id="again">🔁 再編一個故事</button>
+  <a class="back" href="index.html#lobby" id="gohome">🏠 回遊戲間（換一款玩）</a>
+</section>
+
+<script src="family-players.js?v=5"></script>
+<script>
+/* ============================================================
+   G40 故事接龍
+   核心：全遊戲庫唯一沒有輸贏的合作款——內容是「全家共同創作出的故事」。
+   裝置只負責報幕、抽劇情卡、計時，真正的內容全部在大家嘴巴裡。
+   耐玩來源＝劇情卡的隨機轉折逼每個人臨場反應，故事永遠長不一樣。
+   ============================================================ */
+
+const CONFIG = { TURN_SEC: 20 };
+
+const OPENINGS = [
+  '很久很久以前，有一隻愛睡覺的貓咪，住在一棵超大的樹上……',
+  '從前有個小男孩，撿到一把會說話的雨傘……',
+  '在一座漂浮在雲上的城市裡，住著一群不會飛的鳥……',
+  '有一天，冰箱裡的布丁突然開口說話了……',
+  '深山裡有一間神秘的柑仔店，老闆是一隻會算命的貓頭鷹……',
+  '從前有一個國王，他最大的煩惱是每天都會打噴嚏……',
+  '有一隻小恐龍搭錯了時光機，來到了現在的超市……',
+  '在海底深處，有一間專門幫魚看牙齒的診所……',
+  '有一天，家裡的掃地機器人突然變得超級聰明……',
+  '從前有個女孩，她的影子總是比她早一步做決定……',
+];
+
+const TWISTS = [
+  ['🐰','忽然冒出一隻兔子'], ['🌧️','天空突然下起雨'], ['🍔','主角肚子餓得要命'],
+  ['👻','出現了一個奇怪的聲音'], ['🚪','發現一扇神秘的門'], ['❄️','天氣突然變超冷'],
+  ['🎁','收到一個神秘包裹'], ['🐉','遠方出現一隻巨大的生物'], ['💡','主角突然想到一個好點子'],
+  ['🌀','眼前的東西開始旋轉'], ['🎵','遠處傳來奇怪的音樂'], ['🕳️','腳下出現一個大洞'],
+  ['🧙','一位神秘的老人出現了'], ['⚡','忽然一道閃電劃過'], ['🐭','一隻老鼠跑過去'],
+  ['🍄','踩到一朵會發光的蘑菇'], ['📦','打開了一個上鎖的箱子'], ['🌊','突然被一波水沖走'],
+  ['🦋','一群蝴蝶飛了過來'], ['🔔','聽到遠方的鐘聲'], ['🐍','草叢裡有東西在動'],
+  ['🎈','天上飄來一顆氣球'], ['🕰️','時鐘突然倒著走'], ['🍂','風把樹葉吹得到處都是'],
+  ['🐸','一隻青蛙擋住了去路'], ['🚀','天上飛過一個奇怪的東西'], ['🎭','出現了一個戴面具的人'],
+  ['🦴','挖到一根神秘的骨頭'], ['🌈','天空出現了一道彩虹'], ['🍯','發現一罐會發光的蜂蜜'],
+];
+
+let AC=null;
+function beep(fs,dur,type,vol){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+ const t0=AC.currentTime+i*0.06;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+ g.gain.exponentialRampToValueAtTime(0.0001,t0+(dur||0.14));o.connect(g);g.connect(AC.destination);
+ o.start(t0);o.stop(t0+(dur||0.14)+0.02);});}catch(e){}}
+const SFX={
+  tap:()=>beep([560],0.06,'triangle',0.09),
+  tick:()=>beep([1200],0.04,'square',0.07),
+  pass:()=>beep([523,659,784],0.13,'triangle',0.12),
+  win:()=>beep([659,880,1175,1568],0.16,'triangle',0.16),
+};
+const $=id=>document.getElementById(id);
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const S = {
+  players:[], total:10, round:0, turn:0,
+  twistPool:[], usedTwists:[], fastCount:0,
+};
+
+function boot(){
+  S.players = FP.get();
+  $('whoRow').innerHTML = S.players.map(p=>`<span>${p.emoji} ${p.name}</span>`).join('');
+  if(S.players.length<2){ $('startBtn').textContent='⚠️ 至少要 2 個人才能接龍'; $('startBtn').disabled=true; }
+}
+document.querySelectorAll('[data-len]').forEach(b=>b.addEventListener('click',()=>{
+  SFX.tap();document.querySelectorAll('[data-len]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); S.total=+b.dataset.len;
+}));
+$('startBtn').addEventListener('click',()=>{
+  if(S.players.length<2) return;
+  SFX.tap();
+  S.round=0; S.turn=0; S.usedTwists=[]; S.fastCount=0;
+  S.twistPool = shuffle(TWISTS.slice());
+  $('storyStart').textContent = pick(OPENINGS);
+  show('opening');
+});
+$('openingOk').addEventListener('click',()=>{ SFX.pass(); newTurn(); });
+
+function newTurn(){
+  if(!S.twistPool.length) S.twistPool = shuffle(TWISTS.slice());
+  const [em,tx] = S.twistPool.pop();
+  S.currentTwist = {em,tx};
+  const p=S.players[S.turn];
+  $('turnChain').innerHTML = Array.from({length:S.total},(_,i)=>
+    `<i class="${i<S.round?'done':(i===S.round?'now':'')}"></i>`).join('');
+  $('turnName').innerHTML = `輪到 ${p.emoji} <b>${p.name}</b>`;
+  $('twistEm').textContent = em;
+  $('twistTx').textContent = tx;
+  show('turn');
+  runTurnTimer();
+}
+
+let turnRaf=null, turnFastFlag=false;
+function runTurnTimer(){
+  cancelAnimationFrame(turnRaf);
+  turnFastFlag=false;
+  const total=CONFIG.TURN_SEC*1000;
+  const startAt=performance.now();
+  const endAt=startAt+total;
+  let last=-1;
+  const step=()=>{
+    const left=endAt-performance.now();
+    const sec=Math.max(0,left/1000);
+    $('turnBar').style.width = Math.max(0,left/total*100)+'%';
+    $('turnTime').textContent = Math.ceil(sec);
+    const hot=sec<=5;
+    $('turnBar').classList.toggle('hot',hot);
+    $('turnTime').classList.toggle('hot',hot);
+    const s=Math.ceil(sec);
+    if(hot && s!==last && s>0){ SFX.tick(); last=s; }
+    if(left<=0){ cancelAnimationFrame(turnRaf); nextAfterTurn(false); return; }
+    turnRaf=requestAnimationFrame(step);
+  };
+  turnRaf=requestAnimationFrame(step);
+}
+$('turnOk').addEventListener('click',()=>{ SFX.pass(); nextAfterTurn(true); });
+
+function nextAfterTurn(fast){
+  cancelAnimationFrame(turnRaf);
+  if(fast) S.fastCount++;
+  S.usedTwists.push({ ...S.currentTwist, player:S.players[S.turn] });
+  S.round++;
+  S.turn = (S.turn+1) % S.players.length;
+  if(S.round>=S.total) return finish();
+  newTurn();
+}
+
+function finish(){
+  SFX.win();
+  $('overRounds').textContent = S.total;
+  $('recapList').innerHTML = S.usedTwists.map((t,i)=>
+    `<div class="recapRow"><div class="em">${t.em}</div>
+      <div class="nm">第${i+1}輪 · ${t.player.emoji}${t.player.name} 接了「${t.tx}」</div></div>`).join('');
+
+  const badges=[];
+  if(S.fastCount>=Math.ceil(S.total*0.7)) badges.push('⚡ 反應如飛');
+  if(S.total>=15) badges.push('📚 長篇大作');
+  if(new Set(S.usedTwists.map(t=>t.tx)).size===S.usedTwists.length) badges.push('🎲 卡卡不重複');
+  badges.push('🎭 全家創作獎');
+  $('badgeRow').innerHTML = badges.map(b=>`<span>${b}</span>`).join('');
+
+  show('over');
+}
+$('again').addEventListener('click',()=>{
+  SFX.tap();
+  S.round=0; S.turn=0; S.usedTwists=[]; S.fastCount=0;
+  S.twistPool = shuffle(TWISTS.slice());
+  $('storyStart').textContent = pick(OPENINGS);
+  show('opening');
+});
+
+boot();
+</script>
+</body>
+</html>
