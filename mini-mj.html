@@ -98,9 +98,11 @@ pre{font:12px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word;backgro
   <h2>4 素材庫 <span id="libcount"></span></h2>
   <div class="lib" id="lib"></div>
   <div class="btns" style="margin-top:8px">
-    <button class="main" id="export">下載素材包 .json</button>
-    <button class="sec" id="clear">清空素材庫</button>
+    <button class="main" id="export">分享／下載素材包</button>
+    <button class="sec" id="copyPack">複製</button>
+    <button class="sec" id="clear">清空</button>
   </div>
+  <p class="status" id="status4"></p>
   <p class="note">素材包傳給 Claude 就能直接塞進遊戲。圖存在這支手機的瀏覽器裡，換裝置不會帶著走，所以要的先下載。</p>
 </section>
 
@@ -318,25 +320,45 @@ $('go').addEventListener('click', ()=>{
 $('stop').addEventListener('click', ()=>{ runId++; $('go').disabled=false; $('stop').disabled=true; $('status').textContent='停了'; });
 
 // --- 素材庫 ---
+let libCache = [];                                   // 素材庫的副本，匯出時直接用（iPhone 要「按下去當下」就動作，不能等）
 async function renderLib(){
-  const all = (await dbAll()).sort((a,b)=>b.t-a.t);
+  const all = (await dbAll()).sort((a,b)=>b.t-a.t); libCache = all;
   $('libcount').textContent = all.length ? '（'+all.length+' 張）' : '';
   $('lib').innerHTML = all.map(a=>'<div class="cell" data-id="'+a.id+'">'+(a.data?'<img src="'+a.data+'" alt="">':'')+'<span></span><b data-del="'+a.id+'">✕</b></div>').join('');
   [...$('lib').children].forEach((c,i)=>c.querySelector('span').textContent=all[i].name);
 }
 $('lib').addEventListener('click', async e=>{ const d=e.target.closest('[data-del]'); if(d){ await dbDel(d.dataset.del); renderLib(); } });
-$('clear').addEventListener('click', async ()=>{ if ($('clear').textContent!=='真的清空？'){ $('clear').textContent='真的清空？'; setTimeout(()=>$('clear').textContent='清空素材庫',3000); return; } await dbClear(); $('clear').textContent='清空素材庫'; renderLib(); });
+$('clear').addEventListener('click', async ()=>{ if ($('clear').textContent!=='真的清空？'){ $('clear').textContent='真的清空？'; setTimeout(()=>$('clear').textContent='清空',3000); return; } await dbClear(); $('clear').textContent='清空'; renderLib(); });
 
 // 匯出素材包：一個 JSON，裡面每張圖都是 base64，Claude 收到直接塞進遊戲
-$('export').addEventListener('click', async ()=>{
-  const all = await dbAll();
-  if (!all.length){ $('status').textContent='素材庫是空的'; return; }
+// iPhone 的規矩：下載／分享要在「按下去那一瞬間」發生，所以這裡完全不等（素材庫用 libCache）
+function buildPack(){
+  const all = libCache;
+  if (!all.length) return null;
   const pack = { app:'素材工廠', version:2, exported:new Date().toISOString(), count:all.length,
     items: all.map(a=>({ name:a.name, kind:a.kind, prompt:a.prompt, seed:a.seed, w:a.w, h:a.h, url:a.url, data:a.data })) };
-  const blob = new Blob([JSON.stringify(pack)], {type:'application/json'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='assets-'+new Date().toISOString().slice(0,10)+'.json';
+  const name = 'assets-'+new Date().toISOString().slice(0,10)+'.json';
+  return { name, text: JSON.stringify(pack), n: all.length };
+}
+function say4(t){ $('status4').textContent = t; }
+$('export').addEventListener('click', ()=>{
+  const p = buildPack(); if (!p){ say4('素材庫是空的：先在上面按 ✓ 留'); return; }
+  const file = new File([p.text], p.name, {type:'application/json'});
+  const kb = Math.round(p.text.length/1024);
+  if (navigator.canShare && navigator.canShare({files:[file]})){               // iPhone：跳分享選單（存到檔案／傳給 Claude）
+    navigator.share({files:[file], title:p.name}).then(()=>say4('已分享 '+p.n+' 張，'+kb+' KB')).catch(()=>say4('分享取消'));
+    return;
+  }
+  const a = document.createElement('a');                                       // 電腦：直接下載
+  a.href = URL.createObjectURL(new Blob([p.text],{type:'application/json'})); a.download = p.name;
   document.body.appendChild(a); a.click(); a.remove();
-  $('status').textContent='素材包 '+Math.round(blob.size/1024)+' KB，存到「檔案」後傳給 Claude';
+  say4('已下載 '+p.n+' 張，'+kb+' KB');
+});
+// 備案：複製成文字（小包才貼得動）
+$('copyPack').addEventListener('click', ()=>{
+  const p = buildPack(); if (!p){ say4('素材庫是空的：先在上面按 ✓ 留'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(p.text).then(()=>say4('已複製 '+Math.round(p.text.length/1024)+' KB，去對話貼上')).catch(()=>say4('複製失敗，用分享'));
+  else say4('這個瀏覽器不能複製，用分享');
 });
 
 // --- 任務連結：網址帶 ?job=（base64 的 JSON）就自動填好、自動開跑；Claude 寫好清單丟連結，Kris 只要點 ---
