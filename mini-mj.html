@@ -112,7 +112,7 @@ const CONFIG = {
   model: 'flux',          // 借用的大腦
   gapMs: 15000,           // 免費版節奏：兩張之間至少隔 15 秒
   timeoutMs: 90000,       // 一張最多等 90 秒
-  retryMs: 20000,         // 失敗後等多久再試
+  tries: 3,               // 一張最多試幾次（每次之間照 gapMs 等）
   maxPx: 768,             // 存進素材庫時最長邊縮到幾像素（控制檔案大小）
   jpegQ: 0.82,            // JPEG 壓縮品質
   storeKey: 'assetfactory.v2', // localStorage 抽屜名（設定用）
@@ -217,21 +217,22 @@ function plainImg(url){
   });
 }
 async function loadImage(url){
-  if (corsOK !== false){
-    try{
-      const ctl = new AbortController(); const timer = setTimeout(()=>ctl.abort(), CONFIG.timeoutMs);
-      const r = await fetch(url, {signal: ctl.signal}); clearTimeout(timer);
-      if (!r.ok) throw new Error('http '+r.status);                   // 429／500 是對方忙，不是跨網域問題
-      const b = await r.blob(); if (!b.type.startsWith('image/')) throw new Error('not image');
-      const img = await plainImg(URL.createObjectURL(b));             // 自己家的 blob 網址，畫到 canvas 不會被鎖
-      if (img){ corsOK = true; return img; }
-    }catch(e){
-      if (e && e.name==='TypeError' && corsOK===null){                 // TypeError＝被跨網域擋下：以後直接走普通載入
-        corsOK = false; $('status').textContent='對方不給跨網域，圖看得到但素材庫只能記網址；要的圖請「開大圖」長按存相簿';
-      }
+  if (corsOK === false) return plainImg(url);                          // 已知對方不給跨網域：直接普通載入
+  try{
+    const ctl = new AbortController(); const timer = setTimeout(()=>ctl.abort(), CONFIG.timeoutMs);
+    const r = await fetch(url, {signal: ctl.signal}); clearTimeout(timer);
+    if (!r.ok) return null;                                            // 429／500＝對方忙：回 null 讓外面等一下再試，不要馬上再要一次
+    const b = await r.blob(); if (!b.type.startsWith('image/')) return null;
+    const img = await plainImg(URL.createObjectURL(b));               // 自己家的 blob 網址，畫到 canvas 不會被鎖
+    if (img) corsOK = true;
+    return img;
+  }catch(e){
+    if (e && e.name==='TypeError'){                                    // TypeError＝被跨網域擋下：以後直接走普通載入
+      if (corsOK===null) $('status').textContent='對方不給跨網域，圖看得到但素材庫只能記網址；要的圖請「開大圖」長按存相簿';
+      corsOK = false; return plainImg(url);
     }
+    return null;                                                       // 逾時或其他錯：當失敗，外面會重試
   }
-  return plainImg(url);                                                // 普通載入：一定看得到（只要對方活著）
 }
 // 圖 → 縮小 → JPEG base64（存素材庫用）；對方不給跨網域許可就回 null
 function toDataUrl(img){
@@ -244,7 +245,7 @@ function toDataUrl(img){
 }
 
 // --- 批次出圖 ---
-let runId = 0, items = [];     // items：這批每一張的狀態
+let runId = 0, items = [], lastDone = 0;     // items：這批每一張的狀態；lastDone：上一次請求結束的時間
 function renderItem(it){
   const el = it.el;
   el.className = 'item' + (it.kept?' kept':'');
@@ -277,22 +278,28 @@ async function keep(it){
 async function runQueue(queue){
   const my = ++runId;
   $('go').disabled = true; $('stop').disabled = false;
+  // 節奏：每次「送出請求」之間至少隔 gapMs，從上一次請求「結束」（不管成功失敗）起算
+  async function pace(label){
+    const wait = CONFIG.gapMs - (Date.now() - lastDone);
+    for (let left=wait; left>0 && my===runId; left-=1000){ $('status').textContent=label+' '+Math.ceil(left/1000)+' 秒後開始'; await sleep(1000); }
+  }
   for (let n=0;n<queue.length;n++){
     if (my!==runId) break;
     const it = queue[n];
     it.seed = seedFor(it.family, it.index, it.redraw);
     it.url = imageUrl(it.prompt, it.w, it.h, it.seed);
     it.img = null; it.dataUrl = null; it.kept = false; it.state='loading'; renderItem(it);
-    const started = Date.now();
-    let img = await loadImage(it.url);
-    if (!img && my===runId){ $('status').textContent=it.name+' 沒出來，'+(CONFIG.retryMs/1000)+' 秒後重試'; await sleep(CONFIG.retryMs); if (my!==runId) break; img = await loadImage(it.url); }
+    let img = null;
+    for (let tryN=1; tryN<=CONFIG.tries && !img && my===runId; tryN++){
+      await pace(tryN===1 ? '第 '+(n+1)+' 張（'+it.name+'）' : it.name+' 沒出來，第 '+tryN+' 次重試');
+      if (my!==runId) break;
+      $('status').textContent = it.name+' 畫圖中…';
+      img = await loadImage(it.url);
+      lastDone = Date.now();                                          // 這次請求結束，節奏從這裡重算
+    }
     if (my!==runId) break;
     if (img){ it.img=img; it.state='ok'; it.dataUrl=toDataUrl(img); } else { it.state='fail'; }
     renderItem(it);
-    if (n<queue.length-1){                                           // 等滿 15 秒再排下一張
-      const wait = CONFIG.gapMs-(Date.now()-started);
-      for (let left=wait; left>0 && my===runId; left-=1000){ $('status').textContent='下一張（'+queue[n+1].name+'）'+Math.ceil(left/1000)+' 秒後開始'; await sleep(1000); }
-    }
   }
   if (my===runId){ $('status').textContent='這批跑完。按 ✓ 留下要的，不要的按重抽'; $('go').disabled=false; $('stop').disabled=true; }
 }
