@@ -339,11 +339,32 @@ $('export').addEventListener('click', async ()=>{
   $('status').textContent='素材包 '+Math.round(blob.size/1024)+' KB，存到「檔案」後傳給 Claude';
 });
 
-// --- 開場：帶回上次設定 ---
-setKind(cfg.kind||0);
-$('style').value = cfg.style||0; $('extra').value = cfg.extra||''; $('family').value = cfg.family||randSeed();
-$('list').value = cfg.list || '蘋果|red apple\n香蕉|yellow banana\n葡萄|bunch of purple grapes\n西瓜|slice of watermelon';
-refresh(); renderLib();
+// --- 任務連結：網址帶 ?job=（base64 的 JSON）就自動填好、自動開跑；Claude 寫好清單丟連結，Kris 只要點 ---
+// JSON 長這樣：{"kind":"cutout","style":6,"extra":"","family":800579,"list":"戰士|...\n法師|...","auto":1}
+function readJob(){
+  try{
+    const q = new URLSearchParams(location.search).get('job'); if (!q) return null;
+    const bin = atob(q.replace(/-/g,'+').replace(/_/g,'/'));                         // base64url → base64 → 位元組
+    const json = new TextDecoder().decode(Uint8Array.from(bin, c=>c.charCodeAt(0)));  // 位元組 → UTF-8 文字（中文才不會爛）
+    return JSON.parse(json);
+  }catch(e){ return null; }
+}
+
+// --- 開場：有任務連結照任務；沒有就帶回上次設定 ---
+const job = readJob();
+if (job){
+  const ki = Math.max(0, KINDS.findIndex(k=>k.id===job.kind));
+  setKind(ki);
+  $('style').value = job.style||0; $('extra').value = job.extra||''; $('family').value = job.family||randSeed();
+  $('list').value = job.list||'';
+  refresh(); renderLib();
+  if (job.auto){ $('status').textContent='任務連結：自動開跑'; $('go').click(); }
+} else {
+  setKind(cfg.kind||0);
+  $('style').value = cfg.style||0; $('extra').value = cfg.extra||''; $('family').value = cfg.family||randSeed();
+  $('list').value = cfg.list || '蘋果|red apple\n香蕉|yellow banana\n葡萄|bunch of purple grapes\n西瓜|slice of watermelon';
+  refresh(); renderLib();
+}
 </script>
 </body>
 </html>
