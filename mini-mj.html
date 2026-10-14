@@ -126,6 +126,8 @@ const KINDS = [
   { id:'bg',     name:'背景',  w:1024, h:576,  words:'game background scene, wide view, no characters, no text' },
   { id:'puzzle', name:'拼圖',  w:1024, h:768,  words:'richly detailed scene, many distinct objects, vivid colors, no text' },
   { id:'char',   name:'人物',  w:768,  h:1024, words:'single character, full body, standing, plain background, no text' },
+  // 去背用：畫在純綠底上，塞進遊戲時用程式把綠色摳掉（Flux 畫不出透明背景）
+  { id:'cutout', name:'角色・去背', w:768, h:1024, words:'single character, full body, standing, facing slightly left, centered, isolated on a flat solid bright green background, no shadow on the ground, no text' },
 ];
 
 // 風格：整批共用一組，圖才會像同一套
@@ -136,6 +138,7 @@ const STYLES = [
   ['寫實照片',   'photorealistic, soft natural light'],
   ['剪紙',       'paper cut-out craft style, layered paper, soft shadows'],
   ['水墨',       'ink wash painting style, minimal, elegant'],
+  ['魔法學院',   'magic academy fantasy illustration, wizard robes, candlelight, old castle, rich warm colors, bold clean outlines, game art'],
 ];
 
 // 把清單文字拆成 [{name, desc}]；「名稱|描述」或只有名稱
@@ -202,15 +205,33 @@ function refresh(){
 }
 for (const id of ['style','extra','family','list']) $(id).addEventListener('input', refresh);
 
-// --- 載圖：成功或失敗都會結束 ---
-function loadImage(url){
+// --- 載圖：先用 fetch 拿圖（拿得到就能存 base64）；對方不給跨網域就退回普通 <img>（看得到但存不了） ---
+let corsOK = null;                       // null＝還不知道；true＝能存；false＝對方不給，之後不再浪費請求
+function plainImg(url){
   return new Promise(res=>{
-    const img = new Image(); img.crossOrigin = 'anonymous';           // 要求跨網域許可，才能轉成 base64
+    const img = new Image();
     const timer = setTimeout(()=>{ img.src=''; res(null); }, CONFIG.timeoutMs);
     img.onload = ()=>{ clearTimeout(timer); res(img); };
     img.onerror = ()=>{ clearTimeout(timer); res(null); };
     img.src = url;
   });
+}
+async function loadImage(url){
+  if (corsOK !== false){
+    try{
+      const ctl = new AbortController(); const timer = setTimeout(()=>ctl.abort(), CONFIG.timeoutMs);
+      const r = await fetch(url, {signal: ctl.signal}); clearTimeout(timer);
+      if (!r.ok) throw new Error('http '+r.status);                   // 429／500 是對方忙，不是跨網域問題
+      const b = await r.blob(); if (!b.type.startsWith('image/')) throw new Error('not image');
+      const img = await plainImg(URL.createObjectURL(b));             // 自己家的 blob 網址，畫到 canvas 不會被鎖
+      if (img){ corsOK = true; return img; }
+    }catch(e){
+      if (e && e.name==='TypeError' && corsOK===null){                 // TypeError＝被跨網域擋下：以後直接走普通載入
+        corsOK = false; $('status').textContent='對方不給跨網域，圖看得到但素材庫只能記網址；要的圖請「開大圖」長按存相簿';
+      }
+    }
+  }
+  return plainImg(url);                                                // 普通載入：一定看得到（只要對方活著）
 }
 // 圖 → 縮小 → JPEG base64（存素材庫用）；對方不給跨網域許可就回 null
 function toDataUrl(img){
