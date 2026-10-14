@@ -4,371 +4,318 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>迷你 MJ</title>
+<title>素材工廠</title>
 <style>
-/* 版面概念：手機單欄；上面是「七層點餐單」，中間是提示詞預覽，下面是 2×2 出圖格 */
+/* 版面概念：手機單欄；上面設定風格，中間貼清單批次出圖，下面是素材庫和匯出 */
 :root{
-  --bg:#f6f3ee;        /* 米白底，像相紙 */
-  --fg:#1d1a16;        /* 深咖啡字 */
-  --muted:#7a7066;     /* 說明文字 */
-  --panel:#ffffff;     /* 卡片底 */
-  --line:#e2dcd3;      /* 細線 */
-  --accent:#b5432b;    /* 鏽紅，呼應那張紅客廳 */
-  --accent-fg:#ffffff;
-  --tile:#e9e3da;      /* 空的出圖格 */
+  --bg:#f6f3ee;--fg:#1d1a16;--muted:#7a7066;--panel:#ffffff;--line:#e2dcd3;
+  --accent:#b5432b;--accent-fg:#ffffff;--tile:#e9e3da;--ok:#2f7a4a;
   --font:-apple-system,"PingFang TC","Noto Sans TC",system-ui,sans-serif;
   --mono:ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#171412;--fg:#efe9e1;--muted:#a79d92;--panel:#211d1a;--line:#36302a;
-    --accent:#e0664b;--accent-fg:#1a0f0b;--tile:#2a2521;color-scheme:dark;
-  }
+  :root:not([data-theme="light"]){--bg:#171412;--fg:#efe9e1;--muted:#a79d92;--panel:#211d1a;--line:#36302a;--accent:#e0664b;--accent-fg:#1a0f0b;--tile:#2a2521;--ok:#6cc08a;color-scheme:dark}
 }
-:root[data-theme="dark"]{
-  --bg:#171412;--fg:#efe9e1;--muted:#a79d92;--panel:#211d1a;--line:#36302a;
-  --accent:#e0664b;--accent-fg:#1a0f0b;--tile:#2a2521;color-scheme:dark;
-}
+:root[data-theme="dark"]{--bg:#171412;--fg:#efe9e1;--muted:#a79d92;--panel:#211d1a;--line:#36302a;--accent:#e0664b;--accent-fg:#1a0f0b;--tile:#2a2521;--ok:#6cc08a;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--font)}
 body{padding-block:12px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:560px;margin:0 auto}
-h1{font-size:22px;margin:0;letter-spacing:.02em}
+h1{font-size:22px;margin:0}
 h1 small{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
 .sub{color:var(--muted);font-size:13px;margin:2px 0 12px}
 section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 section h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;font-weight:600}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 11px;font-size:13px;cursor:pointer}
-.chip.on,.chip:active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 11px;font-size:13px}
+.chip.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .row{display:grid;grid-template-columns:5.5em 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .row label{font-size:13px;color:var(--muted)}
-input[type=text],select{width:100%;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
-input[type=range]{width:100%}
-.ratio{display:flex;gap:6px}
-.ratio button{flex:1;padding:7px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
-.ratio button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-pre{font:12px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0 0 8px;max-height:9em;overflow:auto}
+input[type=text],input[type=number],select,textarea{width:100%;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+textarea{min-height:7em;font:13px/1.5 var(--mono)}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
 button.main{flex:1;min-width:0;padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-fg);font:inherit;font-weight:700;font-size:16px}
 button.sec{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;font-size:13px}
 button:disabled{opacity:.45}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tile{position:relative;background:var(--tile);border-radius:10px;overflow:hidden;aspect-ratio:var(--ar,1);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;padding:8px;border:2px solid transparent}
-.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.tile.sel{border-color:var(--accent)}
-.tile .tag{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 6px;border-radius:6px}
 .status{font-size:13px;color:var(--muted);margin:8px 0 0;min-height:1.4em}
-.fav{display:flex;gap:6px;flex-wrap:wrap}
-.fav .chip{display:flex;gap:6px;align-items:center}
-.fav .chip b{font-weight:400;opacity:.6}
 .note{font-size:12px;color:var(--muted);margin-top:8px}
-@media (prefers-reduced-motion:no-preference){.tile.loading::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);animation:sh 1.4s infinite}@keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:84px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg)}
+.item .thumb{width:84px;aspect-ratio:1;background:var(--tile);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center;position:relative}
+.item .thumb img{width:100%;height:100%;object-fit:cover}
+.item .meta{min-width:0}
+.item .name{font-weight:600}
+.item .seed{font:11px var(--mono);color:var(--muted)}
+.item .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.item .acts button{padding:5px 9px;font-size:12px}
+.item.kept{border-color:var(--ok)}
+.item.kept .name::after{content:" ✓";color:var(--ok)}
+.item .acts a{font-size:12px;color:var(--fg)}
+pre{font:12px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0 0 8px;max-height:6em;overflow:auto}
+.lib{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.lib .cell{aspect-ratio:1;background:var(--tile);border-radius:8px;overflow:hidden;position:relative}
+.lib .cell img{width:100%;height:100%;object-fit:cover}
+.lib .cell span{position:absolute;left:0;right:0;bottom:0;font-size:10px;background:rgba(0,0,0,.55);color:#fff;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib .cell b{position:absolute;right:3px;top:3px;background:rgba(0,0,0,.6);color:#fff;border-radius:6px;font-size:11px;padding:1px 6px;font-weight:400}
+@media (prefers-reduced-motion:no-preference){.thumb.loading::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);animation:sh 1.4s infinite}@keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
 
-<h1>迷你 MJ <small>仿 Midjourney 工作流 · 大腦借 Flux</small></h1>
-<p class="sub">七層點餐 → 一次 4 張 → 挑一張 → 再抽／放大／存喜歡</p>
+<h1>素材工廠 <small>自用生圖 → 塞進遊戲</small></h1>
+<p class="sub">選類型 → 貼清單 → 批次出圖 → 留下要的 → 匯出素材包</p>
 
-<!-- ① 範例與喜歡：讓頁面一打開就有東西可按 -->
+<!-- ① 風格鎖：整批共用，圖才會一致 -->
 <section>
-  <h2>範例・我的喜歡</h2>
-  <div class="chips" id="presets"></div>
-  <div class="fav" id="favs" style="margin-top:6px"></div>
+  <h2>1 素材類型與風格（整批共用）</h2>
+  <div class="chips" id="kinds"></div>
+  <div class="row" style="margin-top:8px"><label for="style">風格</label><select id="style"></select></div>
+  <div class="row"><label for="extra">補充字</label><input type="text" id="extra" placeholder="選填，例：pastel colors, for kids"></div>
+  <div class="row"><label for="family">seed 家族</label><input type="number" id="family" min="0" max="999999"></div>
+  <pre id="preview"></pre>
 </section>
 
-<!-- ② 七層點餐單 -->
+<!-- ② 清單 -->
 <section>
-  <h2>七層點餐單</h2>
-  <div class="row"><label for="subject">1 主體</label><input type="text" id="subject" placeholder="例：oversized red velvet sofa（中文也可）"></div>
-  <div class="row"><label for="scene">2 場景</label><input type="text" id="scene" placeholder="例：monochrome terracotta living room"></div>
-  <div class="row"><label for="light">3 光線</label><select id="light"></select></div>
-  <div class="row"><label for="material">4 材質</label><select id="material"></select></div>
-  <div class="row"><label for="camera">5 相機</label><select id="camera"></select></div>
-  <div class="row"><label for="style">6 風格</label><select id="style"></select></div>
-  <div class="row"><label>7 長寬比</label><div class="ratio" id="ratio"></div></div>
-  <div class="row"><label for="stylize">　MJ 味</label><input type="range" id="stylize" min="0" max="2" step="1" value="1"></div>
-</section>
-
-<!-- ③ 提示詞預覽 -->
-<section>
-  <h2>拼好的提示詞</h2>
-  <pre id="prompt"></pre>
-  <div class="btns">
-    <button class="main" id="go">生成 4 張</button>
-    <button class="sec" id="copy">複製提示詞</button>
+  <h2>2 素材清單（一行一張）</h2>
+  <textarea id="list" placeholder="名稱|英文描述&#10;蘋果|red apple&#10;香蕉|yellow banana&#10;只寫名稱也可以，但英文描述出圖比較準"></textarea>
+  <div class="btns" style="margin-top:8px">
+    <button class="main" id="go">批次出圖</button>
+    <button class="sec" id="stop" disabled>停</button>
   </div>
   <p class="status" id="status"></p>
+  <p class="note">免費版每 15 秒 1 張；10 張約 2.5 分鐘。畫到一半可以先去做別的事。</p>
 </section>
 
-<!-- ④ 出圖格 -->
+<!-- ③ 這批結果 -->
 <section>
-  <h2>四張選一張</h2>
-  <div class="grid" id="grid"></div>
-  <div class="btns" style="margin-top:8px">
-    <button class="sec" id="vary" disabled>🔁 再抽 4 張</button>
-    <button class="sec" id="hd" disabled>🔍 放大 HD</button>
-    <button class="sec" id="like" disabled>❤️ 存喜歡</button>
-    <a class="sec" id="open" style="display:none;text-decoration:none;line-height:1.3" target="_blank" rel="noopener">⬇️ 開大圖</a>
-  </div>
-  <p class="note">免費版每 15 秒只能出 1 張，所以 4 張要等約 1 分鐘。圖是 Flux 畫的，不是 Midjourney 本人。</p>
+  <h2>3 這批結果（✓ 留的會進素材庫）</h2>
+  <div class="list" id="results"></div>
 </section>
 
-<!-- ===== 第一段：純邏輯（沒有碰畫面），方便無頭驗證 ===== -->
+<!-- ④ 素材庫與匯出 -->
+<section>
+  <h2>4 素材庫 <span id="libcount"></span></h2>
+  <div class="lib" id="lib"></div>
+  <div class="btns" style="margin-top:8px">
+    <button class="main" id="export">下載素材包 .json</button>
+    <button class="sec" id="clear">清空素材庫</button>
+  </div>
+  <p class="note">素材包傳給 Claude 就能直接塞進遊戲。圖存在這支手機的瀏覽器裡，換裝置不會帶著走，所以要的先下載。</p>
+</section>
+
+<!-- ===== 第一段：純邏輯（不碰畫面），方便無頭驗證 ===== -->
 <script id="core">
-// 常數全部集中在這裡：換大腦、改節奏，只動這一塊
+// 常數全部集中：換大腦、改節奏、改尺寸，只動這一塊
 const CONFIG = {
   api: 'https://image.pollinations.ai/prompt/', // 免費生圖網址（匿名、免金鑰）
   model: 'flux',          // 借用的大腦
   gapMs: 15000,           // 免費版節奏：兩張之間至少隔 15 秒
   timeoutMs: 90000,       // 一張最多等 90 秒
-  hdScale: 1.5,           // 放大倍率
-  storeKey: 'minimj.v1',  // localStorage 的抽屜名
-  ratios: { '1:1':[1024,1024], '3:4':[768,1024], '4:3':[1024,768], '16:9':[1280,720] },
+  retryMs: 20000,         // 失敗後等多久再試
+  maxPx: 768,             // 存進素材庫時最長邊縮到幾像素（控制檔案大小）
+  jpegQ: 0.82,            // JPEG 壓縮品質
+  storeKey: 'assetfactory.v2', // localStorage 抽屜名（設定用）
+  dbName: 'assetfactory', // IndexedDB 名稱（存圖用）
 };
 
-// 下拉選單的選項：左邊是玩家看到的中文，右邊是塞進提示詞的英文
-const OPTIONS = {
-  light: [
-    ['柔和散射光','soft indirect diffused light'],
-    ['黃金時刻斜光','golden hour sunlight raking across surfaces, long shadows'],
-    ['陰天冷調','overcast soft light, cool and moody'],
-    ['乾淨棚拍','clean studio lighting'],
-    ['夜晚霓虹','neon night lights, wet reflections'],
-  ],
-  material: [
-    ['絨布＋灰泥','velvet and plaster textures'],
-    ['粗石＋水面','rough travertine stone and still water'],
-    ['鋼＋瓷磚','brushed steel and glossy tiles'],
-    ['木頭＋亞麻','warm wood and linen'],
-    ['火山岩＋野花','dark lava rock and small white wildflowers'],
-  ],
-  camera: [
-    ['平視廣角','eye-level wide shot'],
-    ['低角度仰拍','low angle shot'],
-    ['超廣角風景','ultra wide landscape shot'],
-    ['長曝光動態','long exposure, motion blur on people'],
-    ['特寫','close-up, shallow depth of field'],
-  ],
-  style: [
-    ['建築雜誌風','architectural interior photography, minimalist, tonal color palette, editorial style'],
-    ['極簡紀念碑','brutalist minimalism, monumental scale, tiny human figures for scale'],
-    ['陰鬱風景','moody landscape photography, mist, cinematic atmosphere'],
-    ['黑白紀實','black and white documentary photography, high contrast'],
-    ['溫暖電影感','warm cinematic photography, film grain, soft color grading'],
-  ],
-};
-
-// 「MJ 味」三段：0 寫實少調味、1 雜誌感、2 滿滿 MJ 式華麗
-const SEASONING = [
-  'photorealistic',
-  'editorial photography, refined composition',
-  'award-winning editorial photography, rich color grading, exquisite composition, highly detailed',
+// 素材類型：尺寸＋自動補的風格字；玩家只要選類型，不用懂
+const KINDS = [
+  { id:'card',   name:'卡面',  w:768,  h:768,  words:'single centered subject, game card illustration, clean flat color background, no text' },
+  { id:'icon',   name:'圖示',  w:512,  h:512,  words:'simple bold icon, flat design, thick outline, plain background, no text' },
+  { id:'bg',     name:'背景',  w:1024, h:576,  words:'game background scene, wide view, no characters, no text' },
+  { id:'puzzle', name:'拼圖',  w:1024, h:768,  words:'richly detailed scene, many distinct objects, vivid colors, no text' },
+  { id:'char',   name:'人物',  w:768,  h:1024, words:'single character, full body, standing, plain background, no text' },
 ];
 
-// 四張截圖逆向出來的範例（七層設定）
-const PRESETS = [
-  { name:'紅絨客廳', subject:'oversized rust-red velvet modular sofa, large abstract painting on the wall, cream wool rug, translucent red acrylic coffee table', scene:'monochrome terracotta living room with a potted plant in the background', light:0, material:0, camera:0, style:0, ratio:'4:3', stylize:1 },
-  { name:'石牆倒影', subject:'monumental travertine stone walls rising from a still reflecting pool', scene:'tiny human figures walking between the walls', light:1, material:1, camera:0, style:1, ratio:'3:4', stylize:1 },
-  { name:'圓環山景', subject:'a giant thin black metal ring sculpture framing a mist-covered mountain', scene:'volcanic highland with a dark lava field and small white flowers', light:2, material:4, camera:2, style:2, ratio:'3:4', stylize:2 },
-  { name:'黑白地鐵', subject:'blurred commuters walking through a modern subway corridor', scene:'curved white tiled ceiling, steel handrails in sharp focus', light:3, material:2, camera:3, style:3, ratio:'3:4', stylize:0 },
+// 風格：整批共用一組，圖才會像同一套
+const STYLES = [
+  ['兒童繪本',   'children picture book illustration, soft watercolor, friendly, warm'],
+  ['卡通貼紙',   'cute cartoon sticker style, bold outlines, bright colors'],
+  ['像素風',     '16-bit pixel art style, limited palette'],
+  ['寫實照片',   'photorealistic, soft natural light'],
+  ['剪紙',       'paper cut-out craft style, layered paper, soft shadows'],
+  ['水墨',       'ink wash painting style, minimal, elegant'],
 ];
 
-// 把七層拼成一段英文提示詞
-function buildPrompt(L){
-  const parts = [
-    (L.subject||'').trim(),
-    (L.scene||'').trim(),
-    OPTIONS.light[L.light][1],
-    OPTIONS.material[L.material][1],
-    OPTIONS.camera[L.camera][1],
-    OPTIONS.style[L.style][1],
-    SEASONING[L.stylize],
-  ].filter(Boolean);                       // 空的就跳過
-  return parts.join(', ');
+// 把清單文字拆成 [{name, desc}]；「名稱|描述」或只有名稱
+function parseList(text){
+  return (text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const i = l.indexOf('|');
+    return i<0 ? {name:l, desc:l} : {name:l.slice(0,i).trim(), desc:l.slice(i+1).trim() || l.slice(0,i).trim()};
+  });
 }
 
-// 長寬比 → 寬高像素；放大就乘倍率
-function sizeFor(ratio, scale){
-  const [w,h] = CONFIG.ratios[ratio] || CONFIG.ratios['1:1'];
-  const s = scale || 1;
-  return [Math.round(w*s), Math.round(h*s)];
+// 拼提示詞：描述 → 類型字 → 風格字 → 補充字
+function buildPrompt(desc, kind, styleIdx, extra){
+  return [desc, kind.words, STYLES[styleIdx][1], (extra||'').trim()].filter(Boolean).join(', ');
 }
 
-// 組出一張圖的網址：同一個 seed ＋ 同一段提示詞 → 同一張圖
-function imageUrl(prompt, ratio, seed, scale){
-  const [w,h] = sizeFor(ratio, scale);
-  return CONFIG.api + encodeURIComponent(prompt)
-    + '?width=' + w + '&height=' + h + '&seed=' + seed
-    + '&model=' + CONFIG.model + '&nologo=true';
+// 第 i 張的 seed：家族號＋編號；重抽加 1000，所以同一張永遠能重現
+function seedFor(family, i, redraw){ return (family + i + (redraw||0)*1000) % 1000000; }
+
+// 組網址
+function imageUrl(prompt, w, h, seed){
+  return CONFIG.api + encodeURIComponent(prompt) + '?width='+w+'&height='+h+'&seed='+seed+'&model='+CONFIG.model+'&nologo=true';
 }
 
-// 隨機 seed（0～999999）
 function randSeed(){ return Math.floor(Math.random()*1e6); }
 </script>
 
-<!-- ===== 第二段：畫面與操作 ===== -->
+<!-- ===== 第二段：畫面、批次、素材庫 ===== -->
 <script>
 const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
-// --- 存檔：localStorage 讀寫都包 try，私密模式壞了也不當機 ---
-function loadStore(){ try{ return JSON.parse(localStorage.getItem(CONFIG.storeKey)) || {}; }catch(e){ return {}; } }
-function saveStore(s){ try{ localStorage.setItem(CONFIG.storeKey, JSON.stringify(s)); }catch(e){} }
-let store = loadStore();          // { last:{七層}, favs:[{name,七層}] }
-store.favs = store.favs || [];
+// --- 設定存 localStorage（包 try，壞了不當機） ---
+function loadCfg(){ try{ return JSON.parse(localStorage.getItem(CONFIG.storeKey))||{}; }catch(e){ return {}; } }
+function saveCfg(c){ try{ localStorage.setItem(CONFIG.storeKey, JSON.stringify(c)); }catch(e){} }
+let cfg = loadCfg();
 
-// --- 把下拉選單填好 ---
-for (const key of ['light','material','camera','style']){
-  $(key).innerHTML = OPTIONS[key].map((o,i)=>'<option value="'+i+'">'+o[0]+'</option>').join('');
+// --- 素材庫存 IndexedDB（localStorage 只有 5MB，裝不下圖） ---
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open(CONFIG.dbName, 1);
+    r.onupgradeneeded = ()=> r.result.createObjectStore('assets',{keyPath:'id'});   // 第一次開：建一個抽屜叫 assets
+    r.onsuccess = ()=>res(r.result); r.onerror = ()=>rej(r.error);
+  });
 }
-// 長寬比按鈕
-$('ratio').innerHTML = Object.keys(CONFIG.ratios).map(r=>'<button type="button" data-r="'+r+'">'+r+'</button>').join('');
-$('ratio').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; setRatio(b.dataset.r); refresh(); });
-function setRatio(r){ for (const b of $('ratio').children) b.classList.toggle('on', b.dataset.r===r); }
-function getRatio(){ const b=[...$('ratio').children].find(b=>b.classList.contains('on')); return b ? b.dataset.r : '1:1'; }
+async function dbAll(){ try{ const db=await openDB(); return await new Promise((res,rej)=>{ const q=db.transaction('assets').objectStore('assets').getAll(); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }catch(e){ return []; } }
+async function dbPut(a){ try{ const db=await openDB(); await new Promise((res,rej)=>{ const t=db.transaction('assets','readwrite'); t.objectStore('assets').put(a); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }catch(e){} }
+async function dbDel(id){ try{ const db=await openDB(); await new Promise((res,rej)=>{ const t=db.transaction('assets','readwrite'); t.objectStore('assets').delete(id); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }catch(e){} }
+async function dbClear(){ try{ const db=await openDB(); await new Promise((res,rej)=>{ const t=db.transaction('assets','readwrite'); t.objectStore('assets').clear(); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }catch(e){} }
 
-// --- 七層 ⇄ 表單 ---
-function readLayers(){
-  return { subject:$('subject').value, scene:$('scene').value,
-    light:+$('light').value, material:+$('material').value, camera:+$('camera').value, style:+$('style').value,
-    ratio:getRatio(), stylize:+$('stylize').value };
-}
-function writeLayers(L){
-  $('subject').value=L.subject||''; $('scene').value=L.scene||'';
-  $('light').value=L.light||0; $('material').value=L.material||0; $('camera').value=L.camera||0; $('style').value=L.style||0;
-  setRatio(L.ratio||'1:1'); $('stylize').value=L.stylize==null?1:L.stylize;
-  refresh();
-}
+// --- 把下拉和 chips 填好 ---
+$('kinds').innerHTML = KINDS.map((k,i)=>'<button class="chip" type="button" data-i="'+i+'">'+k.name+' '+k.w+'×'+k.h+'</button>').join('');
+$('style').innerHTML = STYLES.map((s,i)=>'<option value="'+i+'">'+s[0]+'</option>').join('');
+let kindIdx = 0;
+function setKind(i){ kindIdx=i; [...$('kinds').children].forEach((b,k)=>b.classList.toggle('on',k===i)); refresh(); }
+$('kinds').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setKind(+b.dataset.i); });
 
-// --- 範例與喜歡的 chips ---
-$('presets').innerHTML = PRESETS.map((p,i)=>'<button class="chip" type="button" data-i="'+i+'">'+p.name+'</button>').join('');
-$('presets').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; writeLayers(PRESETS[+b.dataset.i]); });
-function renderFavs(){
-  $('favs').innerHTML = store.favs.map((f,i)=>'<button class="chip" type="button" data-i="'+i+'">❤️ '+f.name+'<b data-del="'+i+'">✕</b></button>').join('');
-}
-$('favs').addEventListener('click', e=>{
-  const del = e.target.closest('[data-del]');
-  if (del){ store.favs.splice(+del.dataset.del,1); saveStore(store); renderFavs(); return; }  // 按 ✕ 刪掉
-  const b = e.target.closest('button'); if(!b) return;
-  writeLayers(store.favs[+b.dataset.i]);                                                     // 按名字 → 帶回表單
-});
-renderFavs();
-
-// --- 提示詞預覽：表單一動就重拼，也順手存成「上次」 ---
+// --- 讀寫表單 ---
+function readForm(){ return { kind:kindIdx, style:+$('style').value, extra:$('extra').value, family:+$('family').value||0, list:$('list').value }; }
 function refresh(){
-  const L = readLayers();
-  $('prompt').textContent = buildPrompt(L);
-  document.documentElement.style.setProperty('--ar', L.ratio.replace(':','/'));   // 出圖格跟著長寬比變形
-  store.last = L; saveStore(store);
+  const f = readForm();
+  const first = parseList(f.list)[0];
+  $('preview').textContent = '範例提示詞：' + buildPrompt(first?first.desc:'(清單第一行)', KINDS[f.kind], f.style, f.extra);
+  saveCfg(f);
 }
-for (const id of ['subject','scene','light','material','camera','style','stylize']) $(id).addEventListener('input', refresh);
+for (const id of ['style','extra','family','list']) $(id).addEventListener('input', refresh);
 
-// --- 複製提示詞 ---
-$('copy').addEventListener('click', ()=>{
-  const t = $('prompt').textContent;
-  const done = ()=>{ $('status').textContent='已複製，可以貼去真的 Midjourney 用'; };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(()=>fallback());
-  else fallback();
-  function fallback(){ const r=document.createRange(); r.selectNodeContents($('prompt')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); $('status').textContent='已選取，長按複製'; }
-});
-
-// --- 出圖格 ---
-const tiles = [];                    // 四格的狀態：{el, img, seed, url, prompt, ratio}
-let selected = -1;                   // 目前選中哪一格
-let runId = 0;                       // 每次生成一個流水號，舊的排隊會自動停
-
-$('grid').innerHTML = '';
-for (let i=0;i<4;i++){
-  const el = document.createElement('div'); el.className='tile'; el.textContent='按「生成 4 張」';
-  el.addEventListener('click', ()=>select(i));
-  $('grid').appendChild(el);
-  tiles.push({el, img:null, seed:null, url:null, prompt:null, ratio:null});
-}
-
-function select(i){
-  if (!tiles[i].url) return;                                   // 還沒有圖不能選
-  selected = i;
-  tiles.forEach((t,k)=>t.el.classList.toggle('sel', k===i));
-  $('vary').disabled = $('hd').disabled = $('like').disabled = false;
-  $('open').href = tiles[i].url; $('open').style.display='';
-}
-
-// 載入一張圖：回傳 Promise，成功或失敗都會結束
+// --- 載圖：成功或失敗都會結束 ---
 function loadImage(url){
   return new Promise(res=>{
-    const img = new Image();
-    const timer = setTimeout(()=>{ img.src=''; res({ok:false, img}); }, CONFIG.timeoutMs);
-    img.onload = ()=>{ clearTimeout(timer); res({ok:true, img}); };
-    img.onerror = ()=>{ clearTimeout(timer); res({ok:false, img}); };
+    const img = new Image(); img.crossOrigin = 'anonymous';           // 要求跨網域許可，才能轉成 base64
+    const timer = setTimeout(()=>{ img.src=''; res(null); }, CONFIG.timeoutMs);
+    img.onload = ()=>{ clearTimeout(timer); res(img); };
+    img.onerror = ()=>{ clearTimeout(timer); res(null); };
     img.src = url;
   });
 }
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
-
-// 主流程：依序出圖，兩張之間至少隔 gapMs
-async function generate(seeds, scale){
-  const myRun = ++runId;
-  const L = readLayers();
-  const prompt = buildPrompt(L);
-  if (!L.subject.trim()){ $('status').textContent='第 1 層「主體」要先寫東西'; return; }
-  $('go').disabled = true; selected=-1; $('open').style.display='none';
-  $('vary').disabled = $('hd').disabled = $('like').disabled = true;
-  tiles.forEach(t=>{ t.el.className='tile'; t.el.textContent='排隊中'; t.url=null; });
-
-  for (let i=0;i<seeds.length;i++){
-    if (myRun!==runId) return;                                  // 有新的生成開始了，這批停掉
-    const t = tiles[i];
-    t.seed = seeds[i]; t.prompt = prompt; t.ratio = L.ratio;
-    t.url = imageUrl(prompt, L.ratio, t.seed, scale);
-    t.el.className='tile loading'; t.el.textContent='第 '+(i+1)+' 張畫圖中…';
-    const started = Date.now();
-    let r = await loadImage(t.url);
-    if (!r.ok && myRun===runId){                                // 失敗就等一下再試一次
-      t.el.textContent='第 '+(i+1)+' 張失敗，20 秒後重試';
-      await sleep(20000);
-      if (myRun!==runId) return;
-      r = await loadImage(t.url);
-    }
-    if (myRun!==runId) return;
-    if (r.ok){
-      t.el.className='tile'; t.el.textContent='';
-      r.img.alt='第 '+(i+1)+' 張'; t.el.appendChild(r.img);
-      const tag=document.createElement('span'); tag.className='tag'; tag.textContent=(scale?'HD ':'')+'#'+(i+1)+' seed '+t.seed; t.el.appendChild(tag);
-    } else {
-      t.el.className='tile'; t.el.textContent='這張沒出來，等下再抽'; t.url=null;
-    }
-    // 等到距離這張開始滿 15 秒，才排下一張（免費版的節奏）
-    if (i<seeds.length-1){
-      const wait = CONFIG.gapMs - (Date.now()-started);
-      for (let left=wait; left>0 && myRun===runId; left-=1000){
-        $('status').textContent='第 '+(i+2)+' 張 '+Math.ceil(left/1000)+' 秒後開始';
-        await sleep(1000);
-      }
-    }
-  }
-  if (myRun!==runId) return;
-  $('status').textContent='完成。點一張圖，可以再抽、放大或存喜歡';
-  $('go').disabled = false;
+// 圖 → 縮小 → JPEG base64（存素材庫用）；對方不給跨網域許可就回 null
+function toDataUrl(img){
+  try{
+    const s = Math.min(1, CONFIG.maxPx / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width=Math.round(img.naturalWidth*s); c.height=Math.round(img.naturalHeight*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg', CONFIG.jpegQ);
+  }catch(e){ return null; }
 }
 
-// 生成 4 張：四個隨機 seed
-$('go').addEventListener('click', ()=>generate([randSeed(),randSeed(),randSeed(),randSeed()]));
-// 再抽 4 張：同提示詞、換 seed（仿 MJ 的 V 按鈕；真 MJ 會以選中那張為基準，這裡做不到）
-$('vary').addEventListener('click', ()=>generate([randSeed(),randSeed(),randSeed(),randSeed()]));
-// 放大 HD：同 seed、尺寸乘倍率，只出 1 張放第 1 格（仿 MJ 的 U 按鈕）
-$('hd').addEventListener('click', ()=>{ if(selected<0) return; generate([tiles[selected].seed], CONFIG.hdScale); });
-// 存喜歡：把現在的七層設定記下來，下次一鍵帶回
-$('like').addEventListener('click', ()=>{
-  const L = readLayers();
-  const name = (L.subject.split(',')[0]||'未命名').slice(0,14);
-  store.favs.unshift({name, ...L}); store.favs = store.favs.slice(0,12);   // 最多留 12 個
-  saveStore(store); renderFavs();
-  $('status').textContent='存好了：'+name;
+// --- 批次出圖 ---
+let runId = 0, items = [];     // items：這批每一張的狀態
+function renderItem(it){
+  const el = it.el;
+  el.className = 'item' + (it.kept?' kept':'');
+  el.innerHTML =
+    '<div class="thumb'+(it.state==='loading'?' loading':'')+'">'+(it.img?'':(it.state==='loading'?'畫圖中…':it.state==='fail'?'沒出來':'排隊'))+'</div>'+
+    '<div class="meta"><div class="name"></div><div class="seed">seed '+it.seed+' · '+it.w+'×'+it.h+'</div>'+
+    '<div class="acts">'+
+      '<button class="sec" data-a="keep" '+(it.img?'':'disabled')+'>'+(it.kept?'已留':'✓ 留')+'</button>'+
+      '<button class="sec" data-a="redraw" '+(it.state==='loading'?'disabled':'')+'>🔁 重抽</button>'+
+      (it.url?'<a href="'+it.url+'" target="_blank" rel="noopener">開大圖</a>':'')+
+    '</div></div>';
+  el.querySelector('.name').textContent = it.name;
+  if (it.img) el.querySelector('.thumb').appendChild(it.img);
+}
+$('results').addEventListener('click', async e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const it = items[+b.closest('.item').dataset.i];
+  if (b.dataset.a==='keep' && it.img && !it.kept){ await keep(it); renderItem(it); }
+  if (b.dataset.a==='redraw'){ it.redraw=(it.redraw||0)+1; runQueue([it]); }     // 重抽：換 seed，只跑這一張
+});
+async function keep(it){
+  const data = it.dataUrl || toDataUrl(it.img);                      // 轉 base64；失敗就只存網址
+  it.kept = true;
+  await dbPut({ id:it.id, name:it.name, prompt:it.prompt, seed:it.seed, w:it.w, h:it.h, url:it.url, data:data, kind:KINDS[kindIdx].id, t:Date.now() });
+  if (!data) $('status').textContent = '這張存不成圖檔（對方不給跨網域），只記了網址；請「開大圖」長按存相簿';
+  renderLib();
+}
+
+// 依序出圖，兩張之間至少隔 gapMs；傳入哪些 items 就跑哪些
+async function runQueue(queue){
+  const my = ++runId;
+  $('go').disabled = true; $('stop').disabled = false;
+  for (let n=0;n<queue.length;n++){
+    if (my!==runId) break;
+    const it = queue[n];
+    it.seed = seedFor(it.family, it.index, it.redraw);
+    it.url = imageUrl(it.prompt, it.w, it.h, it.seed);
+    it.img = null; it.dataUrl = null; it.kept = false; it.state='loading'; renderItem(it);
+    const started = Date.now();
+    let img = await loadImage(it.url);
+    if (!img && my===runId){ $('status').textContent=it.name+' 沒出來，'+(CONFIG.retryMs/1000)+' 秒後重試'; await sleep(CONFIG.retryMs); if (my!==runId) break; img = await loadImage(it.url); }
+    if (my!==runId) break;
+    if (img){ it.img=img; it.state='ok'; it.dataUrl=toDataUrl(img); } else { it.state='fail'; }
+    renderItem(it);
+    if (n<queue.length-1){                                           // 等滿 15 秒再排下一張
+      const wait = CONFIG.gapMs-(Date.now()-started);
+      for (let left=wait; left>0 && my===runId; left-=1000){ $('status').textContent='下一張（'+queue[n+1].name+'）'+Math.ceil(left/1000)+' 秒後開始'; await sleep(1000); }
+    }
+  }
+  if (my===runId){ $('status').textContent='這批跑完。按 ✓ 留下要的，不要的按重抽'; $('go').disabled=false; $('stop').disabled=true; }
+}
+$('go').addEventListener('click', ()=>{
+  const f = readForm(); const rows = parseList(f.list);
+  if (!rows.length){ $('status').textContent='清單是空的，一行寫一張'; return; }
+  if (!f.family){ $('family').value=randSeed(); refresh(); }
+  const fam = +$('family').value, kind = KINDS[f.kind];
+  $('results').innerHTML=''; items = rows.map((r,i)=>{
+    const el=document.createElement('div'); el.className='item'; el.dataset.i=i; $('results').appendChild(el);
+    return { el, id:Date.now()+'-'+i, index:i, name:r.name, prompt:buildPrompt(r.desc,kind,f.style,f.extra), w:kind.w, h:kind.h, family:fam, redraw:0, state:'queue' };
+  });
+  items.forEach(renderItem);
+  runQueue(items);
+});
+$('stop').addEventListener('click', ()=>{ runId++; $('go').disabled=false; $('stop').disabled=true; $('status').textContent='停了'; });
+
+// --- 素材庫 ---
+async function renderLib(){
+  const all = (await dbAll()).sort((a,b)=>b.t-a.t);
+  $('libcount').textContent = all.length ? '（'+all.length+' 張）' : '';
+  $('lib').innerHTML = all.map(a=>'<div class="cell" data-id="'+a.id+'">'+(a.data?'<img src="'+a.data+'" alt="">':'')+'<span></span><b data-del="'+a.id+'">✕</b></div>').join('');
+  [...$('lib').children].forEach((c,i)=>c.querySelector('span').textContent=all[i].name);
+}
+$('lib').addEventListener('click', async e=>{ const d=e.target.closest('[data-del]'); if(d){ await dbDel(d.dataset.del); renderLib(); } });
+$('clear').addEventListener('click', async ()=>{ if ($('clear').textContent!=='真的清空？'){ $('clear').textContent='真的清空？'; setTimeout(()=>$('clear').textContent='清空素材庫',3000); return; } await dbClear(); $('clear').textContent='清空素材庫'; renderLib(); });
+
+// 匯出素材包：一個 JSON，裡面每張圖都是 base64，Claude 收到直接塞進遊戲
+$('export').addEventListener('click', async ()=>{
+  const all = await dbAll();
+  if (!all.length){ $('status').textContent='素材庫是空的'; return; }
+  const pack = { app:'素材工廠', version:2, exported:new Date().toISOString(), count:all.length,
+    items: all.map(a=>({ name:a.name, kind:a.kind, prompt:a.prompt, seed:a.seed, w:a.w, h:a.h, url:a.url, data:a.data })) };
+  const blob = new Blob([JSON.stringify(pack)], {type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='assets-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  $('status').textContent='素材包 '+Math.round(blob.size/1024)+' KB，存到「檔案」後傳給 Claude';
 });
 
-// --- 開場：有上次就帶上次，沒有就帶第一個範例 ---
-writeLayers(store.last && store.last.subject ? store.last : PRESETS[0]);
+// --- 開場：帶回上次設定 ---
+setKind(cfg.kind||0);
+$('style').value = cfg.style||0; $('extra').value = cfg.extra||''; $('family').value = cfg.family||randSeed();
+$('list').value = cfg.list || '蘋果|red apple\n香蕉|yellow banana\n葡萄|bunch of purple grapes\n西瓜|slice of watermelon';
+refresh(); renderLib();
 </script>
 </body>
 </html>
